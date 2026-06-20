@@ -1,0 +1,32 @@
+name: Bug report
+description: Something isn't working.
+labels: ["type/fix"]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `paragon-stats --version` (or the commit SHA).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / output
+      render: text
