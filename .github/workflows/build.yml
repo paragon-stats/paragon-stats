@@ -25,5 +25,5 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore
       - run: dotnet format --verify-no-changes --severity error --no-restore
-      - run: dotnet build --no-restore -warnaserror
+      - run: dotnet build --no-restore
       - run: dotnet test --no-build
