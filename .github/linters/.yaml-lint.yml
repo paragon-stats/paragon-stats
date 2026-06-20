@@ -1,0 +1,14 @@
+extends: default
+rules:
+  line-length:
+    max: 200
+  truthy:
+    allowed-values: ["true", "false", "yes", "no", "on", "off"]
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  # GitHub workflow / config YAML does not use explicit document markers.
+  document-start: disable
+  document-end: disable
+  comments:
+    min-spaces-from-content: 1

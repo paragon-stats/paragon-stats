@@ -1,0 +1,3 @@
+# zizmor — GitHub Actions security audit configuration.
+# Default audits run; add per-rule ignores here as specific needs arise.
+rules: {}
