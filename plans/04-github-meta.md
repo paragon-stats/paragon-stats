@@ -8,7 +8,8 @@ no Super-Linter (overkill for now), no separate lint workflow.
 ## Steps
 
 1. **`.github/CODEOWNERS`** — one line:
-   ```
+
+   ```text
    * @pkloehn1
    ```
 
@@ -83,7 +84,7 @@ no Super-Linter (overkill for now), no separate lint workflow.
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "ci: add CODEOWNERS, Dependabot, and Windows build workflow"
 ```

@@ -2,17 +2,25 @@
 
 Thanks for your interest in paragon-stats.
 
+## Setup
+
+Requires the .NET 10 SDK (Windows x64) and Python 3.12+ (for the pre-commit hooks).
+After cloning:
+
+```text
+py -3 -m pip install -r requirements-dev.txt
+pre-commit install --install-hooks
+```
+
 ## Build and test
 
-Requires the .NET 10 SDK (Windows x64).
-
-```
+```text
 dotnet build
 dotnet test
 ```
 
-Run `dotnet format` before committing; a pre-commit hook enforces this once the
-hook framework is in place.
+`dotnet format`, markdown/YAML/Actions linting, secret scanning, and Conventional
+Commit checks all run automatically via the pre-commit hooks (and again in CI).
 
 ## Code style
 

@@ -10,3 +10,5 @@ MD033:
 # ul-indent is governed by .editorconfig; ol-prefix conflicts with our numbered lists.
 MD007: false
 MD029: false
+# Table column alignment fights the repo's markdown auto-formatter; not worth enforcing.
+MD060: false

@@ -11,7 +11,8 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
 
 2. **`.gitattributes`** — single short file with cross-platform line
    ending normalization:
-   ```
+
+   ```text
    * text=auto eol=lf
    *.sln eol=crlf
    *.bat eol=crlf
@@ -22,7 +23,8 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
    ```
 
 3. **`LICENSE`** — Apache-2.0 text. Fetch from the canonical source:
-   ```
+
+   ```text
    curl -fsSL https://www.apache.org/licenses/LICENSE-2.0.txt -o LICENSE
    ```
 
@@ -90,21 +92,22 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
    Target ~40 lines.
 
 6. **`Makefile`** — four targets, no more:
+
    ```makefile
    .PHONY: build test format clean
 
    build:
-   	dotnet build
+    dotnet build
 
    test:
-   	dotnet test
+    dotnet test
 
    format:
-   	dotnet format
+    dotnet format
 
    clean:
-   	dotnet clean
-   	rm -rf publish/
+    dotnet clean
+    rm -rf publish/
    ```
 
    (Use tabs, not spaces, for the indented lines — Make requires tabs.)
@@ -117,7 +120,7 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "docs: add LICENSE, README, CONTRIBUTING, gitignore, gitattributes, Makefile"
 ```

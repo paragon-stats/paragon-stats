@@ -79,7 +79,7 @@ right-sized for a .NET repo.
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "ci: add polyglot linters, style-guide docs, and CodeQL analysis"
 ```

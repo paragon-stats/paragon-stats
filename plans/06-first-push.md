@@ -13,40 +13,47 @@ Get the scaffold onto GitHub and confirm the CI workflow goes green.
 
 - The GitHub repo `paragon-stats/paragon-stats` exists (✓ already created/pushed).
 - Commit signing is configured locally:
-  ```
+
+  ```text
   git config commit.gpgsign        # should return "true"
   git config user.signingkey       # should return a key fingerprint or path
   ```
+
   And the corresponding public key is registered at
   <https://github.com/settings/keys>.
 
 ## Steps
 
 1. **Initialize git** if not already (skip if `.git/` exists):
-   ```
+
+   ```text
    git init -b main
    ```
 
 2. **Stage everything**:
-   ```
+
+   ```text
    git add .
    git status      # sanity-check what's about to be committed
    ```
 
 3. **Make the initial commit** (signed). If you've been committing per-task
    throughout, this step is a no-op; otherwise:
-   ```
+
+   ```text
    git commit -S -m "chore: initial scaffold"
    ```
 
 4. **Add the remote and push**:
-   ```
+
+   ```text
    git remote add origin git@github.com:paragon-stats/paragon-stats.git
    git push -u origin main
    ```
 
    If you authenticate over HTTPS instead of SSH, substitute:
-   ```
+
+   ```text
    git remote add origin https://github.com/paragon-stats/paragon-stats.git
    ```
 

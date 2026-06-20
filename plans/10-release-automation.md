@@ -35,6 +35,7 @@ plugin repos (`techdocs-authoring`, `unifi-netops`).
 2. **Release Please config** at the repo root:
 
    `release-please-config.json`:
+
    ```json
    {
      "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
@@ -47,6 +48,7 @@ plugin repos (`techdocs-authoring`, `unifi-netops`).
    ```
 
    `.release-please-manifest.json`:
+
    ```json
    { ".": "0.0.0" }
    ```
@@ -87,7 +89,7 @@ plugin repos (`techdocs-authoring`, `unifi-netops`).
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "ci: add Release Please + MinVer for SemVer releases"
 ```

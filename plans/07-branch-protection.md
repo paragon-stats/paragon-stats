@@ -55,6 +55,7 @@ Settings → **Code security** → **Code scanning** → **Set up CodeQL** →
 **Default**.
 
 After the first CodeQL run completes:
+
 - Return to **Settings → Rules → Rulesets → main-protection**
 - Edit the ruleset, find **Require status checks**, add `CodeQL` to the list
 - Save

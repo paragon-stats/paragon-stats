@@ -62,7 +62,7 @@ placement, and dependency hygiene. Adapted from the house pattern, .NET-scoped.
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "ci: add issue/PR templates, auto-labeler, triage, project automation, Dependabot"
 ```

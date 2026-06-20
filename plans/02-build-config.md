@@ -76,7 +76,7 @@ Central Package Management.
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "chore: add Directory.Build.props, CPM, and .editorconfig"
 ```

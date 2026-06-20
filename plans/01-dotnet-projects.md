@@ -16,17 +16,20 @@ contents are canonical (not hand-written).
 
 1. **Pin the SDK**. Take the installed 10.x.x version from
    `dotnet --list-sdks` and:
-   ```
+
+   ```text
    dotnet new globaljson --sdk-version <installed-version> --roll-forward latestFeature
    ```
 
 2. **Create the solution**:
-   ```
+
+   ```text
    dotnet new sln --name ParagonStats
    ```
 
 3. **Create the three projects** in their final layout:
-   ```
+
+   ```text
    dotnet new classlib --name ParagonStats.Core       --output src/ParagonStats.Core       --framework net10.0
    dotnet new console  --name ParagonStats.Cli        --output src/ParagonStats.Cli        --framework net10.0
    dotnet new xunit    --name ParagonStats.Core.Tests --output tests/ParagonStats.Core.Tests --framework net10.0
@@ -34,18 +37,21 @@ contents are canonical (not hand-written).
 
    Verify the test project uses **xUnit v3**, not v2. If `dotnet new xunit`
    produces v2, install the v3 template and re-create:
-   ```
+
+   ```text
    dotnet new install xunit.v3.templates
    dotnet new xunit3 --name ParagonStats.Core.Tests --output tests/ParagonStats.Core.Tests --framework net10.0 --force
    ```
 
 4. **Add projects to the solution**:
-   ```
+
+   ```text
    dotnet sln add src/ParagonStats.Core src/ParagonStats.Cli tests/ParagonStats.Core.Tests
    ```
 
 5. **Wire project references**:
-   ```
+
+   ```text
    dotnet add src/ParagonStats.Cli reference src/ParagonStats.Core
    dotnet add tests/ParagonStats.Core.Tests reference src/ParagonStats.Core
    ```
@@ -58,7 +64,8 @@ contents are canonical (not hand-written).
      either is acceptable
 
 7. **Verify the build**:
-   ```
+
+   ```text
    dotnet build
    dotnet test
    ```
@@ -72,7 +79,7 @@ contents are canonical (not hand-written).
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "chore: scaffold .NET 10 solution with Core, Cli, and Tests projects"
 ```

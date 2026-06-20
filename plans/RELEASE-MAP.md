@@ -39,7 +39,7 @@ maintainer is Windows-only; GUI was deferred but lands inside Phase 1 here.
 
 > Milestones for the product track: **v0.5 — CLI**, **v0.8 — GUI**, **v1.0 — Stable
 > (CLI + GUI)**. v2.0 is intentionally unscoped for now.
-
+>
 > The GitHub repo already exists, is public, and the plan files are pushed. M1
 > repo-creation/first-push is done; the scaffold is committed on top.
 
@@ -63,7 +63,7 @@ milestone. Closed by the PR that lands the work (`Closes #N`).
 
 ## How the loop closes (reduced manual effort)
 
-```
+```text
 plan task ──▶ GitHub issue (milestone-assigned)
                  │
                  ▼

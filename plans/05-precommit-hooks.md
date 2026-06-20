@@ -19,7 +19,7 @@ the machine — with the same hooks CI enforces (parity).
 
 1. **Install the tool** (pin in `requirements-dev.txt` for reproducibility):
 
-   ```
+   ```text
    py -3 -m pip install pre-commit
    ```
 
@@ -85,14 +85,14 @@ the machine — with the same hooks CI enforces (parity).
 
 4. **Install the git hooks**:
 
-   ```
+   ```text
    pre-commit install --install-hooks
    ```
 
 5. **Pin tool versions** in `requirements-dev.txt` (`pre-commit==...`) and document
    onboarding in `CONTRIBUTING.md`:
 
-   ```
+   ```text
    py -3 -m pip install -r requirements-dev.txt && pre-commit install --install-hooks
    ```
 
@@ -104,7 +104,7 @@ the machine — with the same hooks CI enforces (parity).
 
 ## Commit
 
-```
+```text
 git add .
 git commit -S -m "chore: add pre-commit framework (dotnet format, markdown/yaml/actions/secrets, commitlint)"
 ```

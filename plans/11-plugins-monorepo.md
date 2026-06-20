@@ -14,7 +14,7 @@ This is a **separate repo**, not part of `paragon-stats`. It mirrors the maintai
 
 Layout:
 
-```
+```text
 claude-plugins/
 ├── .claude-plugin/marketplace.json          # lists all plugins in this repo
 ├── plugins/
@@ -31,6 +31,7 @@ claude-plugins/
 ```
 
 1. **`plugin.json`** — annotate the version so Release Please can bump it:
+
    ```jsonc
    {
      "name": "karpathy-minimalism",
