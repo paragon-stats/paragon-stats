@@ -1,4 +1,9 @@
-# 06 — First push to GitHub
+# 06 — Push the scaffold
+
+> **Status update**: the repo already exists, is **public**, and the plan files are
+> pushed (`bdb3814`); local `main` tracks `origin/main`. So "create repo + first
+> push" is done. This task is now just: commit each M1 scaffold step (signed) and
+> push, then confirm CI goes green once the workflows from M2/M3 land.
 
 ## Goal
 
@@ -6,8 +11,7 @@ Get the scaffold onto GitHub and confirm the CI workflow goes green.
 
 ## Prerequisites
 
-- The GitHub repo `paragon-stats/paragon-stats` exists and is empty (no
-  auto-init README, LICENSE, or `.gitignore`).
+- The GitHub repo `paragon-stats/paragon-stats` exists (✓ already created/pushed).
 - Commit signing is configured locally:
   ```
   git config commit.gpgsign        # should return "true"

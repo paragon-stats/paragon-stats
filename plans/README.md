@@ -5,13 +5,33 @@ first, then execute the numbered tasks in order.
 
 ## Tasks
 
+Grouped into milestones with SemVer targets — see [`RELEASE-MAP.md`](RELEASE-MAP.md).
+
+**M1 — Scaffold (`v0.1.0`)**
+
 1. [`01-dotnet-projects.md`](01-dotnet-projects.md) — Solution + Core/Cli/Tests via `dotnet new`
-2. [`02-build-config.md`](02-build-config.md) — `Directory.Build.props`, `Directory.Packages.props`, `.editorconfig`
-3. [`03-repo-hygiene.md`](03-repo-hygiene.md) — `LICENSE`, `README`, `CONTRIBUTING`, `.gitignore`, `.gitattributes`, `Makefile`
-4. [`04-github-meta.md`](04-github-meta.md) — `CODEOWNERS`, Dependabot, build workflow
-5. [`05-husky-hooks.md`](05-husky-hooks.md) — Pre-commit hooks via Husky.Net
-6. [`06-first-push.md`](06-first-push.md) — Initial commit, push, verify CI green
-7. [`07-branch-protection.md`](07-branch-protection.md) — Manual UI checklist for the ruleset
+3. [`03-repo-hygiene.md`](03-repo-hygiene.md) — `LICENSE`, `README`, `CONTRIBUTING`, `.gitignore`, `.gitattributes`, `Makefile`, `SECURITY`
+6. [`06-first-push.md`](06-first-push.md) — Commit + push the scaffold (repo already exists)
+
+**M2 — Quality gates (`v0.2.0`)**
+
+2. [`02-build-config.md`](02-build-config.md) — `Directory.Build.props`, CPM, analyzers, `.editorconfig`, AOT
+5. [`05-precommit-hooks.md`](05-precommit-hooks.md) — Pre-commit framework (Python `pre-commit`)
+8. [`08-linting-style-guides.md`](08-linting-style-guides.md) — Polyglot linters, style-guide docs, **CodeQL**
+
+**M3 — Automation & release (`v0.3.0`)**
+
+4. [`04-github-meta.md`](04-github-meta.md) — CI build workflow, `CODEOWNERS`, Dependabot
+9. [`09-issue-pr-automation.md`](09-issue-pr-automation.md) — Issue/PR templates, auto-labeler, triage, Projects
+10. [`10-release-automation.md`](10-release-automation.md) — Release Please + MinVer (SemVer)
+
+**M4 — Protected trunk (`v0.4.0`)**
+
+7. [`07-branch-protection.md`](07-branch-protection.md) — Branch ruleset; required checks incl. CodeQL
+
+**M5 — Dev plugins**
+
+11. [`11-plugins-monorepo.md`](11-plugins-monorepo.md) — Private plugins monorepo (Karpathy) + ponytail wiring
 
 ## Usage with Claude Code
 

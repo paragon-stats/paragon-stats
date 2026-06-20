@@ -36,6 +36,11 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
 
    **Status: pre-alpha.** Scaffolding only; parsing engine not yet implemented.
 
+   > **Built with AI assistance.** This project is developed with the help of
+   > AI coding tools (Claude Code). All contributions are human-reviewed before
+   > merge. Mentioned up front so you can make an informed decision about using
+   > or contributing to it.
+
    ## Getting started
 
    - **Requirements**: .NET 10 SDK (Windows x64)
