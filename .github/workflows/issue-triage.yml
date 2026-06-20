@@ -1,0 +1,30 @@
+name: issue-triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.issue.body || "";
+            const m = body.match(/Risk \/ Severity\s*[\r\n]+\s*(low|medium|high|critical)/i);
+            if (!m) return;
+            const map = { critical: "priority/P0", high: "priority/P1", medium: "priority/P2", low: "priority/P3" };
+            const want = map[m[1].toLowerCase()];
+            const issue_number = context.payload.issue.number;
+            const current = (await github.rest.issues.listLabelsOnIssue({ ...context.repo, issue_number })).data.map(l => l.name);
+            for (const name of current.filter(l => l.startsWith("priority/") && l !== want)) {
+              await github.rest.issues.removeLabel({ ...context.repo, issue_number, name }).catch(() => {});
+            }
+            if (!current.includes(want)) {
+              await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [want] });
+            }

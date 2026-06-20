@@ -1,0 +1,123 @@
+name: Work Package / Incident RCA
+description: Plan work or document incidents with deliverables and success criteria.
+title: "type(scope): short summary of work"
+labels: ["type/chore", "status/wip"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - work-package
+        - incident-rca
+    validations:
+      required: true
+  - type: input
+    id: objective
+    attributes:
+      label: Objective
+      description: One-sentence outcome/goal, or the problem statement for an incident.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk_level
+    attributes:
+      label: Risk / Severity
+      options:
+        - low
+        - medium
+        - high
+        - critical
+    validations:
+      required: true
+  - type: input
+    id: deployed_version
+    attributes:
+      label: Deployed version
+      description: SemVer tag (incident-rca only, optional).
+      placeholder: "v0.1.0"
+  - type: textarea
+    id: affected_paths
+    attributes:
+      label: Affected projects/paths
+      description: Projects/folders/files impacted.
+      placeholder: |
+        - src/ParagonStats.Core/...
+        - .github/workflows/...
+    validations:
+      required: true
+  - type: textarea
+    id: rollback_plan
+    attributes:
+      label: Rollback plan
+      description: How to revert safely.
+      value: |
+        - Revert commit(s)
+        - Confirm build + tests green
+    validations:
+      required: true
+  - type: textarea
+    id: root_cause_analysis
+    attributes:
+      label: Root cause analysis
+      description: Incident-rca only.
+      placeholder: |
+        **5 Whys:** 1. Why...? -> ...
+
+        **Root Cause:** ...
+  - type: textarea
+    id: preventive_measures
+    attributes:
+      label: Preventive measures
+      description: Incident-rca only.
+      placeholder: |
+        - [ ] ...
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables
+      description: Concrete artifacts/changes to produce.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: Observable pass/fail outcomes (checkboxes).
+      value: |
+        - [ ] Behaves as documented for the target use case
+        - [ ] Build is green with warnings-as-errors; `dotnet format` clean
+        - [ ] No regressions in the listed affected paths
+        - [ ] Documentation/examples updated where behavior changed
+    validations:
+      required: true
+  - type: textarea
+    id: tdd_requirements
+    attributes:
+      label: TDD Requirements
+      value: |
+        - [ ] Write failing test first (Red)
+        - [ ] Implement minimal code to pass (Green)
+        - [ ] Refactor for quality/maintainability (Refactor)
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      placeholder: "#123, #456"
+  - type: input
+    id: related
+    attributes:
+      label: Related commits/PRs
+      placeholder: "Commits: abc1234 | PRs: #66"
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Estimate
+      options:
+        - 1h
+        - 2h
+        - 3h
+    validations:
+      required: true
