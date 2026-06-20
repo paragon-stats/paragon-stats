@@ -4,7 +4,8 @@
 
 Control AI-assist sprawl with **pinned, auditable** plugins. Vendor the Karpathy
 minimalism guidance into a private, release-tracked plugin (the public source has no
-releases — nothing to pin or audit), and consume `ponytail` pinned from upstream.
+releases — nothing to pin or audit), and consume `ponytail` and the maintainer's own
+`techdocs-authoring` plugin pinned by version.
 
 This is a **separate repo**, not part of `paragon-stats`. It mirrors the maintainer's
 `techdocs-authoring`/`unifi-netops` pattern, in monorepo form.
@@ -53,11 +54,14 @@ claude-plugins/
 
 ## Part 2 — Wire plugins into `paragon-stats`
 
-Register both marketplaces and enable the plugins **pinned to exact versions** in
+Register the marketplaces and enable the plugins **pinned to exact versions** in
 this repo's `.claude/settings.json`:
 
 - the private monorepo → enable `karpathy-minimalism@<version>`
 - `DietrichGebert/ponytail` → enable `ponytail@<version>` (e.g. the current release)
+- `pkloehn1/techdocs-authoring` → enable `techdocs-authoring@<version>` — the
+  maintainer's own SemVer-tracked plugin (Release Please via `.claude-plugin/plugin.json`),
+  so it pins cleanly like the others. Authoring/reference skill for docs work in this repo.
 
 > Confirm the exact `.claude/settings.json` keys for marketplaces + pinned plugins
 > against current Claude Code plugin docs before writing — do not guess the schema.
@@ -74,6 +78,6 @@ this repo's `.claude/settings.json`:
 ## Open items
 
 - Monorepo repo name (`pkloehn1/claude-plugins`?).
-- ponytail version to pin.
+- ponytail and techdocs-authoring versions to pin.
 - ponytail and the Karpathy plugin both push minimalism — decide whether to run both
   or just one to avoid redundant guidance (sprawl control is the whole point).
