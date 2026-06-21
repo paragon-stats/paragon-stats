@@ -47,6 +47,8 @@ repos:
         pass_filenames: false
       - id: conventional-commit
         name: Conventional Commit message
-        language: system
+        # language: python -> pre-commit provisions the interpreter, so this works
+        # on Windows/macOS/Debian without depending on system `py`/`python`/`python3`.
+        language: python
         stages: [commit-msg]
-        entry: py -3 scripts/check_commit_message.py
+        entry: python scripts/check_commit_message.py

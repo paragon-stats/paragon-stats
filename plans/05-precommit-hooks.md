@@ -12,15 +12,16 @@ the machine — with the same hooks CI enforces (parity).
 
 ## Prerequisites
 
-- Python 3.12+ on PATH (`py -3 --version`). This is a dev-only dependency; it is
+- Python 3.12+ on PATH (`python3 --version`; `py -3` on Windows). This is a dev-only dependency; it is
   **not** a runtime dependency of the .NET app.
 
 ## Steps
 
-1. **Install the tool** (pin in `requirements-dev.txt` for reproducibility):
+1. **Install the tool** (`python3` on Linux/macOS, `py -3` on Windows; pin in
+   `requirements-dev.txt` for reproducibility):
 
    ```text
-   py -3 -m pip install pre-commit
+   python3 -m pip install pre-commit
    ```
 
 2. **Create `.pre-commit-config.yaml`** at the repo root. Right-sized for a .NET
@@ -71,9 +72,9 @@ the machine — with the same hooks CI enforces (parity).
            pass_filenames: false
          - id: conventional-commit
            name: Conventional Commit message
-           language: system
+           language: python
            stages: [commit-msg]
-           entry: py -3 scripts/check_commit_message.py
+           entry: python scripts/check_commit_message.py
    ```
 
    `dotnet build -warnaserror` is intentionally **not** a pre-commit hook (too slow);
@@ -90,10 +91,10 @@ the machine — with the same hooks CI enforces (parity).
    ```
 
 5. **Pin tool versions** in `requirements-dev.txt` (`pre-commit==...`) and document
-   onboarding in `CONTRIBUTING.md`:
+   onboarding in `CONTRIBUTING.md` (`python3` on Linux/macOS, `py -3` on Windows):
 
    ```text
-   py -3 -m pip install -r requirements-dev.txt && pre-commit install --install-hooks
+   python3 -m pip install -r requirements-dev.txt && pre-commit install --install-hooks
    ```
 
 ## Acceptance
