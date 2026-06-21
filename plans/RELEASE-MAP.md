@@ -23,22 +23,24 @@ test, lint, release, and protect itself.
 
 ## Track B — Product release roadmap (capability-driven)
 
-Begins once the parsing engine starts (first `feat:`). **All `0.x` releases are GitHub
-pre-releases**; `1.0.0` is the first non-pre-release. The maintainer develops on
-**Debian 13**; the product ships **cross-platform (win-x64 + linux-x64)**. GUI was
-deferred but lands inside Phase 1.
+**Start-at-patch** (`bump-patch-for-minor-pre-major: true`): pre-1.0, **every
+`feat:`/`fix:` bumps patch** (`0.0.1`, `0.0.2`, …) and **only a breaking change
+auto-bumps the minor**. The named milestones below are **deliberate promotions**
+(a `Release-As:` footer when you reach them), not auto-computed. `0.x` is the
+unstable pre-1.0 line; `1.0.0` is the first stable release. Baseline anchored by
+the `v0.0.0` tag. Dev on Debian 13; ships cross-platform (win-x64 + linux-x64).
 
-| Version | Stage | Flag | Capability gate |
-| --- | --- | --- | --- |
-| `0.1.0` | **CLI** | pre-release | First usable CLI: parse CoH logs + initial stats. |
-| `0.2`–`0.x` | **Features** | pre-release | Incremental features — one minor per feat; milestones added as mapped. |
-| `0.x` | **GUI** | pre-release | GUI on the stable Core/CLI; exact version emerges (un-pegged). |
-| `0.x` | **Release candidate** | pre-release | Integrate CLI + GUI, polish, docs. |
-| `1.0.0` | **Stable** | release | First supported release = CLI + GUI; frozen format; signed AOT (win-x64 + linux-x64). |
-| `2.0.0` | **Major (future)** | release | Breaking overhaul / beyond v1. |
+| Version | Stage | How it's cut |
+| --- | --- | --- |
+| `0.0.1`–`0.0.x` | **Alpha** | every `feat:`/`fix:` (patch) — features + fixes accrue here |
+| `0.1.0` | **CLI** | deliberate `Release-As: 0.1.0` when the CLI is usable |
+| `0.x` | **GUI** | deliberate promotion; version un-pegged |
+| `0.x` | **Release candidate** | integrate CLI + GUI, polish, docs |
+| `1.0.0` | **Stable (CLI + GUI)** | deliberate `Release-As: 1.0.0`; frozen format; signed AOT |
+| `2.0.0` | **Major (future)** | breaking change post-1.0 |
 
-> Product milestones: **v0.1 — CLI**, **GUI** (un-pegged), **v1.0 — Stable (CLI + GUI)**.
-> Feature milestones (`v0.2`…) are added as features get mapped; `v2.0` is unscoped.
+> Product milestones (**CLI / GUI / Stable**) are **deliberate** version promotions —
+> pre-1.0 routine changes stay in `0.0.x`; you bump to `0.1.0`/`1.0.0` via `Release-As`.
 
 ## Issues (one per task/workstream)
 
