@@ -11,7 +11,7 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 
 ## Getting started
 
-- **Requirements**: .NET 10 SDK (Windows x64)
+- **Requirements**: .NET 10 SDK (Windows or Linux x64)
 - **Build**: `dotnet build`
 - **Test**: `dotnet test`
 
@@ -20,7 +20,7 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 | | |
 |---|---|
 | Language | C# / .NET 10 LTS |
-| Platform | Windows x64 (native AOT) |
+| Platform | Windows x64 + Linux x64 (native AOT) |
 | License | Apache-2.0 |
 
 ## Contributing

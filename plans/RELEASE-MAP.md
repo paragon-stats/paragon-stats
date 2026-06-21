@@ -2,64 +2,61 @@
 
 Versioning is **Release Please** driven: the version is computed from Conventional
 Commits, so **only `feat:`/`fix:` bump it** — `chore:`/`ci:`/`docs:` do not. That
-means the entire bootstrap (M1–M5, all chores) produces **no product release**; the
-product version stays at `0.0.0` until the first **feature** lands. So bootstrap
-progress and product versions are two separate tracks. MinVer stamps the .NET/AOT
-binary from whatever tag exists. See [`10-release-automation.md`](10-release-automation.md).
+means the entire bootstrap (all chores) produces **no product release**; the product
+version stays at `0.0.0` until the first **feature** lands. So bootstrap progress and
+product versions are two separate tracks. MinVer stamps the .NET/AOT binary from
+whatever tag exists. See [`10-release-automation.md`](10-release-automation.md).
 
 ## Track A — Bootstrap milestones (repo readiness, *not* product versions)
 
-These are tracked by milestone completion. They emit no product semver (optionally a
-single `v0.0.1` "repo ready" tag at the end of M5). Done when the repo can build,
+Tracked by milestone completion; they emit no product semver (optionally a single
+`v0.0.1` "repo ready" tag at the end of Dev plugins). Done when the repo can build,
 test, lint, release, and protect itself.
 
-| Milestone                     | Source tasks                                                                                   | Workstream                                                                               |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **M1 — Scaffold**             | [`01`](01-dotnet-projects.md), [`03`](03-repo-hygiene.md), [`06`](06-first-push.md)            | .NET solution + repo hygiene; scaffold committed/pushed ✅                                |
-| **M2 — Quality gates**        | [`02`](02-build-config.md), [`05`](05-precommit-hooks.md), [`08`](08-linting-style-guides.md)  | build config + analyzers; pre-commit framework; polyglot linting + style guides + CodeQL |
-| **M3 — Automation & release** | [`04`](04-github-meta.md), [`09`](09-issue-pr-automation.md), [`10`](10-release-automation.md) | CI; full issue/PR automation; Release Please + MinVer                                     |
-| **M4 — Protected trunk**      | [`07`](07-branch-protection.md)                                                                | branch ruleset; required checks: `build`, lint, commitlint, **CodeQL**                    |
-| **M5 — Dev plugins**          | [`11`](11-plugins-monorepo.md)                                                                 | private plugins monorepo (Karpathy) + ponytail; wire into this repo                       |
+| Milestone | Source tasks | Workstream |
+| --- | --- | --- |
+| **Scaffold** | `01`, `03`, `06` | .NET solution + repo hygiene; scaffold committed/pushed ✅ |
+| **Quality gates** | `02`, `05`, `08` | build config + analyzers; pre-commit; polyglot linting + style guides + CodeQL |
+| **Automation & release** | `04`, `09`, `10` | CI; full issue/PR automation; Release Please + MinVer |
+| **Protected trunk** | `07` | branch ruleset; required checks: `build`, lint, commitlint, **CodeQL** |
+| **Dev plugins** | `11` | private plugins monorepo (Karpathy) + ponytail; wire into this repo |
 
 ## Track B — Product release roadmap (capability-driven)
 
-Begins once the parsing engine starts (first `feat:`). **All `0.x` releases are
-flagged as GitHub pre-releases**; `1.0.0` is the first non-pre-release. The
-maintainer is Windows-only; GUI was deferred but lands inside Phase 1 here.
+Begins once the parsing engine starts (first `feat:`). **All `0.x` releases are GitHub
+pre-releases**; `1.0.0` is the first non-pre-release. The maintainer develops on
+**Debian 13**; the product ships **cross-platform (win-x64 + linux-x64)**. GUI was
+deferred but lands inside Phase 1.
 
-| Version            | Stage                  | Release flag | Capability gate                                                              |
-| ------------------ | ---------------------- | ------------ | --------------------------------------------------------------------------- |
-| `0.1.0`–`0.4.x`    | **Alpha**              | pre-release  | Parsing engine slices: read CoH logs, parse events, first stats. CLI forms. |
-| **`0.5.0`**        | **CLI**                | pre-release  | CLI feature-complete: full core stat set computed + rendered. Format may still change. |
-| `0.6`–`0.7`        | **Beta (CLI hardening)** | pre-release | Real-world log coverage, AOT perf, edge cases; freeze the output format.   |
-| **`0.8.0`**        | **GUI**                | pre-release  | GUI lands on top of the stable Core/CLI.                                     |
-| `0.9.x`            | **Release candidate**  | pre-release  | Integrate CLI + GUI, polish, docs.                                          |
-| **`1.0.0`**        | **Stable**             | release      | First supported release = **CLI + GUI**, frozen format, signed AOT binary.  |
-| **`2.0.0`**        | **Major (future)**     | release      | Breaking stats/log-format overhaul or major new capability beyond v1.       |
+| Version | Stage | Flag | Capability gate |
+| --- | --- | --- | --- |
+| `0.1.0` | **CLI** | pre-release | First usable CLI: parse CoH logs + initial stats. |
+| `0.2`–`0.x` | **Features** | pre-release | Incremental features — one minor per feat; milestones added as mapped. |
+| `0.x` | **GUI** | pre-release | GUI on the stable Core/CLI; exact version emerges (un-pegged). |
+| `0.x` | **Release candidate** | pre-release | Integrate CLI + GUI, polish, docs. |
+| `1.0.0` | **Stable** | release | First supported release = CLI + GUI; frozen format; signed AOT (win-x64 + linux-x64). |
+| `2.0.0` | **Major (future)** | release | Breaking overhaul / beyond v1. |
 
-> Milestones for the product track: **v0.5 — CLI**, **v0.8 — GUI**, **v1.0 — Stable
-> (CLI + GUI)**. v2.0 is intentionally unscoped for now.
->
-> The GitHub repo already exists, is public, and the plan files are pushed. M1
-> repo-creation/first-push is done; the scaffold is committed on top.
+> Product milestones: **v0.1 — CLI**, **GUI** (un-pegged), **v1.0 — Stable (CLI + GUI)**.
+> Feature milestones (`v0.2`…) are added as features get mapped; `v2.0` is unscoped.
 
 ## Issues (one per task/workstream)
 
-Created via `gh` after milestones exist. Each gets `area/*` + `type/*` labels and a
-milestone. Closed by the PR that lands the work (`Closes #N`).
+Each gets `area/*` + `type/*` labels and a milestone. Closed by the PR that lands the
+work (`Closes #N`). The live list is on GitHub — this is the original seed mapping.
 
-| #   | Title                                                                                          | Milestone | Labels                    |
-| --- | ---------------------------------------------------------------------------------------------- | --------- | ------------------------- |
-| —   | Scaffold .NET 10 solution (Core, Cli, Tests)                                                   | M1        | `area/build` `type/chore` |
-| —   | Add repo hygiene (LICENSE, README, CONTRIBUTING, gitignore, gitattributes, Makefile, SECURITY) | M1        | `area/docs` `type/chore`  |
-| —   | Add Directory.Build.props, CPM, analyzers, .editorconfig, AOT                                  | M2        | `area/build` `type/chore` |
-| —   | Add pre-commit framework (replaces Husky.Net)                                                  | M2        | `area/ci` `type/chore`    |
-| —   | Add polyglot linting, style-guide docs, and CodeQL                                             | M2        | `area/ci` `type/chore`    |
-| —   | Add CI build workflow, CODEOWNERS, Dependabot                                                  | M3        | `area/ci` `type/chore`    |
-| —   | Add full issue/PR automation (templates, labeler, triage, projects)                            | M3        | `area/ci` `type/chore`    |
-| —   | Add SemVer release mechanism (Release Please + MinVer)                                         | M3        | `area/build` `type/feat`  |
-| —   | Apply main branch protection ruleset (+ CodeQL required)                                       | M4        | `area/ci` `type/chore`    |
-| —   | Stand up private plugins monorepo + wire ponytail/karpathy                                     | M5        | `area/ci` `type/feat`     |
+| Title | Milestone |
+| --- | --- |
+| Scaffold .NET 10 solution (Core, Cli, Tests) | Scaffold |
+| Add repo hygiene (LICENSE, README, …) | Scaffold |
+| Add Directory.Build.props, CPM, analyzers, .editorconfig, AOT | Quality gates |
+| Add pre-commit framework | Quality gates |
+| Add polyglot linting, style-guide docs, and CodeQL | Quality gates |
+| Add CI build workflow, CODEOWNERS, Dependabot | Automation & release |
+| Add full issue/PR automation | Automation & release |
+| Add SemVer release mechanism (Release Please + MinVer) | Automation & release |
+| Apply main branch protection ruleset (+ CodeQL required) | Protected trunk |
+| Stand up private plugins monorepo + wire plugins | Dev plugins |
 
 ## How the loop closes (reduced manual effort)
 

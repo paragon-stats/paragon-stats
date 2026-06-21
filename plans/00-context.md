@@ -19,9 +19,10 @@ licensed to Homecoming Servers, LLC).
 ## Phase 1 scope
 
 - **Language**: C# / .NET 10 LTS
-- **Platform**: Windows x64 only — the maintainer has no Mac/Linux
-  hardware. Mac/Linux are out of scope until contributors with that hardware
-  join.
+- **Platform**: cross-platform — ships **win-x64 + linux-x64** native AOT
+  binaries (CoH players are mostly on Windows; Linux/Proton covered too). The
+  maintainer develops on **Debian 13 (Trixie)**. Native AOT cannot cross-compile,
+  so each RID is published on its matching CI runner.
 - **Architecture**: library + CLI + tests
   - `src/ParagonStats.Core` — parsing engine and domain model
   - `src/ParagonStats.Cli` — entry point, native AOT publish
