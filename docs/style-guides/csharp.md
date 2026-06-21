@@ -15,7 +15,7 @@ the config.
 
 ## AOT safety (Core + Cli)
 
-`ParagonStats.Cli` publishes with **native AOT** (`win-x64`). Keep
+`ParagonStats.Cli` publishes with **native AOT** (`win-x64` and `linux-x64`). Keep
 `ParagonStats.Core` AOT-compatible:
 
 - No unbounded reflection, `dynamic`, or runtime code generation.

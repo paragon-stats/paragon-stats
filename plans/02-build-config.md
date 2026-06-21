@@ -60,7 +60,7 @@ Central Package Management.
    `src/ParagonStats.Cli/ParagonStats.Cli.csproj`:
    - `<PublishAot>true</PublishAot>`
    - `<InvariantGlobalization>true</InvariantGlobalization>`
-   - `<RuntimeIdentifiers>win-x64</RuntimeIdentifiers>`
+   - `<RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>`
 
 5. **Create `.editorconfig`** via `dotnet new editorconfig` to get the
    canonical Microsoft .NET defaults. Do not add speculative analyzer

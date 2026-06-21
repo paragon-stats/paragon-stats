@@ -4,7 +4,7 @@ Thanks for your interest in paragon-stats.
 
 ## Setup
 
-Requires the .NET 10 SDK (Windows x64) and Python 3.12+ (for the pre-commit hooks).
+Requires the .NET 10 SDK (Windows or Linux x64) and Python 3.12+ (for the pre-commit hooks).
 After cloning:
 
 ```text
