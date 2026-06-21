@@ -8,9 +8,6 @@
 > **The real clean-room risk is at implementation time, not here.** Do **not**
 > reverse-engineer the original's data structures, category enums, save-file format, or
 > metadata schema field-for-field from the GPLv2 source — design those independently.
-> (Five inventory entries that drifted toward the original's internals — a proprietary
-> format id, a category enum, an internal struct shape, an internal flag, and an exact
-> metadata field roster — were paraphrased to concept level here.)
 
 Assembled by the `herostats-feature-map` workflow (run `wf_c95299f0-4cc`) from the
 SourceForge project (concept/names only), herostats.org, the local `.hsd` data schema,
@@ -29,15 +26,13 @@ first, `ParagonStats.Gui` later.
 | GUI-only | 21 | Live / visual / interactive — needs a UI |
 | **Total** | **79** | |
 
-> The **Core/CLI track owns 58 features**; the **GUI adds 21** on top.
 > HeroStats was GUI-only, so this CLI/GUI split is paragon-stats' own design choice.
 
-## Roadmap implication (start-at-patch)
+## Roadmap implication
 
-Under start-at-patch ([`RELEASE-MAP.md`](RELEASE-MAP.md)), each shipped feature/fix is a
-`0.0.x` patch. The **58 Core/CLI features** are the body of the pre-`0.1.0` alpha
-line; **`Release-As: 0.1.0`** marks the CLI milestone once the core set is usable. The
-**21 GUI features** form the later GUI milestone (still `0.x`).
+Under [start-at-patch](RELEASE-MAP.md), the **58 Core/CLI features** are the pre-`0.1.0`
+alpha body; **`Release-As: 0.1.0`** marks the CLI milestone; the **21 GUI features**
+come later (still `0.x`).
 
 ## Core / CLI features (58)
 
