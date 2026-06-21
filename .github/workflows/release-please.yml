@@ -3,10 +3,9 @@ name: release-please
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   group: release-please-${{ github.ref }}
@@ -15,8 +14,25 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
+      # release-please creates commits via the REST API (not `git commit`), so a
+      # GitHub App installation token is the only auth that yields commits which
+      # are (a) auto-signed by GitHub (satisfies the required-signed-commits
+      # ruleset) and (b) able to trigger downstream workflows (the built-in
+      # GITHUB_TOKEN is suppressed by loop-prevention, leaving required checks
+      # stuck "Expected"). Requires the RELEASE_PLEASE_APP_ID /
+      # RELEASE_PLEASE_APP_PRIVATE_KEY secrets + the App installed on the repo.
+      - name: Mint GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
       - uses: googleapis/release-please-action@v4
         with:
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
