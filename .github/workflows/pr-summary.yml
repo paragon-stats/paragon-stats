@@ -1,0 +1,32 @@
+name: pr-summary
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-summary-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  summary:
+    # Same-repo PRs only; fork PRs get a read-only token and can't edit the body.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    # CI glue only (no product build), so it runs on Linux regardless of target RID.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - run: dotnet run tools/pr-summary.cs -- --pr ${{ github.event.pull_request.number }} --base ${{ github.event.pull_request.base.ref }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
