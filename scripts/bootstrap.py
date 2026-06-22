@@ -64,7 +64,7 @@ def _prerequisites() -> list[str]:
         have = ".".join(map(str, sys.version_info[:3]))
         problems.append(f"Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ required (running {have}).")
     if shutil.which("dotnet") is None:
-        problems.append("`dotnet` not on PATH — install the .NET SDK (matches global.json).")
+        problems.append("`dotnet` not on PATH - install the .NET SDK (matches global.json).")
     if shutil.which("git") is None:
         problems.append("`git` not on PATH.")
     return problems
@@ -73,19 +73,19 @@ def _prerequisites() -> list[str]:
 def _warn_if_unsigned() -> None:
     result = _run(["git", "config", "--get", "commit.gpgsign"], capture=True)
     if result.stdout.strip().lower() != "true":
-        print("[warn] commit.gpgsign != true — signed commits are required; configure signing before committing.")
+        print("[warn] commit.gpgsign != true - signed commits are required; configure signing before committing.")
 
 
 def verify() -> int:
     problems = _prerequisites()
     if not _venv_python().exists():
-        problems.append(".venv missing — run: python3 scripts/bootstrap.py")
+        problems.append(".venv missing - run: python3 scripts/bootstrap.py")
     elif _run([str(_venv_python()), "-m", "pre_commit", "--version"], capture=True).returncode != 0:
         problems.append("pre-commit not installed in .venv.")
     if not (REPO_ROOT / ".git" / "hooks" / "pre-commit").exists():
         problems.append("pre-commit git hook not installed.")
     if not _up_to_date():
-        problems.append("environment is stale — re-run: python3 scripts/bootstrap.py")
+        problems.append("environment is stale - re-run: python3 scripts/bootstrap.py")
     if problems:
         print("[FAIL] dev environment is not ready:")
         for problem in problems:
