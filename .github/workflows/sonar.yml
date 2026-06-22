@@ -48,6 +48,7 @@ jobs:
           /o:"paragon-stats"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.coverage.exclusions=scripts/**
           /d:sonar.qualitygate.wait=true
       - run: dotnet build --no-incremental --no-restore
       - name: Test with coverage
