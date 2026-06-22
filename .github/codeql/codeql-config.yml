@@ -1,8 +1,7 @@
 name: paragon-stats CodeQL config
 
-# Build artifacts are generated, not authored — don't scan them. xUnit/MSBuild emit
-# C# into obj/ (e.g. the test entry point, AssemblyInfo, GlobalUsings), which would
-# otherwise raise maintainability alerts on code we don't own or edit.
+# obj/ holds generated, intermediate build files — xUnit/MSBuild emit C# there (the
+# test entry point, AssemblyInfo, GlobalUsings) that we don't author or edit. Exclude
+# it so security-and-quality runs only on real source. (bin/ has no .cs to analyze.)
 paths-ignore:
   - "**/obj/**"
-  - "**/bin/**"
