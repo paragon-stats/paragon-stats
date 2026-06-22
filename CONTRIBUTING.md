@@ -4,13 +4,15 @@ Thanks for your interest in paragon-stats.
 
 ## Setup
 
-Requires the .NET 10 SDK (Windows or Linux x64) and Python 3.12+ (for the pre-commit hooks).
-After cloning (`python3` on Linux/macOS, `py -3` on Windows):
+Requires the .NET 10 SDK (Windows or Linux x64) and Python 3.12+. After cloning, run the
+bootstrap script — it creates a `.venv`, installs the pinned pre-commit + git hooks,
+restores the .NET local tools, and verifies the toolchain (idempotent):
 
 ```text
-python3 -m pip install -r requirements-dev.txt
-pre-commit install --install-hooks
+python3 scripts/bootstrap.py        # Windows: py -3 scripts/bootstrap.py
 ```
+
+`python3 scripts/bootstrap.py --verify` confirms the environment is correct and up to date.
 
 ## Build and test
 
