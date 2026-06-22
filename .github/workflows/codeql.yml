@@ -32,6 +32,7 @@ jobs:
         with:
           languages: csharp
           queries: security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
       # C# is compiled, so CodeQL needs a real build (more reliable than autobuild
       # with Central Package Management + analyzers).
       - run: dotnet build --no-incremental

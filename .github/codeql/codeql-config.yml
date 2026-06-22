@@ -1,0 +1,7 @@
+name: paragon-stats CodeQL config
+
+# obj/ holds generated, intermediate build files — xUnit/MSBuild emit C# there (the
+# test entry point, AssemblyInfo, GlobalUsings) that we don't author or edit. Exclude
+# it so security-and-quality runs only on real source. (bin/ has no .cs to analyze.)
+paths-ignore:
+  - "**/obj/**"
