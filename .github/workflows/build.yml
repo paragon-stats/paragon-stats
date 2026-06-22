@@ -26,6 +26,36 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet restore
+      - run: dotnet tool restore
       - run: dotnet format --verify-no-changes --severity error --no-restore
       - run: dotnet build --no-restore
-      - run: dotnet test --no-build
+      # Collect coverage as Visual Studio XML — the format SonarQube Cloud consumes
+      # via sonar.cs.vscoveragexml.reportsPaths (#23). dotnet-coverage supports the
+      # Microsoft.Testing.Platform runner; coverlet.collector / OpenCover do not.
+      - name: Test with coverage
+        shell: pwsh
+        run: dotnet tool run dotnet-coverage collect "dotnet test --no-build" -f xml -o coverage.xml
+      - name: Coverage report
+        shell: pwsh
+        run: dotnet tool run reportgenerator -reports:coverage.xml -targetdir:coveragereport -reporttypes:"MarkdownSummaryGithub;JsonSummary" -assemblyfilters:"-*.Tests.dll"
+      - name: Publish coverage summary
+        if: always()
+        shell: pwsh
+        run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }
+      - name: Coverage gate
+        shell: pwsh
+        env:
+          MIN_COVERAGE: '0'  # bootstrap: Core has no production code yet; ratchet to 100% (#37)
+        run: |
+          $s = (Get-Content coveragereport/Summary.json -Raw | ConvertFrom-Json).summary
+          if ($null -eq $s.linecoverage -or $s.coverablelines -eq 0) {
+            Write-Host '::notice::No production code to cover yet — coverage gate passes (bootstrap).'
+            exit 0
+          }
+          $cov = [double]$s.linecoverage
+          $min = [double]$env:MIN_COVERAGE
+          Write-Host "Line coverage: $cov% (gate: >= $min%)"
+          if ($cov -lt $min) {
+            Write-Error "Coverage $cov% is below the $min% gate."
+            exit 1
+          }
