@@ -38,9 +38,10 @@ treated as errors — fix issues at the source rather than suppressing them.
 ## Code quality (SonarQube)
 
 CI scans every push/PR via SonarQube Cloud (`SONAR_TOKEN` secret). Optional local
-tooling: the MCP server (`.mcp.json`) needs Docker + `export SONARQUBE_TOKEN=<token>`;
-SonarLint connected mode (`.vscode/settings.json`) needs an IDE connection with id
-`paragon-stats`.
+tooling: the MCP server (`.mcp.json`) runs `scripts/run_sonarqube_mcp.py` (needs
+`python` + Docker; refreshes the image only when the registry digest changes) plus
+`export SONARQUBE_TOKEN=<token>`; SonarLint connected mode (`.vscode/settings.json`)
+needs an IDE connection with id `paragon-stats`.
 
 ## House rules
 

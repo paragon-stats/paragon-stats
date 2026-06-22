@@ -2,18 +2,9 @@
   "mcpServers": {
     "sonarqube": {
       "type": "stdio",
-      "command": "docker",
+      "command": "python",
       "args": [
-        "run",
-        "-i",
-        "--rm",
-        "--init",
-        "--pull=always",
-        "-e",
-        "SONARQUBE_TOKEN",
-        "-e",
-        "SONARQUBE_ORG",
-        "mcp/sonarqube"
+        "scripts/run_sonarqube_mcp.py"
       ],
       "env": {
         "SONARQUBE_ORG": "paragon-stats"
