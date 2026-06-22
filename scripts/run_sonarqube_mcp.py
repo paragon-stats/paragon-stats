@@ -52,12 +52,17 @@ def _local_image_id() -> str | None:
     return result.stdout.decode("utf-8", "replace").strip() or None
 
 
+def _pull() -> int:
+    """Pull IMAGE; route docker's progress to stderr so stdout (the MCP channel) stays clean."""
+    return subprocess.run([*DOCKER, "pull", IMAGE], stdout=sys.stderr, check=False).returncode
+
+
 def _ensure_image_fresh() -> None:
     """Pull IMAGE only if missing or stale; remove the superseded image."""
     local = _local_repo_digest()
     if local is None:
         sys.stderr.write(f"{IMAGE} not cached locally; pulling...\n")
-        _docker(["pull", IMAGE])
+        _pull()
         return
 
     remote = _remote_repo_digest()
@@ -69,7 +74,7 @@ def _ensure_image_fresh() -> None:
 
     old_id = _local_image_id()
     sys.stderr.write(f"{IMAGE} is stale; pulling newer image...\n")
-    if _docker(["pull", IMAGE]).returncode == 0 and old_id is not None:
+    if _pull() == 0 and old_id is not None:
         _docker(["rmi", old_id], capture=True)  # prune the superseded image by id
 
 
