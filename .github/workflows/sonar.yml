@@ -1,0 +1,58 @@
+name: sonar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  sonar:
+    # Fork PRs can't read SONAR_TOKEN — skip rather than fail the scan.
+    if: ${{ !github.event.pull_request.head.repo.fork }}
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      # The .NET scanner reads SONAR_TOKEN from the environment (begin + end),
+      # so the token never appears on a command line.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # MinVer + Sonar need full history
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@v4  # SonarScanner for .NET needs a JRE (17+)
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: dotnet restore
+      - run: dotnet tool restore
+      # begin -> build -> tests+coverage -> end: the MSBuild scanner analyses the
+      # build between begin/end and ingests coverage via vscoveragexml (#24).
+      - name: SonarScanner begin
+        run: >
+          dotnet tool run dotnet-sonarscanner begin
+          /k:"paragon-stats_paragon-stats"
+          /o:"paragon-stats"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          /d:sonar.coverage.exclusions=scripts/**
+          /d:sonar.qualitygate.wait=true
+      - run: dotnet build --no-incremental --no-restore
+      - name: Test with coverage
+        run: dotnet tool run dotnet-coverage collect "dotnet test --no-build" -f xml -o coverage.xml
+      - name: SonarScanner end
+        if: always()  # post a definite Sonar status even if a prior step failed (avoids the #14 freeze)
+        run: dotnet tool run dotnet-sonarscanner end

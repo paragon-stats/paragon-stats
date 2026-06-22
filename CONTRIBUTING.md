@@ -35,6 +35,14 @@ treated as errors — fix issues at the source rather than suppressing them.
   (`feat:`, `fix:`, `chore:`, `docs:`, ...).
 - All status checks must pass before merge.
 
+## Code quality (SonarQube)
+
+CI scans every push/PR via SonarQube Cloud (`SONAR_TOKEN` secret). Optional local
+tooling: the MCP server (`.mcp.json`) runs `scripts/run_sonarqube_mcp.py` (needs
+`python` + Docker; refreshes the image only when the registry digest changes) plus
+`export SONARQUBE_TOKEN=<token>`; SonarLint connected mode (`.vscode/settings.json`)
+needs an IDE connection with id `paragon-stats`.
+
 ## House rules
 
 **Clean-room.** Do not paste code from the original HeroStats source or the
