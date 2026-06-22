@@ -1,0 +1,43 @@
+name: pre-commit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pre-commit-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements-dev.txt
+      - name: Run pre-commit
+        env:
+          # dotnet format runs in build.yml (CI-enforced there) and needs the .NET SDK,
+          # which this Python-only job doesn't set up — skip it here to avoid a redundant
+          # restore + double-run. The commit-msg conventional-commit hook isn't a
+          # pre-commit-stage hook, so `pre-commit run` skips it (CI enforcement is #26).
+          # When Super-Linter (#27) lands it takes over markdown/yaml/actions linting —
+          # add markdownlint,yamllint,actionlint to SKIP then to avoid double-linting.
+          SKIP: dotnet-format
+        run: pre-commit run --all-files --show-diff-on-failure
