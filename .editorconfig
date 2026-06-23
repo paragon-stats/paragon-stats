@@ -3,6 +3,13 @@ root = true
 # All files
 [*]
 indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+# Markdown: trailing whitespace is a hard line break - keep it.
+[*.md]
+trim_trailing_whitespace = false
 
 # Xml files
 [*.xml]
