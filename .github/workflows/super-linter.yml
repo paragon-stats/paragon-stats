@@ -1,0 +1,47 @@
+name: super-linter
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Do not cancel in-progress runs: a cancelled run would leave the required `lint`
+# check stuck "Expected" (freeze risk, #14). This job has no path/fork filter, so it
+# always runs to a terminal status. On a low-traffic repo the redundant runner time
+# from not cancelling superseded runs is negligible.
+concurrency:
+  group: super-linter-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # Super-Linter diffs changed files against the default branch
+      - name: Super-Linter
+        uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918  # v8.7.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: origin/${{ github.event.repository.default_branch }}
+          VALIDATE_ALL_CODEBASE: false
+          # Include-only: enabling any VALIDATE_* defaults the rest to false. The
+          # languages we actually have + hygiene + secrets. C#/dotnet is owned by
+          # build.yml + CodeQL + Sonar; the generated .husky/ scripts are excluded.
+          VALIDATE_MARKDOWN: true
+          VALIDATE_YAML: true
+          VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_JSON: true
+          VALIDATE_BASH: true
+          VALIDATE_EDITORCONFIG: true
+          VALIDATE_GITLEAKS: true
+          LINTER_RULES_PATH: .github/linters
+          MARKDOWN_CONFIG_FILE: .markdownlint.yml
+          FILTER_REGEX_EXCLUDE: (^|/)\.husky/
