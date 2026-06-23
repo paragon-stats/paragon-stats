@@ -4,7 +4,7 @@
       "type": "stdio",
       "command": "python",
       "args": [
-        "scripts/run_sonarqube_mcp.py"
+        "scripts/mcp/run_sonarqube_mcp.py"
       ],
       "env": {
         "SONARQUBE_ORG": "paragon-stats"

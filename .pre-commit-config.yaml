@@ -1,5 +1,6 @@
-default_install_hook_types: [pre-commit, commit-msg]
-
+# CI-only (run by .github/workflows/pre-commit.yml). Local git hooks are Husky.Net
+# (.husky/, .NET-native). These polyglot/secret/hygiene checks move to Super-Linter
+# (#27), after which this file and pre-commit.yml are removed.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -36,19 +37,3 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
-
-  - repo: local
-    hooks:
-      - id: dotnet-format
-        name: dotnet format (verify)
-        language: system
-        entry: dotnet format --verify-no-changes --severity error
-        files: \.cs$
-        pass_filenames: false
-      - id: conventional-commit
-        name: Conventional Commit message
-        # language: python -> pre-commit provisions the interpreter, so this works
-        # on Windows/macOS/Debian without depending on system `py`/`python`/`python3`.
-        language: python
-        stages: [commit-msg]
-        entry: python scripts/check_commit_message.py

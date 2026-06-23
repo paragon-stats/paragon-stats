@@ -22,14 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      # The official action installs, caches, and runs pre-commit (default:
-      # `run --all-files`) — no raw `pip install` for the GitHub Actions analyzer to
-      # flag, and it manages its own hook-env cache.
+      # CI-only polyglot/secret/hygiene linting (markdown, yaml, actions, gitleaks).
+      # Local git hooks are Husky.Net (.NET-native), so nothing is skipped here. This
+      # workflow + .pre-commit-config.yaml are removed once Super-Linter (#27) takes
+      # over polyglot linting in CI.
       - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd  # v3.0.1
-        env:
-          # dotnet format runs in build.yml (needs the SDK; CI-enforced there) — skip
-          # to avoid a redundant restore + double-run. The commit-msg conventional-commit
-          # hook isn't a pre-commit-stage hook, so `pre-commit run` doesn't execute it
-          # (CI enforcement is #26). When Super-Linter (#27) lands it takes over
-          # markdown/yaml/actions linting — add markdownlint,yamllint,actionlint to SKIP.
-          SKIP: dotnet-format
