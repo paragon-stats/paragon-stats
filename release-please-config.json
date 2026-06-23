@@ -4,6 +4,7 @@
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "include-component-in-tag": false,
+  "last-release-sha": "a1f0a647b92d041fb4a1c5c3f7b970c32ab2bfb3",
   "packages": {
     ".": {
       "package-name": "paragon-stats"
