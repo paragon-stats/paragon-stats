@@ -1,7 +1,7 @@
 # Markdown style guide
 
 Enforced by markdownlint via [`.github/linters/.markdownlint.yml`](../../.github/linters/.markdownlint.yml)
-(in pre-commit and CI).
+(in CI via Super-Linter).
 
 ## Conventions
 

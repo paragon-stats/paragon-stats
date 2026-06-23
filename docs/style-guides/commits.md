@@ -10,7 +10,7 @@ Format: `type(scope): subject`. Allowed types:
 - Subject in imperative mood, no trailing period, ~72 chars.
 - Reference issues in the body/footer: `Closes #N` (auto-closes on merge) or `Refs #N`.
 
-Enforced by a `commit-msg` hook (pre-commit) and the `commitlint` CI check.
+Enforced by a Husky.Net `commit-msg` hook and the `commitlint` CI check.
 
 ## Commits & PRs
 

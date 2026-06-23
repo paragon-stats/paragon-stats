@@ -8,8 +8,8 @@ right-sized for a .NET repo.
 
 ## Steps
 
-1. **Centralized linter configs** under `.github/linters/` (single source consumed by
-   both pre-commit and CI):
+1. **Centralized linter configs** under `.github/linters/` (consumed by Super-Linter
+   in CI):
    - `.markdownlint.yml` — house rules: `MD013: {line_length: 200, code_blocks: false,
      tables: false}`, `MD033: {allowed_elements: [div, span, img, br, p, a]}`.
    - `.yaml-lint.yml` — `extends: default`; `line-length.max: 200`; `truthy` allow
@@ -27,9 +27,9 @@ right-sized for a .NET repo.
    (`.editorconfig`, StyleCop.Analyzers, Meziantou.Analyzer, `TreatWarningsAsErrors`,
    `dotnet format`). Nothing new here beyond the style-guide doc.
 
-4. **Polyglot linters** run via the pre-commit framework
-   ([`05`](05-precommit-hooks.md)) and again in CI ([`09`](09-issue-pr-automation.md)
-   adds the workflow): markdownlint, yamllint, actionlint, gitleaks.
+4. **Polyglot linters** run via Super-Linter in CI (`super-linter.yml`):
+   markdownlint, yamllint, actionlint, JSON, editorconfig, gitleaks. Local git
+   hooks are .NET-native (Husky.Net); see [`05`](05-precommit-hooks.md).
 
 5. **CodeQL** (mandatory quality gate). Add `.github/workflows/codeql.yml`:
 
@@ -72,7 +72,7 @@ right-sized for a .NET repo.
 
 ## Acceptance
 
-- `pre-commit run --all-files` is green.
+- Super-Linter (the `lint` check) is green.
 - `actionlint`/`zizmor` pass on all workflow files.
 - CodeQL workflow completes and uploads results to the Security tab; an intentionally
   vulnerable snippet (e.g. unsanitized path concat) is flagged, then removed.

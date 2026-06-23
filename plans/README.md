@@ -17,7 +17,7 @@ Grouped into bootstrap milestones (Track A — no product version). Product vers
 ### Quality gates
 
 2. [`02-build-config.md`](02-build-config.md) — `Directory.Build.props`, CPM, analyzers, `.editorconfig`, AOT
-5. [`05-precommit-hooks.md`](05-precommit-hooks.md) — Pre-commit framework (Python `pre-commit`)
+5. [`05-precommit-hooks.md`](05-precommit-hooks.md) — Git hooks (Husky.Net)
 8. [`08-linting-style-guides.md`](08-linting-style-guides.md) — Polyglot linters, style-guide docs, **CodeQL**
 
 ### Automation & release
