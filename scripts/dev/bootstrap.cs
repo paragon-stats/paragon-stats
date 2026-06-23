@@ -55,7 +55,7 @@ static bool SigningConfigured() =>
 static bool HooksInstalled() =>
     Capture("git", "config --get core.hooksPath").Replace('\\', '/').EndsWith(".husky", StringComparison.Ordinal);
 
-if (Run("git", "--version") != 0)
+if (string.IsNullOrWhiteSpace(Capture("git", "--version")))
 {
     Console.Error.WriteLine("[FAIL] git not found on PATH.");
     return 1;
