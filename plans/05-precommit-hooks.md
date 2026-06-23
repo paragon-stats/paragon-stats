@@ -1,111 +1,46 @@
-# 05 — Pre-commit framework
+# 05 — Git hooks (Husky.Net)
 
-> Supersedes the original Husky.Net plan. The maintainer approved a `pre-commit`
-> framework; the Python [`pre-commit`](https://pre-commit.com) tool is the house
-> standard across `repo-template` and its spokes and is the best polyglot fit. It
-> runs the .NET checks *and* the markdown/yaml/actions/secret hooks from one config.
+> Supersedes the Python `pre-commit` plan. For a .NET repo the right architecture is a
+> .NET-native hook manager: [Husky.Net](https://alirezanet.github.io/Husky.Net/). Local
+> hooks need only the .NET SDK contributors already have — no Python, no `.venv`, no
+> `python`/`py`/`python3` ambiguity. Polyglot linting (markdown/yaml/actions) and secret
+> scanning move to CI (Super-Linter, `08` / #27), keeping the local hooks lean.
 
 ## Goal
 
-Catch formatting, analyzer, commit-message, and hygiene issues before commits leave
-the machine — with the same hooks CI enforces (parity).
+Catch formatting and commit-message issues before commits leave the machine, using
+.NET-native tooling; let CI own the polyglot/secret checks.
 
 ## Prerequisites
 
-- Python 3.12+ on PATH (`python3 --version`; `py -3` on Windows). This is a dev-only dependency; it is
-  **not** a runtime dependency of the .NET app.
+- .NET 10 SDK on PATH (already required to build).
 
 ## Steps
 
-1. **Install the tool** (`python3` on Linux/macOS, `py -3` on Windows; pin in
-   `requirements-dev.txt` for reproducibility):
+1. **Pin Husky.Net** as a local tool: `dotnet tool install husky` (recorded in
+   `.config/dotnet-tools.json`).
+2. **Install the hooks**: `dotnet husky install` (points `core.hooksPath` at `.husky/`).
+3. **`.husky/task-runner.json`** — a `pre-commit` group task running
+   `dotnet format --verify-no-changes --severity error`.
+4. **`.husky/pre-commit`** → `dotnet husky run --group pre-commit`.
+5. **`.husky/commit-msg`** → `dotnet run scripts/git/check-commit-message.cs -- "$1"` —
+   a C# file-based Conventional-Commits validator (allowed types
+   `feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert`).
+6. **Bootstrap** (`scripts/dev/bootstrap.cs`, C# file-based): `dotnet tool restore` +
+   `dotnet husky install` + toolchain checks; **signed commits are required → hard
+   error**. Documented in `CONTRIBUTING.md` as `dotnet run scripts/dev/bootstrap.cs`.
 
-   ```text
-   python3 -m pip install pre-commit
-   ```
+`dotnet build -warnaserror` and the polyglot/secret linters are intentionally CI-only.
 
-2. **Create `.pre-commit-config.yaml`** at the repo root. Right-sized for a .NET
-   lib+CLI — keep .NET + markdown + yaml + actions + secrets + hygiene; **omit** the
-   homelab Ansible/Docker/Terraform/Traefik/PowerShell hooks and Super-Linter.
+## Transition (staged cutover from Python pre-commit)
 
-   ```yaml
-   default_install_hook_types: [pre-commit, commit-msg]
-   repos:
-     - repo: https://github.com/pre-commit/pre-commit-hooks
-       rev: v5.0.0
-       hooks:
-         - id: end-of-file-fixer
-         - id: trailing-whitespace
-           args: [--markdown-linebreak-ext=md]
-         - id: mixed-line-ending
-           args: [--fix=lf]
-         - id: check-yaml
-         - id: check-json
-         - id: check-merge-conflict
-         - id: check-added-large-files
-           args: [--maxkb=500]
-     - repo: https://github.com/igorshubovych/markdownlint-cli
-       rev: v0.45.0   # pin latest at bootstrap
-       hooks:
-         - id: markdownlint
-           args: [-c, .github/linters/.markdownlint.yml]
-     - repo: https://github.com/adrienverge/yamllint
-       rev: v1.37.1   # pin latest at bootstrap
-       hooks:
-         - id: yamllint
-           args: [-c, .github/linters/.yaml-lint.yml]
-     - repo: https://github.com/rhysd/actionlint
-       rev: v1.7.7    # pin latest at bootstrap
-       hooks:
-         - id: actionlint
-     - repo: https://github.com/gitleaks/gitleaks
-       rev: v8.28.0   # pin latest at bootstrap
-       hooks:
-         - id: gitleaks
-     - repo: local
-       hooks:
-         - id: dotnet-format
-           name: dotnet format (staged)
-           language: system
-           entry: dotnet format --verify-no-changes --severity error
-           files: \.cs$
-           pass_filenames: false
-         - id: conventional-commit
-           name: Conventional Commit message
-           language: python
-           stages: [commit-msg]
-           entry: python scripts/check_commit_message.py
-   ```
-
-   `dotnet build -warnaserror` is intentionally **not** a pre-commit hook (too slow);
-   CI enforces it. Add it as an opt-in `manual` hook if desired.
-
-3. **Add a minimal commit-message checker** at `scripts/check_commit_message.py`
-   validating Conventional Commits (`type(scope): subject`, allowed types
-   `feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert`). Keep it ~40 lines.
-
-4. **Install the git hooks**:
-
-   ```text
-   pre-commit install --install-hooks
-   ```
-
-5. **Pin tool versions** in `requirements-dev.txt` (`pre-commit==...`) and document
-   onboarding in `CONTRIBUTING.md` (`python3` on Linux/macOS, `py -3` on Windows):
-
-   ```text
-   python3 -m pip install -r requirements-dev.txt && pre-commit install --install-hooks
-   ```
+Local hooks cut over to Husky.Net immediately; CI keeps the Python `pre-commit`
+workflow for markdown/yaml/actions/secret/hygiene linting until **Super-Linter (#27)**
+takes it over — then `.pre-commit-config.yaml` + `pre-commit.yml` are removed and Python
+is gone entirely. No coverage gap at any point.
 
 ## Acceptance
 
-- `pre-commit run --all-files` passes on the scaffold.
-- A formatting violation in a staged `.cs` blocks the commit; `dotnet format` fixes it.
+- A formatting violation blocks the commit; `dotnet format` fixes it.
 - A non-Conventional commit message is rejected by the `commit-msg` hook.
-
-## Commit
-
-```text
-git add .
-git commit -S -m "chore: add pre-commit framework (dotnet format, markdown/yaml/actions/secrets, commitlint)"
-```
+- `dotnet run scripts/dev/bootstrap.cs --verify` reports the environment ready.
