@@ -22,16 +22,23 @@ jobs:
             const want = map[m[1].toLowerCase()];
             const issue_number = context.payload.issue.number;
             const current = (await github.rest.issues.listLabelsOnIssue({ ...context.repo, issue_number })).data.map(l => l.name);
+            // Remove stale priority/* labels best-effort: collect non-404 failures
+            // instead of aborting, so the wanted label below is always applied.
+            // 404 = label already gone (race with a concurrent edit); ignored.
+            const failures = [];
             for (const name of current.filter(l => l.startsWith("priority/") && l !== want)) {
               try {
                 await github.rest.issues.removeLabel({ ...context.repo, issue_number, name });
               } catch (err) {
-                // 404 = label already absent (race with a concurrent edit); ignore.
-                // Anything else (403 permission, 429 rate-limit) must surface, not
-                // be swallowed — otherwise an issue can keep two priority/* labels.
-                if (err.status !== 404) throw err;
+                if (err.status !== 404) failures.push(`remove ${name}: ${err.status || err.message}`);
               }
             }
             if (!current.includes(want)) {
               await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [want] });
+            }
+            // Surface genuine failures (403 permission, 429 rate-limit) only after the
+            // wanted label has been applied, so the step still fails loudly for
+            // investigation without ever leaving the issue mislabeled.
+            if (failures.length) {
+              throw new Error(`issue-triage: ${failures.length} label removal(s) failed: ${failures.join("; ")}`);
             }
