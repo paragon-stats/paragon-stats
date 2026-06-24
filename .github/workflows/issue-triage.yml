@@ -23,7 +23,14 @@ jobs:
             const issue_number = context.payload.issue.number;
             const current = (await github.rest.issues.listLabelsOnIssue({ ...context.repo, issue_number })).data.map(l => l.name);
             for (const name of current.filter(l => l.startsWith("priority/") && l !== want)) {
-              await github.rest.issues.removeLabel({ ...context.repo, issue_number, name }).catch(() => {});
+              try {
+                await github.rest.issues.removeLabel({ ...context.repo, issue_number, name });
+              } catch (err) {
+                // 404 = label already absent (race with a concurrent edit); ignore.
+                // Anything else (403 permission, 429 rate-limit) must surface, not
+                // be swallowed — otherwise an issue can keep two priority/* labels.
+                if (err.status !== 404) throw err;
+              }
             }
             if (!current.includes(want)) {
               await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [want] });

@@ -65,8 +65,15 @@ if (updated == body)
 }
 
 string tmp = Path.GetTempFileName();
-File.WriteAllText(tmp, updated);
-Run("gh", $"pr edit {pr} --body-file \"{tmp}\"");
+try
+{
+    File.WriteAllText(tmp, updated);
+    Run("gh", $"pr edit {pr} --body-file \"{tmp}\"");
+}
+finally
+{
+    File.Delete(tmp);
+}
 Console.WriteLine($"Updated PR #{pr} auto-summary ({commits.Count} commits, {issues.Count} issue(s)).");
 return 0;
 
