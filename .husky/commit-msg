@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck source=/dev/null  # husky.sh is generated in .husky/_/ at install time
 . "$(dirname "$0")/_/husky.sh"
 
 ## husky task runner examples -------------------
@@ -19,4 +20,6 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
+# Word-splitting is intentional: pass each staged path as a separate argument.
+# shellcheck disable=SC2046
 dotnet run scripts/git/check-commit-message.cs -- "$1" $(git diff --cached --name-only)

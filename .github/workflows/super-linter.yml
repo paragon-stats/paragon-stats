@@ -43,7 +43,7 @@ jobs:
           ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
           # Include-only: enabling any VALIDATE_* defaults the rest to false. The
           # languages we actually have + hygiene + secrets. C#/dotnet is owned by
-          # build.yml + CodeQL + Sonar; the generated .husky/ scripts are excluded.
+          # build.yml + CodeQL + Sonar; only generated .husky/_/ scripts are excluded.
           VALIDATE_MARKDOWN: true
           VALIDATE_YAML: true
           VALIDATE_GITHUB_ACTIONS: true
@@ -53,4 +53,6 @@ jobs:
           VALIDATE_GITLEAKS: true
           LINTER_RULES_PATH: .github/linters
           MARKDOWN_CONFIG_FILE: .markdownlint.yml
-          FILTER_REGEX_EXCLUDE: (^|/)\.husky/
+          # Lint the hand-written hooks (.husky/pre-commit, commit-msg); skip only
+          # the Husky.Net-generated internals under .husky/_/.
+          FILTER_REGEX_EXCLUDE: (^|/)\.husky/_/
