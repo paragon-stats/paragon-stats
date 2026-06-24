@@ -17,6 +17,9 @@ if [ -z "$(git diff --cached --name-only --diff-filter=ACMR -- '*.cs')" ]; then
 fi
 
 stashed=0
+# Invoked indirectly via `trap restore_unstaged EXIT` below, which shellcheck's
+# reachability analysis does not follow (flags SC2329 / SC2317 otherwise).
+# shellcheck disable=SC2329,SC2317
 restore_unstaged() {
   if [ "$stashed" = 1 ]; then
     git stash pop --quiet 2>/dev/null || cat >&2 <<'MSG'
