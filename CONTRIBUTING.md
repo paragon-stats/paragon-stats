@@ -36,6 +36,8 @@ treated as errors — fix issues at the source rather than suppressing them.
 - Use [Conventional Commits](https://www.conventionalcommits.org)
   (`feat:`, `fix:`, `chore:`, `docs:`, ...).
 - All status checks must pass before merge.
+- Every PR clears two reviews (correctness + over-engineering) before merge —
+  see the [review workflow](docs/style-guides/review-workflow.md).
 
 ## Code quality (SonarQube)
 
