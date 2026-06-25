@@ -22,13 +22,13 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
         with:
           fetch-depth: 0  # MinVer derives the version from git history + tags
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5
         with:
           global-json-file: global.json
-      - uses: github/codeql-action/init@v4
+      - uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
         with:
           languages: csharp
           queries: security-and-quality
@@ -36,4 +36,4 @@ jobs:
       # C# is compiled, so CodeQL needs a real build (more reliable than autobuild
       # with Central Package Management + analyzers).
       - run: dotnet build --no-incremental
-      - uses: github/codeql-action/analyze@v4
+      - uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
