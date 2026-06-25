@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Conventional-Commit prefix so dependabot's commits pass the commitlint
+    # check; `chore` doesn't trigger a release-please version bump.
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
     groups:
       analyzers:
         patterns:
@@ -13,6 +18,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "chore"
     groups:
       github-actions:
         patterns:

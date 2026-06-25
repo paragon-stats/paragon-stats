@@ -15,8 +15,12 @@ concurrency:
 
 jobs:
   sonar:
-    # Fork PRs can't read SONAR_TOKEN — skip rather than fail the scan.
-    if: ${{ !github.event.pull_request.head.repo.fork }}
+    # Fork and Dependabot PRs run with a read-only token and can't read
+    # SONAR_TOKEN. Skip the scan on those (a job-level skip reports the `sonar`
+    # check as "Skipped", which branch protection treats as satisfied — unlike a
+    # workflow/path skip, which never reports and freezes the PR). Pushes to main
+    # always run, so merged changes are still analysed.
+    if: ${{ github.event_name != 'pull_request' || (!github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]') }}
     runs-on: windows-latest
     timeout-minutes: 15
     env:
