@@ -20,6 +20,9 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
-# Word-splitting is intentional: pass each staged path as a separate argument.
+# Word-splitting is intentional: each staged path becomes a separate argument.
+# `set -f` disables glob expansion so a path containing *, ?, or [ ] is passed
+# literally rather than expanded against the working tree.
+set -f
 # shellcheck disable=SC2046
 dotnet run scripts/git/check-commit-message.cs -- "$1" $(git diff --cached --name-only)

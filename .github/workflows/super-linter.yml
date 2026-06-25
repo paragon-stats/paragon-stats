@@ -38,9 +38,11 @@ jobs:
           DEFAULT_BRANCH: origin/${{ github.event.repository.default_branch }}
           VALIDATE_ALL_CODEBASE: false
           # Report results back to the PR (requires the statuses/pull-requests
-          # write permissions above). Both default true on CI; set explicitly.
-          MULTI_STATUS: true
-          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: true
+          # write permissions above). Fork PRs get a read-only token regardless of
+          # those permissions, so skip the reporting there to avoid 403 noise; the
+          # summary comment only makes sense on a pull_request event, not on push.
+          MULTI_STATUS: ${{ !github.event.pull_request.head.repo.fork }}
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
           # Include-only: enabling any VALIDATE_* defaults the rest to false. The
           # languages we actually have + hygiene + secrets. C#/dotnet is owned by
           # build.yml + CodeQL + Sonar; only generated .husky/_/ scripts are excluded.
