@@ -24,6 +24,8 @@ dotnet test
 Husky.Net git hooks run `dotnet format` and the Conventional-Commit check locally;
 markdown/YAML/Actions linting and secret scanning run in CI.
 
+Tests come first — see the [testing & TDD guide](docs/style-guides/tdd.md).
+
 ## Code style
 
 Enforced by `.editorconfig` and analyzers (StyleCop, Meziantou). Warnings are
