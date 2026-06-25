@@ -8,6 +8,11 @@ on:
 
 permissions:
   contents: read
+  # Super-Linter reports results back to the PR; without these it logs 403s and
+  # silently skips the reports (statuses + summary comment), keeping only the
+  # job's own pass/fail.
+  statuses: write       # MULTI_STATUS — one commit status per linted language
+  pull-requests: write  # ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT — PR summary
 
 # Do not cancel in-progress runs: a cancelled run would leave the required `lint`
 # check stuck "Expected" (freeze risk, #14). This job has no path/fork filter, so it
@@ -32,9 +37,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: origin/${{ github.event.repository.default_branch }}
           VALIDATE_ALL_CODEBASE: false
+          # Report results back to the PR (requires the statuses/pull-requests
+          # write permissions above). Fork PRs get a read-only token regardless of
+          # those permissions, so skip the reporting there to avoid 403 noise; the
+          # summary comment only makes sense on a pull_request event, not on push.
+          MULTI_STATUS: ${{ !github.event.pull_request.head.repo.fork }}
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
           # Include-only: enabling any VALIDATE_* defaults the rest to false. The
           # languages we actually have + hygiene + secrets. C#/dotnet is owned by
-          # build.yml + CodeQL + Sonar; the generated .husky/ scripts are excluded.
+          # build.yml + CodeQL + Sonar; only generated .husky/_/ scripts are excluded.
           VALIDATE_MARKDOWN: true
           VALIDATE_YAML: true
           VALIDATE_GITHUB_ACTIONS: true
@@ -44,4 +55,6 @@ jobs:
           VALIDATE_GITLEAKS: true
           LINTER_RULES_PATH: .github/linters
           MARKDOWN_CONFIG_FILE: .markdownlint.yml
-          FILTER_REGEX_EXCLUDE: (^|/)\.husky/
+          # Lint the hand-written hooks (.husky/pre-commit, commit-msg); skip only
+          # the Husky.Net-generated internals under .husky/_/.
+          FILTER_REGEX_EXCLUDE: (^|/)\.husky/_/
