@@ -7,15 +7,14 @@ failing test before the code that makes it pass.
 
 New code must be covered, and that's enforced, not aspirational:
 
-- The **SonarQube quality gate** carries the new-code coverage requirement and
-  **blocks the merge** when it isn't met (`sonar.qualitygate.wait=true` in
-  `sonar.yml`). Coverage is collected with `dotnet-coverage` and reported to
-  SonarCloud on every PR; the target is full coverage on new code.
+- The **SonarQube quality gate** enforces the new-code coverage requirement and
+  **blocks the merge** when it isn't met. Coverage is collected with
+  `dotnet-coverage` and reported to SonarCloud on every PR.
 - A red test or a coverage gap fails CI before review — caught in the pipeline,
   not in someone's head.
 
-Writing the test first is the only dependable way to land at full new-code
-coverage without backfilling.
+Writing the test first is the only dependable way to keep new code covered
+without backfilling.
 
 ## Framework
 
