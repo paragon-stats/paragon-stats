@@ -27,13 +27,13 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
         with:
           fetch-depth: 0  # MinVer + Sonar need full history
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5
         with:
           global-json-file: global.json
-      - uses: actions/setup-java@v4  # SonarScanner for .NET needs a JRE (17+)
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9  # v4 (SonarScanner needs a JRE 17+)
         with:
           distribution: temurin
           java-version: '21'
