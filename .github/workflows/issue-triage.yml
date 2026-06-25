@@ -22,10 +22,18 @@ jobs:
             const want = map[m[1].toLowerCase()];
             const issue_number = context.payload.issue.number;
             const current = (await github.rest.issues.listLabelsOnIssue({ ...context.repo, issue_number })).data.map(l => l.name);
-            // Remove stale priority/* labels best-effort: collect non-404 failures
-            // instead of aborting, so the wanted label below is always applied.
-            // 404 = label already gone (race with a concurrent edit); ignored.
+            // Apply the wanted label FIRST so a later removal failure can never
+            // leave the issue without a priority label. Collect every non-404
+            // failure (add or remove) and surface them together at the end; 404 =
+            // label already gone (race with a concurrent edit), ignored.
             const failures = [];
+            if (!current.includes(want)) {
+              try {
+                await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [want] });
+              } catch (err) {
+                failures.push(`add ${want}: ${err.status || err.message}`);
+              }
+            }
             for (const name of current.filter(l => l.startsWith("priority/") && l !== want)) {
               try {
                 await github.rest.issues.removeLabel({ ...context.repo, issue_number, name });
@@ -33,12 +41,9 @@ jobs:
                 if (err.status !== 404) failures.push(`remove ${name}: ${err.status || err.message}`);
               }
             }
-            if (!current.includes(want)) {
-              await github.rest.issues.addLabels({ ...context.repo, issue_number, labels: [want] });
-            }
-            // Surface genuine failures (403 permission, 429 rate-limit) only after the
-            // wanted label has been applied, so the step still fails loudly for
-            // investigation without ever leaving the issue mislabeled.
+            // Fail loud on any genuine error (403 permission, 429 rate-limit) — per
+            // #30 these must surface, not be swallowed — but only after the wanted
+            // label is in place, so the issue is never left mislabeled.
             if (failures.length) {
-              throw new Error(`issue-triage: ${failures.length} label removal(s) failed: ${failures.join("; ")}`);
+              throw new Error(`issue-triage: ${failures.length} label op(s) failed: ${failures.join("; ")}`);
             }

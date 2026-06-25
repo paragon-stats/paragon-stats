@@ -72,7 +72,10 @@ try
 }
 finally
 {
-    File.Delete(tmp);
+    // Best-effort cleanup: a delete failure must not mask the real exception
+    // from the gh edit above.
+    try { File.Delete(tmp); }
+    catch { /* ignore */ }
 }
 Console.WriteLine($"Updated PR #{pr} auto-summary ({commits.Count} commits, {issues.Count} issue(s)).");
 return 0;
