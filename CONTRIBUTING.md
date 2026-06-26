@@ -56,3 +56,6 @@ which stats were computed) only.
 **Dependencies.** Apache-2.0-compatible licenses only (MIT, BSD, ISC, Apache-2.0,
 CC0, …). No GPL, AGPL, MPL, or source-available non-OSI licenses. Verify the SPDX
 identifier against the package's actual `LICENSE`.
+
+**AI assistance.** Welcome — but AI meta-docs aren't committed; see the
+[AI-assistance policy](docs/style-guides/ai-assistance-policy.md).

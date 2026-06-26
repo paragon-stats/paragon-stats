@@ -4,10 +4,10 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 
 **Status: pre-alpha.** Scaffolding only; parsing engine not yet implemented.
 
-> **Built with AI assistance.** This project is developed with the help of AI
-> coding tools (Claude Code). All contributions are human-reviewed before merge.
-> Mentioned up front so you can make an informed decision about using or
-> contributing to it.
+> **Built with AI assistance.** Developed with the help of AI coding tools
+> (Claude Code); all contributions are human-reviewed before merge. You're
+> welcome to use your own AI tools — committed AI meta-docs are not (see the
+> [AI-assistance policy](docs/style-guides/ai-assistance-policy.md)).
 
 ## Getting started
 
