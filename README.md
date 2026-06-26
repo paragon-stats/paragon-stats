@@ -18,7 +18,7 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 ## Status
 
 | | |
-|---|---|
+| --- | --- |
 | Language | C# / .NET 10 LTS |
 | Platform | Windows x64 + Linux x64 (native AOT) |
 | License | Apache-2.0 |
