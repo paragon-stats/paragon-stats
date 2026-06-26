@@ -31,30 +31,20 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
         with:
           fetch-depth: 0  # Super-Linter diffs changed files against the default branch
+      # Load the shared VALIDATE_*/config from .github/super-linter.env so CI and the
+      # local runner (scripts/dev/run-super-linter.cs) stay in lockstep. Strip comments
+      # and blank lines; the rest is NAME=value, the format $GITHUB_ENV expects.
+      - name: Load shared Super-Linter config
+        shell: bash
+        run: grep -vE '^[[:space:]]*(#|$)' .github/super-linter.env >> "$GITHUB_ENV"
       - name: Super-Linter
         uses: super-linter/super-linter@4ce20838b8ab83717e78138c5b3a1407148e0918  # v8.7.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: origin/${{ github.event.repository.default_branch }}
-          VALIDATE_ALL_CODEBASE: false
           # Report results back to the PR (requires the statuses/pull-requests
           # write permissions above). Fork PRs get a read-only token regardless of
           # those permissions, so skip the reporting there to avoid 403 noise; the
           # summary comment only makes sense on a pull_request event, not on push.
           MULTI_STATUS: ${{ !github.event.pull_request.head.repo.fork }}
           ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
-          # Include-only: enabling any VALIDATE_* defaults the rest to false. The
-          # languages we actually have + hygiene + secrets. C#/dotnet is owned by
-          # build.yml + CodeQL + Sonar; only generated .husky/_/ scripts are excluded.
-          VALIDATE_MARKDOWN: true
-          VALIDATE_YAML: true
-          VALIDATE_GITHUB_ACTIONS: true
-          VALIDATE_JSON: true
-          VALIDATE_BASH: true
-          VALIDATE_EDITORCONFIG: true
-          VALIDATE_GITLEAKS: true
-          LINTER_RULES_PATH: .github/linters
-          MARKDOWN_CONFIG_FILE: .markdownlint.yml
-          # Lint the hand-written hooks (.husky/pre-commit, commit-msg); skip only
-          # the Husky.Net-generated internals under .husky/_/.
-          FILTER_REGEX_EXCLUDE: (^|/)\.husky/_/
