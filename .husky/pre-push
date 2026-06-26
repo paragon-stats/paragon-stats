@@ -1,0 +1,5 @@
+#!/bin/sh
+# shellcheck source=/dev/null  # husky.sh is generated in .husky/_/ at install time
+. "$(dirname "$0")/_/husky.sh"
+
+dotnet husky run --group pre-push
