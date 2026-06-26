@@ -7,8 +7,10 @@ MD013:
 # A small set of inline HTML elements is allowed (badges, layout).
 MD033:
   allowed_elements: [div, span, img, br, p, a]
-# ul-indent is governed by .editorconfig; ol-prefix conflicts with our numbered lists.
-MD007: false
-MD029: false
-# Table column alignment fights the repo's markdown auto-formatter; not worth enforcing.
-MD060: false
+# Hardened (#18): ul-indent stays on (matches the .editorconfig 2-space indent); ol-prefix
+# permissive (one-or-ordered); compact single-space tables now that the editor no longer
+# Prettier-aligns markdown.
+MD029:
+  style: one_or_ordered
+MD060:
+  style: compact
