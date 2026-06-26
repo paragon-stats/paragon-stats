@@ -1,12 +1,12 @@
-// check-encoding.cs - fail on non-ASCII bytes in script/CLI output source.
+// check-encoding.cs - fail on non-ASCII characters in script/CLI output source.
 //
 // Run by the Husky pre-commit hook and CI:  dotnet run scripts/dev/check-encoding.cs
 //
-// Console/CLI output must be encoding-safe (ASCII, or forced UTF-8) so it does not
-// mojibake on a legacy-codepage Windows console - see docs/style-guides/encoding.md.
-// This scans the tooling scripts and the CLI for any non-ASCII byte (> 0x7E, or a
-// control byte other than tab/newline/carriage-return) and reports file:line:col.
-// Prose (docs, markdown) is intentionally NOT scanned - the rule is terminal output.
+// Console/CLI output must be ASCII so it does not mojibake on a legacy-codepage
+// Windows console - see docs/style-guides/encoding.md. Scans the tooling scripts and
+// the CLI for non-ASCII characters (codepoint > U+007E, or a control char other than
+// tab) and reports file:line:column - one offence per visible character. A leading
+// UTF-8 BOM is ignored (a file marker, not output). Prose (docs) is NOT scanned.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -16,13 +16,8 @@ string[] roots = ["scripts", Path.Combine("src", "ParagonStats.Cli")];
 string[] extensions = [".cs", ".py", ".sh", ".ps1"];
 
 List<string> offences = [];
-foreach (string root in roots)
+foreach (string root in roots.Where(Directory.Exists))
 {
-    if (!Directory.Exists(root))
-    {
-        continue;
-    }
-
     foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
     {
         if (!extensions.Contains(Path.GetExtension(path)))
@@ -30,26 +25,19 @@ foreach (string root in roots)
             continue;
         }
 
-        byte[] bytes = File.ReadAllBytes(path);
-        // Skip a leading UTF-8 BOM: a file-encoding marker, not console-output content.
-        int offset = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF ? 3 : 0;
-        int line = 1;
-        int col = 0;
-        for (int idx = offset; idx < bytes.Length; idx++)
+        // The default reader detects + strips a leading UTF-8 BOM, so the scan sees
+        // characters (one offence per visible glyph, editor-accurate column) - not bytes.
+        string[] lines = File.ReadAllLines(path);
+        for (int i = 0; i < lines.Length; i++)
         {
-            byte b = bytes[idx];
-            if (b == (byte)'\n')
+            string line = lines[i];
+            for (int col = 0; col < line.Length; col++)
             {
-                line++;
-                col = 0;
-                continue;
-            }
-
-            col++;
-            bool allowed = b is (byte)'\t' or (byte)'\r' || (b >= 0x20 && b <= 0x7E);
-            if (!allowed)
-            {
-                offences.Add($"{path.Replace('\\', '/')}:{line}:{col}: non-ASCII byte 0x{b:X2}");
+                char c = line[col];
+                if (c != '\t' && (c < ' ' || c > '~'))
+                {
+                    offences.Add($"{path.Replace('\\', '/')}:{i + 1}:{col + 1}: non-ASCII U+{(int)c:X4}");
+                }
             }
         }
     }
@@ -57,15 +45,13 @@ foreach (string root in roots)
 
 if (offences.Count > 0)
 {
-    Console.Error.WriteLine("[FAIL] non-ASCII bytes in script/CLI output source:");
+    Console.Error.WriteLine("[FAIL] non-ASCII characters in script/CLI output source:");
     foreach (string offence in offences)
     {
         Console.Error.WriteLine($"  {offence}");
     }
 
-    Console.Error.WriteLine(
-        "Use ASCII in console output, or force UTF-8 (Console.OutputEncoding = Encoding.UTF8). " +
-        "See docs/style-guides/encoding.md.");
+    Console.Error.WriteLine("Keep output in these paths ASCII - see docs/style-guides/encoding.md.");
     return 1;
 }
 
