@@ -32,6 +32,8 @@ jobs:
       - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5
         with:
           global-json-file: global.json
+      - name: Check console output encoding
+        run: dotnet run scripts/dev/check-encoding.cs
       - run: dotnet restore
       - run: dotnet tool restore
       - run: dotnet format --verify-no-changes --severity error --no-restore

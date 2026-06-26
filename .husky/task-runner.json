@@ -8,6 +8,12 @@
       "args": ["format", "--verify-no-changes", "--severity", "error"]
     },
     {
+      "name": "check-encoding",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": ["run", "scripts/dev/check-encoding.cs"]
+    },
+    {
       "name": "super-linter",
       "group": "pre-push",
       "command": "dotnet",
