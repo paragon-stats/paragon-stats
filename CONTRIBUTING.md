@@ -56,3 +56,7 @@ which stats were computed) only.
 **Dependencies.** Apache-2.0-compatible licenses only (MIT, BSD, ISC, Apache-2.0,
 CC0, …). No GPL, AGPL, MPL, or source-available non-OSI licenses. Verify the SPDX
 identifier against the package's actual `LICENSE`.
+
+**AI assistance.** Built with AI help, and you're welcome to use it — but AI
+meta-docs (`CLAUDE.md`, `.cursorrules`, …) are deliberately not committed. See the
+[AI-assistance policy](docs/style-guides/ai-assistance-policy.md).
