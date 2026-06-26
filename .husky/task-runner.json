@@ -6,6 +6,12 @@
       "group": "pre-commit",
       "command": "dotnet",
       "args": ["format", "--verify-no-changes", "--severity", "error"]
+    },
+    {
+      "name": "super-linter",
+      "group": "pre-push",
+      "command": "dotnet",
+      "args": ["run", "scripts/dev/run-super-linter.cs"]
     }
   ]
 }

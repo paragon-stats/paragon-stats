@@ -85,6 +85,13 @@ if (verify)
         return 1;
     }
 
+    if (string.IsNullOrWhiteSpace(Capture("docker", "--version")))
+    {
+        Console.WriteLine(
+            "[NOTE] Docker not found - the pre-push Super-Linter pass will be skipped. " +
+            "Install Docker for local lint parity with CI.");
+    }
+
     Console.WriteLine("[OK] dev environment is correct and up to date.");
     return 0;
 }
