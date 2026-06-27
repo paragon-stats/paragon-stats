@@ -17,18 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7 -- for commit-types.txt
+        with:
+          persist-credentials: false
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9
         with:
           script: |
+            const fs = require('fs');
             const branch = context.payload.pull_request.head.ref;
             // Bot-generated branches don't follow the convention.
             if (/^(dependabot\/|release-please--)/.test(branch)) {
               console.log(`Exempt automation branch: ${branch}`);
               return;
             }
-            // Type set mirrors scripts/git/check-commit-message.cs (the canonical list).
-            const pattern =
-              /^(feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert)\/[0-9]+-[a-z0-9-]+$/;
+            // Single source of truth for the type set (shared with check-commit-message.cs).
+            const types = fs.readFileSync('scripts/git/commit-types.txt', 'utf8')
+              .split('\n').map(t => t.trim()).filter(Boolean).join('|');
+            const pattern = new RegExp(`^(${types})/[0-9]+-[a-z0-9-]+$`);
             if (!pattern.test(branch)) {
               core.setFailed(
                 `Branch "${branch}" does not match the convention ` +

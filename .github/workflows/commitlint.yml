@@ -40,3 +40,16 @@ jobs:
             fi
           done
           exit "$fail"
+      # The PR title becomes the squash commit subject (repo squash setting is PR_TITLE),
+      # which is what Release Please parses -- so validate the title with the same validator,
+      # passing the PR's changed files so the feat/fix-needs-src guard applies to it too.
+      - name: Validate the PR title (the squash subject)
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          printf '%s\n' "$PR_TITLE" > /tmp/pr-title.txt
+          mapfile -t paths < <(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+          dotnet run scripts/git/check-commit-message.cs -- /tmp/pr-title.txt "${paths[@]}"

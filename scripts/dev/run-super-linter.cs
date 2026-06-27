@@ -1,12 +1,12 @@
 // run-super-linter.cs - run the CI Super-Linter image locally for lint parity.
 //
-// Run:  dotnet run scripts/dev/run-super-linter.cs   (wired to the Husky pre-push hook)
+// Run:  dotnet run scripts/dev/run-super-linter.cs   (wired to the Husky pre-commit hook)
 //
 // Lints the working tree with the SAME super-linter image + config CI uses
 // (.github/super-linter.env), so polyglot/hygiene/secret findings surface locally
 // before they reach CI. The image tag is pinned and immutable (kept in sync with the
 // action in super-linter.yml), so freshness == presence: pull only when it isn't
-// cached - no per-push registry round-trip. Docker is required; when unavailable the
+// cached - no per-commit registry round-trip. Docker is required; when unavailable the
 // run is skipped, not failed - CI still lints.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false
@@ -82,7 +82,7 @@ int code = Docker(
 
 if (code != 0)
 {
-    Console.Error.WriteLine("[FAIL] Super-Linter reported findings - fix them before pushing.");
+    Console.Error.WriteLine("[FAIL] Super-Linter reported findings - fix them before committing.");
 }
 
 return code;
