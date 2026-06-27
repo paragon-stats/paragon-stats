@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: sonar-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false  # required check: a cancelled run must still report (#14)
 
 jobs:
   sonar:
