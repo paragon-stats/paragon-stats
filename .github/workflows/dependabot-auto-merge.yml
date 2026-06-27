@@ -1,3 +1,10 @@
+# Auto-merge for Dependabot PRs. ACTIVATION (operator, post-merge):
+#   - Enable the repo setting "Allow auto-merge" (else `gh pr merge --auto` errors).
+#   - Approval model: the #9 ruleset requires a Code-Owner review, which a bot can't give.
+#     Either keep it and approve Dependabot PRs yourself (this then squash-merges on green
+#     with no manual merge), or drop Code-Owner-required so it's fully hands-off.
+# The on:pull_request + write-permissions pattern is GitHub's documented Dependabot
+# auto-merge approach; the explicit permissions block grants the run write access.
 name: dependabot-auto-merge
 
 on: pull_request
@@ -29,7 +36,7 @@ jobs:
         run: gh pr merge --auto --squash "$PR_URL"
       # Major: leave for manual review; comment once (on open) so it isn't spammed.
       - name: Flag major updates for manual review
-        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-major' && github.event.action == 'opened' }}
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-major' && (github.event.action == 'opened' || github.event.action == 'reopened') }}
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

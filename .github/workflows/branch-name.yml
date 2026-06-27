@@ -26,8 +26,9 @@ jobs:
               console.log(`Exempt automation branch: ${branch}`);
               return;
             }
+            // Type set mirrors scripts/git/check-commit-message.cs (the canonical list).
             const pattern =
-              /^(feat|fix|ci|docs|chore|refactor|test|perf|build|revert)\/[0-9]+-[a-z0-9-]+$/;
+              /^(feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert)\/[0-9]+-[a-z0-9-]+$/;
             if (!pattern.test(branch)) {
               core.setFailed(
                 `Branch "${branch}" does not match the convention ` +
