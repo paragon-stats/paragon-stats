@@ -20,12 +20,6 @@ using System.Text.RegularExpressions;
 // Single source of truth for the type set, shared with branch-name.yml. Read relative to
 // the repo root, where the commit-msg hook and the commitlint workflow both invoke this.
 const string TypesPath = "scripts/git/commit-types.txt";
-if (!File.Exists(TypesPath))
-{
-    Console.Error.WriteLine($"type list not found: {TypesPath} (run from the repo root)");
-    return 2;
-}
-
 string[] types = [.. File.ReadAllLines(TypesPath).Select(line => line.Trim()).Where(line => line.Length > 0)];
 var subject = new Regex(@"^(?<type>" + string.Join("|", types) + @")(?:\([\w.\-/ ]+\))?!?: .+");
 string[] allowedPrefixes = ["Merge ", "Revert ", "fixup!", "squash!"];
