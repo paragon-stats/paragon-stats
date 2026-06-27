@@ -1,7 +1,7 @@
 # Bootstrap plan
 
 Task files for bootstrapping the paragon-stats repo. Read [`00-context.md`](00-context.md)
-first, then execute the numbered tasks in order.
+first, then work the task files in numeric order (01 → 11); the lists below group them by milestone.
 
 ## Tasks
 
@@ -10,29 +10,29 @@ Grouped into bootstrap milestones (Track A — no product version). Product vers
 
 ### Scaffold
 
-1. [`01-dotnet-projects.md`](01-dotnet-projects.md) — Solution + Core/Cli/Tests via `dotnet new`
-3. [`03-repo-hygiene.md`](03-repo-hygiene.md) — `LICENSE`, `README`, `CONTRIBUTING`, `.gitignore`, `.gitattributes`, `Makefile`, `SECURITY`
-6. [`06-first-push.md`](06-first-push.md) — Commit + push the scaffold (repo already exists)
+- [`01-dotnet-projects.md`](01-dotnet-projects.md) — Solution + Core/Cli/Tests via `dotnet new`
+- [`03-repo-hygiene.md`](03-repo-hygiene.md) — `LICENSE`, `README`, `CONTRIBUTING`, `.gitignore`, `.gitattributes`, `Makefile`, `SECURITY`
+- [`06-first-push.md`](06-first-push.md) — Commit + push the scaffold (repo already exists)
 
 ### Quality gates
 
-2. [`02-build-config.md`](02-build-config.md) — `Directory.Build.props`, CPM, analyzers, `.editorconfig`, AOT
-5. [`05-precommit-hooks.md`](05-precommit-hooks.md) — Git hooks (Husky.Net)
-8. [`08-linting-style-guides.md`](08-linting-style-guides.md) — Polyglot linters, style-guide docs, **CodeQL**
+- [`02-build-config.md`](02-build-config.md) — `Directory.Build.props`, CPM, analyzers, `.editorconfig`, AOT
+- [`05-precommit-hooks.md`](05-precommit-hooks.md) — Git hooks (Husky.Net)
+- [`08-linting-style-guides.md`](08-linting-style-guides.md) — Polyglot linters, style-guide docs, **CodeQL**
 
 ### Automation & release
 
-4. [`04-github-meta.md`](04-github-meta.md) — CI build workflow, `CODEOWNERS`, Dependabot
-9. [`09-issue-pr-automation.md`](09-issue-pr-automation.md) — Issue/PR templates, auto-labeler, triage, Projects
-10. [`10-release-automation.md`](10-release-automation.md) — Release Please + MinVer (SemVer)
+- [`04-github-meta.md`](04-github-meta.md) — CI build workflow, `CODEOWNERS`, Dependabot
+- [`09-issue-pr-automation.md`](09-issue-pr-automation.md) — Issue/PR templates, auto-labeler, triage, Projects
+- [`10-release-automation.md`](10-release-automation.md) — Release Please + MinVer (SemVer)
 
 ### Protected trunk
 
-7. [`07-branch-protection.md`](07-branch-protection.md) — Branch ruleset; required checks incl. CodeQL
+- [`07-branch-protection.md`](07-branch-protection.md) — Branch ruleset; required checks incl. CodeQL
 
 ### Dev plugins
 
-11. [`11-plugins-monorepo.md`](11-plugins-monorepo.md) — Private plugins monorepo (Karpathy) + ponytail wiring
+- [`11-plugins-monorepo.md`](11-plugins-monorepo.md) — Private plugins monorepo (Karpathy) + ponytail wiring
 
 ## Usage with Claude Code
 

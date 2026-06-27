@@ -1,0 +1,37 @@
+name: branch-name
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-name-${{ github.ref }}
+  cancel-in-progress: false  # required check: a cancelled run must still report (#14)
+
+jobs:
+  branch-name:
+    name: branch-name
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref;
+            // Bot-generated branches don't follow the convention.
+            if (/^(dependabot\/|release-please--)/.test(branch)) {
+              console.log(`Exempt automation branch: ${branch}`);
+              return;
+            }
+            // Type set mirrors scripts/git/check-commit-message.cs (the canonical list).
+            const pattern =
+              /^(feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert)\/[0-9]+-[a-z0-9-]+$/;
+            if (!pattern.test(branch)) {
+              core.setFailed(
+                `Branch "${branch}" does not match the convention ` +
+                "<type>/<issue#>-<short-kebab-summary> (e.g. ci/14-protected-trunk). " +
+                "See docs/style-guides/commits.md.");
+            }

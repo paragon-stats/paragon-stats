@@ -9,7 +9,7 @@ permissions:
 
 concurrency:
   group: commitlint-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false  # required check: a cancelled run must still report (#14)
 
 jobs:
   commitlint:
