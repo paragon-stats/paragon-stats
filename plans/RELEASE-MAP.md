@@ -14,7 +14,7 @@ Tracked by milestone completion; they emit no product semver (optionally a singl
 test, lint, release, and protect itself.
 
 | Milestone | Source tasks | Workstream |
-| ------------------------ | ---------------- | ------------------------------------------------------------------------------ |
+| --- | --- | --- |
 | **Scaffold** | `01`, `03`, `06` | .NET solution + repo hygiene; scaffold committed/pushed ✅ |
 | **Quality gates** | `02`, `05`, `08` | build config + analyzers; pre-commit; polyglot linting + style guides + CodeQL |
 | **Automation & release** | `04`, `09`, `10` | CI; full issue/PR automation; Release Please + MinVer |
@@ -35,7 +35,7 @@ features** (the pre-`0.1.0` alpha body) plus **21 GUI features** (later mileston
 reimplemented clean-room from the GPLv2 original (concept only).
 
 | Version | Stage | How it's cut |
-| --------------- | ---------------------- | ----------------------------------------------------------- |
+| --- | --- | --- |
 | `0.0.1`–`0.0.x` | **Alpha** | every `feat:`/`fix:` (patch) — features + fixes accrue here |
 | `0.1.0` | **CLI** | deliberate `Release-As: 0.1.0` when the CLI is usable |
 | `0.x` | **GUI** | deliberate promotion; version un-pegged |
@@ -52,7 +52,7 @@ Each gets `area/*` + `type/*` labels and a milestone. Closed by the PR that land
 work (`Closes #N`). The live list is on GitHub — this is the original seed mapping.
 
 | Title | Milestone |
-| ------------------------------------------------------------- | -------------------- |
+| --- | --- |
 | Scaffold .NET 10 solution (Core, Cli, Tests) | Scaffold |
 | Add repo hygiene (LICENSE, README, …) | Scaffold |
 | Add Directory.Build.props, CPM, analyzers, .editorconfig, AOT | Quality gates |

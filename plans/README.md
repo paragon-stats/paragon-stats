@@ -1,7 +1,7 @@
 # Bootstrap plan
 
 Task files for bootstrapping the paragon-stats repo. Read [`00-context.md`](00-context.md)
-first, then execute the numbered tasks in order.
+first, then work the task files in numeric order (01 → 11); the lists below group them by milestone.
 
 ## Tasks
 

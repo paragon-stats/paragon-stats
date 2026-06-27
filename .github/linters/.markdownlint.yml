@@ -7,8 +7,8 @@ MD013:
 # A small set of inline HTML elements is allowed (badges, layout).
 MD033:
   allowed_elements: [div, span, img, br, p, a]
-# Hardened (#18): ul-indent stays on (matches the .editorconfig 2-space indent); ol-prefix
-# permissive (one-or-ordered); compact single-space tables now that the editor no longer
+# Hardened (#18): ul-indent on (markdownlint default, 2-space); ol-prefix permissive
+# (one-or-ordered); compact single-space tables now that the editor no longer
 # Prettier-aligns markdown.
 MD029:
   style: one_or_ordered
