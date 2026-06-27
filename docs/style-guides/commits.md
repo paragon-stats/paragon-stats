@@ -2,8 +2,10 @@
 
 ## Conventional Commits
 
-Format: `type(scope): subject`. Allowed types:
-`feat`, `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `style`, `build`, `revert`.
+Format: `type(scope): subject`. The allowed `type` set is the single source of truth in
+[`scripts/git/commit-types.txt`](../../scripts/git/commit-types.txt) — `feat`, `fix`, `docs`,
+`chore`, `ci`, `refactor`, `test`, `perf`, `style`, `build`, `revert` — read by both the
+commit/PR-title validator and the `branch-name` check.
 
 - `feat:` → minor bump; `fix:` → patch; `feat!:`/`BREAKING CHANGE:` → major
   (minor while pre-1.0). This is what Release Please reads to compute the version.

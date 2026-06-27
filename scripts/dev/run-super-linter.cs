@@ -6,7 +6,7 @@
 // (.github/super-linter.env), so polyglot/hygiene/secret findings surface locally
 // before they reach CI. The image tag is pinned and immutable (kept in sync with the
 // action in super-linter.yml), so freshness == presence: pull only when it isn't
-// cached - no per-push registry round-trip. Docker is required; when unavailable the
+// cached - no per-commit registry round-trip. Docker is required; when unavailable the
 // run is skipped, not failed - CI still lints.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false

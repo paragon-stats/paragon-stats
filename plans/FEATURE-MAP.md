@@ -30,10 +30,9 @@ first, `ParagonStats.Gui` later.
 
 ## Roadmap implication
 
-Each feature is one `feat:` PR = one minor (see [RELEASE-MAP.md](RELEASE-MAP.md) and
-[release-strategy.md](../docs/release-strategy.md)). The **58 Core/CLI features** map to
-`0.1.0` - `0.58.0`, then a `0.59.0` CLI release; the **21 GUI features** map to `0.60.0` -
-`0.80.0`, then a `0.81.0` beta/RC and `1.0.0` stable.
+Each feature is one `feat:` PR = one minor; the canonical **version ladder** (features to
+releases through `1.0.0`) is in
+[release-strategy.md](../docs/release-strategy.md#the-ladder-features-to-releases).
 
 ## Core / CLI features (58)
 

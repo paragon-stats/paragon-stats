@@ -27,18 +27,11 @@ consolidation releases (the CLI cut, beta, RCs, `1.0.0`) carry no new feature an
 with a `Release-As:` footer. Pre-1.0 the minor is a feature odometer, not a compatibility
 contract (SemVer major-zero). Cross-platform native AOT (win-x64 + linux-x64).
 
-| Range | Stage | How it's cut |
-| --- | --- | --- |
-| `0.1.0` - `0.58.0` | 58 Core/CLI features | one `feat:` PR per feature, minor |
-| `0.59.0` | **Core/CLI release** | `Release-As: 0.59.0`; full regression + string tests |
-| `0.60.0` - `0.80.0` | 21 GUI features | one `feat:` PR per feature, minor |
-| `0.81.0-beta.N` | **Beta** | `Release-As:`; external testers (powerset/system coverage) |
-| `0.81.0-rc.N` | **Release candidate** | `Release-As:`; feedback-driven fixes |
-| `1.0.0` | **Stable** | `Release-As: 1.0.0`; frozen format; signed AOT |
-
-The 58 Core/CLI + 21 GUI features are inventoried in [`FEATURE-MAP.md`](FEATURE-MAP.md). The
-three phase milestones (**CLI / GUI / Stable**) group the feature issues; each feature
-issue's `feat:` PR cuts its minor. Re-packaged prereleases bump `-beta.(N+1)` / `-rc.(N+1)`.
+The canonical features-to-releases **version ladder** lives in
+[`../docs/release-strategy.md`](../docs/release-strategy.md#the-ladder-features-to-releases).
+The 58 Core/CLI + 21 GUI features are inventoried in [`FEATURE-MAP.md`](FEATURE-MAP.md); the
+three phase milestones (**CLI / GUI / Stable**) group the feature issues, and each feature
+issue's `feat:` PR cuts its minor.
 
 ## How the loop closes
 

@@ -36,8 +36,7 @@
           { "context": "lint", "integration_id": 15368 },
           { "context": "commitlint", "integration_id": 15368 },
           { "context": "sonar", "integration_id": 15368 },
-          { "context": "branch-name", "integration_id": 15368 },
-          { "context": "semantic-pr", "integration_id": 15368 }
+          { "context": "branch-name", "integration_id": 15368 }
         ]
       }
     }
