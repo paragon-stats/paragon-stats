@@ -21,8 +21,9 @@ dotnet build
 dotnet test
 ```
 
-Husky.Net hooks run `dotnet format` + the commit-message check on commit and the full
-Super-Linter image on push (needs Docker; skipped without it); the same linters run in CI.
+Husky.Net hooks run `dotnet format`, the commit-message + encoding checks, and the full
+Super-Linter image — all on commit (Super-Linter needs Docker; skipped without it). The
+same linters run in CI.
 
 ## Code style
 
