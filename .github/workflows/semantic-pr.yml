@@ -1,0 +1,41 @@
+name: semantic-pr
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: semantic-pr-${{ github.ref }}
+  cancel-in-progress: false  # required check: a cancelled run must still report (#14)
+
+jobs:
+  semantic-pr:
+    name: semantic-pr
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The PR title becomes the squash commit subject (repo squash setting is
+      # PR_TITLE), which is what Release Please parses to compute the version --
+      # so the *title* must be a valid Conventional Commit. The commitlint check
+      # validates branch commits, which the squash discards; this guards the title.
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50  # v6.1.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Mirrors the Conventional-Commit type set in docs/style-guides/commits.md.
+          types: |
+            feat
+            fix
+            docs
+            chore
+            ci
+            refactor
+            test
+            perf
+            style
+            build
+            revert
