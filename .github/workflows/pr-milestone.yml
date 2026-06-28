@@ -1,0 +1,53 @@
+name: pr-milestone
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: pr-milestone-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inherit-milestone:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+            // Fork PRs get a read-only token; nothing to do (and the write would 403).
+            if (pr.head.repo && pr.head.repo.fork) {
+              core.info(`PR #${pr.number}: fork PR, skipping.`);
+              return;
+            }
+            // Never override a manually-set milestone.
+            if (pr.milestone) {
+              core.info(`PR #${pr.number}: already milestoned (${pr.milestone.title}); leaving as-is.`);
+              return;
+            }
+            const query = `query($owner:String!,$repo:String!,$num:Int!){
+              repository(owner:$owner,name:$repo){
+                pullRequest(number:$num){
+                  closingIssuesReferences(first:10){ nodes{ number milestone{ number title } } }
+                }
+              }
+            }`;
+            const data = await github.graphql(query, { owner, repo, num: pr.number });
+            const nodes = data.repository.pullRequest.closingIssuesReferences.nodes;
+            const src = nodes.find(n => n.milestone);
+            if (!src) {
+              core.info(`PR #${pr.number}: no closing issue with a milestone; skipping.`);
+              return;
+            }
+            await github.rest.issues.update({
+              owner, repo, issue_number: pr.number, milestone: src.milestone.number,
+            });
+            core.info(`PR #${pr.number} -> milestone "${src.milestone.title}" (from issue #${src.number}).`);
