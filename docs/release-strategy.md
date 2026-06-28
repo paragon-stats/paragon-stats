@@ -87,3 +87,20 @@ inventory is in [FEATURE-MAP.md](../plans/FEATURE-MAP.md).
   (`MinVerTagPrefix=v`); between tags it auto-increments the next minor.
 - **Release artifacts**: native AOT binaries (`win-x64`, `linux-x64`) are built per-RID and
   attached to the GitHub Release.
+
+## Release tags
+
+Release Please owns the `vX.Y.Z` tag namespace -- **humans never hand-cut version tags.**
+Each `feat:` / `fix:` merge lets it tag the next version, which MinVer reads verbatim to
+stamp the build.
+
+- **No pre-product marker tags.** The repo carries one hand-made annotated anchor, `v0.0.0`
+  (baseline; anchors Release Please + MinVer at 0.x). There is no `v0.0.1` "repo ready" tag:
+  [SemVer](https://semver.org/) starts initial development at `0.1.0`, and a manual marker
+  would only skew MinVer's in-development versions (it bases the next version on the nearest
+  tag) for no product benefit. Repo-readiness is a milestone state, not a git ref.
+- **Hand-made tags are annotated and SSH-signed** (`git tag -s`), matching the signed-commit
+  posture -- reserved for non-version anchors like `v0.0.0`.
+- **A bare git tag, not a GitHub Release**, for anything without build artifacts. GitHub
+  Releases are for shipped binaries; the win-x64 / linux-x64 AOT publish attaches to the real
+  `vX.Y.Z` releases Release Please cuts.
