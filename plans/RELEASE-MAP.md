@@ -8,9 +8,11 @@ from the tag. Full mechanics and diagrams: [`../docs/release-strategy.md`](../do
 
 ## Track A -- Bootstrap milestones (repo readiness, _not_ product versions)
 
-Tracked by milestone completion; they emit no product semver (optionally a single `v0.0.1`
-"repo ready" tag at the end of Dev plugins). Done when the repo can build, test, lint,
-release, and protect itself.
+Tracked by milestone completion; they emit no product semver and **no marker tag** --
+repo-readiness is a milestone state, not a git ref. (Release Please owns the `vX.Y.Z`
+namespace; the lone hand-made anchor is `v0.0.0` -- see
+[release-strategy.md](../docs/release-strategy.md#release-tags).) Done when the repo can
+build, test, lint, release, and protect itself.
 
 | Milestone | Source tasks | Workstream |
 | --- | --- | --- |
@@ -18,7 +20,7 @@ release, and protect itself.
 | **Quality gates** | `02`, `05`, `08` | build config + analyzers; pre-commit; linting + CodeQL ✅ |
 | **Automation & release** | `04`, `09`, `10` | CI; issue/PR automation; Release Please + MinVer ✅ |
 | **Protected trunk** | `07` | branch ruleset; required checks ✅ |
-| **Dev plugins** | `11` | private plugins (ponytail/karpathy/techdocs); wire into this repo |
+| **Dev plugins** | `11` | four public plugins (ponytail, techdocs-authoring, karpathy-guidelines, thinking-tools); wire into this repo |
 
 ## Track B -- Product release roadmap (feature -> release)
 
