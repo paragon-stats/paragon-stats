@@ -21,8 +21,9 @@ dotnet build
 dotnet test
 ```
 
-Husky.Net hooks run `dotnet format` + the commit-message check on commit and the full
-Super-Linter image on push (needs Docker; skipped without it); the same linters run in CI.
+Husky.Net hooks run `dotnet format`, the commit-message + encoding checks, and the full
+Super-Linter image — all on commit (Super-Linter needs Docker; skipped without it). The
+same linters run in CI.
 
 ## Code style
 
@@ -34,7 +35,8 @@ treated as errors — fix issues at the source rather than suppressing them.
 - Branch from `main`; open PRs against `main`.
 - **Signed commits are required.**
 - Use [Conventional Commits](https://www.conventionalcommits.org)
-  (`feat:`, `fix:`, `chore:`, `docs:`, ...).
+  (`feat:`, `fix:`, `chore:`, `docs:`, ...) — they drive the version; see the
+  [branch and release strategy](docs/release-strategy.md).
 - All status checks must pass before merge.
 - Every PR clears two reviews (correctness + over-engineering) before merge —
   see the [review workflow](docs/style-guides/review-workflow.md).

@@ -30,9 +30,9 @@ first, `ParagonStats.Gui` later.
 
 ## Roadmap implication
 
-Under [start-at-patch](RELEASE-MAP.md), the **58 Core/CLI features** are the pre-`0.1.0`
-alpha body; **`Release-As: 0.1.0`** marks the CLI milestone; the **21 GUI features**
-come later (still `0.x`).
+Each feature is one `feat:` PR = one minor; the canonical **version ladder** (features to
+releases through `1.0.0`) is in
+[release-strategy.md](../docs/release-strategy.md#the-ladder-features-to-releases).
 
 ## Core / CLI features (58)
 

@@ -1,22 +1,26 @@
 // check-commit-message.cs - validate a commit message follows Conventional Commits,
 // and enforce that release-triggering types touch product code.
 //
-// Run by the Husky.Net commit-msg hook and the commitlint CI workflow:
+// Run by the Husky.Net commit-msg hook and the commitlint CI workflow (branch commits and
+// the squash-subject PR title):
 //   dotnet run scripts/git/check-commit-message.cs -- <commit-msg-file> [changed-path ...]
 //
 // Format: `type(scope): subject` (Conventional Commits). Additionally, a feat/fix commit
-// must change at least one file under src/ (product code): feat/fix bump the version under
-// start-at-patch, so tooling/docs/test/CI changes must use ci/chore/docs/test/build/
-// refactor and never trigger a release. CI tooling, not shipped product code: exempt from
-// the solution-wide StyleCop/Meziantou analyzers + warnings-as-errors.
+// must change at least one file under src/ (product code): feat/fix bump the version, so
+// tooling/docs/test/CI changes must use ci/chore/docs/test/build/refactor and never trigger
+// a release. The type set is the single source of truth in scripts/git/commit-types.txt
+// (shared with branch-name.yml). CI tooling, not shipped product code: exempt from the
+// solution-wide StyleCop/Meziantou analyzers + warnings-as-errors.
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
 #:property RunAnalyzers=false
 
 using System.Text.RegularExpressions;
 
-string[] types =
-    ["feat", "fix", "docs", "chore", "ci", "refactor", "test", "perf", "style", "build", "revert"];
+// Single source of truth for the type set, shared with branch-name.yml. Read relative to
+// the repo root, where the commit-msg hook and the commitlint workflow both invoke this.
+const string TypesPath = "scripts/git/commit-types.txt";
+string[] types = [.. File.ReadAllLines(TypesPath).Select(line => line.Trim()).Where(line => line.Length > 0)];
 var subject = new Regex(@"^(?<type>" + string.Join("|", types) + @")(?:\([\w.\-/ ]+\))?!?: .+");
 string[] allowedPrefixes = ["Merge ", "Revert ", "fixup!", "squash!"];
 
@@ -64,7 +68,7 @@ if (type is "feat" or "fix" && changedPaths.Length > 0)
         Console.Error.WriteLine(
             $"'{type}:' changes nothing under src/ (product code):\n" +
             $"  {first}\n" +
-            "feat/fix bump the version (start-at-patch) and must touch src/. Use\n" +
+            "feat/fix bump the version and must touch src/. Use\n" +
             "ci:/chore:/docs:/test:/build:/refactor: for tooling, docs, tests, or CI.");
         return 1;
     }

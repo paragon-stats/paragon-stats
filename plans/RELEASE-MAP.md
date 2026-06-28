@@ -1,84 +1,41 @@
-# Release map — two tracks: bootstrap milestones and product versions
+# Release map -- two tracks: bootstrap milestones and product versions
 
-Versioning is **Release Please** driven: the version is computed from Conventional
-Commits, so **only `feat:`/`fix:` bump it** — `chore:`/`ci:`/`docs:` do not. That
-means the entire bootstrap (all chores) produces **no product release**; the product
-version stays at `0.0.0` until the first **feature** lands. So bootstrap progress and
-product versions are two separate tracks. MinVer stamps the .NET/AOT binary from
-whatever tag exists. See [`10-release-automation.md`](10-release-automation.md).
+Versioning is **Release Please** driven: the version is computed from Conventional Commits.
+Pre-1.0, **`feat:` -> minor, `fix:` -> patch** (each feature is its own minor); `chore:` /
+`ci:` / `docs:` do not bump. So the entire bootstrap (all chores) produced **no product
+release** -- the product line starts at the first feature. MinVer stamps the .NET/AOT binary
+from the tag. Full mechanics and diagrams: [`../docs/release-strategy.md`](../docs/release-strategy.md).
 
-## Track A — Bootstrap milestones (repo readiness, _not_ product versions)
+## Track A -- Bootstrap milestones (repo readiness, _not_ product versions)
 
-Tracked by milestone completion; they emit no product semver (optionally a single
-`v0.0.1` "repo ready" tag at the end of Dev plugins). Done when the repo can build,
-test, lint, release, and protect itself.
+Tracked by milestone completion; they emit no product semver (optionally a single `v0.0.1`
+"repo ready" tag at the end of Dev plugins). Done when the repo can build, test, lint,
+release, and protect itself.
 
 | Milestone | Source tasks | Workstream |
 | --- | --- | --- |
-| **Scaffold** | `01`, `03`, `06` | .NET solution + repo hygiene; scaffold committed/pushed ✅ |
-| **Quality gates** | `02`, `05`, `08` | build config + analyzers; pre-commit; polyglot linting + style guides + CodeQL |
-| **Automation & release** | `04`, `09`, `10` | CI; full issue/PR automation; Release Please + MinVer |
-| **Protected trunk** | `07` | branch ruleset; required checks: `build`, lint, commitlint, **CodeQL** |
-| **Dev plugins** | `11` | private plugins monorepo (Karpathy) + ponytail; wire into this repo |
+| **Scaffold** | `01`, `03`, `06` | .NET solution + repo hygiene ✅ |
+| **Quality gates** | `02`, `05`, `08` | build config + analyzers; pre-commit; linting + CodeQL ✅ |
+| **Automation & release** | `04`, `09`, `10` | CI; issue/PR automation; Release Please + MinVer ✅ |
+| **Protected trunk** | `07` | branch ruleset; required checks ✅ |
+| **Dev plugins** | `11` | private plugins (ponytail/karpathy/techdocs); wire into this repo |
 
-## Track B — Product release roadmap (capability-driven)
+## Track B -- Product release roadmap (feature -> release)
 
-**Start-at-patch** (`bump-patch-for-minor-pre-major: true`): pre-1.0, **every
-`feat:`/`fix:` bumps patch** (`0.0.1`, `0.0.2`, …) and **only a breaking change
-auto-bumps the minor**. The named milestones below are **deliberate promotions**
-(a `Release-As:` footer when you reach them), not auto-computed. `0.x` is the
-unstable pre-1.0 line; `1.0.0` is the first stable release. Baseline anchored by
-the `v0.0.0` tag. Dev on Debian 13; ships cross-platform (win-x64 + linux-x64).
+**One feature = one `feat:` PR = one minor.** Bugfixes are `fix:` patches. Deliberate
+consolidation releases (the CLI cut, beta, RCs, `1.0.0`) carry no new feature and are cut
+with a `Release-As:` footer. Pre-1.0 the minor is a feature odometer, not a compatibility
+contract (SemVer major-zero). Cross-platform native AOT (win-x64 + linux-x64).
 
-Product scope is mapped in [`FEATURE-MAP.md`](FEATURE-MAP.md): **58 Core/CLI
-features** (the pre-`0.1.0` alpha body) plus **21 GUI features** (later milestone),
-reimplemented clean-room from the GPLv2 original (concept only).
+The canonical features-to-releases **version ladder** lives in
+[`../docs/release-strategy.md`](../docs/release-strategy.md#the-ladder-features-to-releases).
+The 58 Core/CLI + 21 GUI features are inventoried in [`FEATURE-MAP.md`](FEATURE-MAP.md); the
+three phase milestones (**CLI / GUI / Stable**) group the feature issues, and each feature
+issue's `feat:` PR cuts its minor.
 
-| Version | Stage | How it's cut |
-| --- | --- | --- |
-| `0.0.1`–`0.0.x` | **Alpha** | every `feat:`/`fix:` (patch) — features + fixes accrue here |
-| `0.1.0` | **CLI** | deliberate `Release-As: 0.1.0` when the CLI is usable |
-| `0.x` | **GUI** | deliberate promotion; version un-pegged |
-| `0.x` | **Release candidate** | integrate CLI + GUI, polish, docs |
-| `1.0.0` | **Stable (CLI + GUI)** | deliberate `Release-As: 1.0.0`; frozen format; signed AOT |
-| `2.0.0` | **Major (future)** | breaking change post-1.0 |
+## How the loop closes
 
-> Product milestones (**CLI / GUI / Stable**) are **deliberate** version promotions —
-> pre-1.0 routine changes stay in `0.0.x`; you bump to `0.1.0`/`1.0.0` via `Release-As`.
-
-## Issues (one per task/workstream)
-
-Each gets `area/*` + `type/*` labels and a milestone. Closed by the PR that lands the
-work (`Closes #N`). The live list is on GitHub — this is the original seed mapping.
-
-| Title | Milestone |
-| --- | --- |
-| Scaffold .NET 10 solution (Core, Cli, Tests) | Scaffold |
-| Add repo hygiene (LICENSE, README, …) | Scaffold |
-| Add Directory.Build.props, CPM, analyzers, .editorconfig, AOT | Quality gates |
-| Add pre-commit framework | Quality gates |
-| Add polyglot linting, style-guide docs, and CodeQL | Quality gates |
-| Add CI build workflow, CODEOWNERS, Dependabot | Automation & release |
-| Add full issue/PR automation | Automation & release |
-| Add SemVer release mechanism (Release Please + MinVer) | Automation & release |
-| Apply main branch protection ruleset (+ CodeQL required) | Protected trunk |
-| Stand up private plugins monorepo + wire plugins | Dev plugins |
-
-## How the loop closes (reduced manual effort)
-
-```text
-plan task ──▶ GitHub issue (milestone-assigned)
-                 │
-                 ▼
-          branch + PR ("Closes #N")
-                 │  auto-labeled, added to Project board,
-                 │  required checks: build, lint, commitlint, CodeQL
-                 ▼
-          merge ──▶ issue auto-closes
-                 │
-                 ▼
-   Release Please release PR ──▶ merge ──▶ tag vX.Y.Z + GitHub Release + CHANGELOG
-                 │
-                 ▼
-   MinVer stamps the next build/AOT binary with X.Y.Z
-```
+A planned task becomes a milestone-assigned issue, then a branch + PR (`Closes #N`), then a
+squash-merge that Release Please turns into a tagged release. The full pipeline -- branch ->
+PR -> squash -> Release Please -> tag -> MinVer -> AOT publish -- with diagrams is in
+[`../docs/release-strategy.md`](../docs/release-strategy.md).
