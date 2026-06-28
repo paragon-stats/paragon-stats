@@ -2,5 +2,6 @@
   "sonarlint.connectedMode.project": {
     "connectionId": "paragon-stats",
     "projectKey": "paragon-stats_paragon-stats"
-  }
+  },
+  "snyk.advanced.autoSelectOrganization": true
 }
