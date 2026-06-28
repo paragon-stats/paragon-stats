@@ -36,8 +36,12 @@ the source rather than suppressing.
 
 ## Code quality (SonarQube)
 
-CI scans every push/PR via SonarQube Cloud. Optional local tooling — a SonarQube MCP server and
-SonarLint connected mode — is wired in `.mcp.json` and `.vscode/settings.json`.
+CI scans every push/PR via SonarQube Cloud. Optional local tooling:
+
+- **MCP server** — `.mcp.json` runs `scripts/mcp/run_sonarqube_mcp.py` (needs `python` + Docker)
+  and sets only the org, so also `export SONARQUBE_TOKEN=<token>`.
+- **SonarLint connected mode** — `.vscode/settings.json` binds the project; create an IDE
+  connection with id `paragon-stats`.
 
 ## House rules
 
