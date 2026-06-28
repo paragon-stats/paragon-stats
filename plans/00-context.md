@@ -35,8 +35,8 @@ licensed to Homecoming Servers, LLC).
 
 - **License**: Apache-2.0
 - **Documentation**: terse. Follow the Sonarr repo's pattern — short README,
-  link out to deeper docs. Avoid AI-agent meta-doc sprawl (no separate
-  `AGENTS.md`, `CLAUDE.md`, `.cursorrules`, `copilot-instructions.md`).
+  link out to deeper docs. No committed AI-agent meta-docs (see
+  [ai-assistance-policy.md](../docs/style-guides/ai-assistance-policy.md)).
 - **Code style**: Microsoft .NET conventions via `.editorconfig`. Start lean
   from `dotnet new editorconfig`; only add overrides as you encounter
   specific needs.
