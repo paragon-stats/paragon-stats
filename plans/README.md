@@ -32,7 +32,7 @@ Grouped into bootstrap milestones (Track A — no product version). Product vers
 
 ### Dev plugins
 
-- [`11-plugins-monorepo.md`](11-plugins-monorepo.md) — Private plugins monorepo (Karpathy) + ponytail wiring
+- [`11-plugins-monorepo.md`](11-plugins-monorepo.md) — Pinned dev plugins (ponytail/techdocs/karpathy/thinking-tools), wired into `.claude/settings.json`
 
 ## Usage with Claude Code
 

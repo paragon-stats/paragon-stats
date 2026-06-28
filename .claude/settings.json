@@ -1,12 +1,36 @@
 {
   "enabledPlugins": {
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "techdocs-authoring@techdocs-authoring": true,
+    "karpathy-guidelines@karpathy-minimalism": true,
+    "thinking-tools@thinking-tools": true
   },
   "extraKnownMarketplaces": {
     "ponytail": {
       "source": {
         "ref": "v4.7.0",
         "repo": "DietrichGebert/ponytail",
+        "source": "github"
+      }
+    },
+    "techdocs-authoring": {
+      "source": {
+        "ref": "v0.2.0",
+        "repo": "pkloehn1/techdocs-authoring",
+        "source": "github"
+      }
+    },
+    "karpathy-minimalism": {
+      "source": {
+        "ref": "v0.1.0",
+        "repo": "pkloehn1/karpathy-minimalism",
+        "source": "github"
+      }
+    },
+    "thinking-tools": {
+      "source": {
+        "ref": "v0.1.0",
+        "repo": "pkloehn1/thinking-tools",
         "source": "github"
       }
     }
