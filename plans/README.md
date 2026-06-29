@@ -1,12 +1,12 @@
-# Bootstrap plan
+# Bootstrap plan (historical record)
 
-Task files for bootstrapping the paragon-stats repo. Read [`00-context.md`](00-context.md)
-first, then work the task files in numeric order (01 → 11); the lists below group them by milestone.
+Task files that bootstrapped the paragon-stats repo. **Kept as-is** for provenance;
+these are completed-work records, not the live plan. The authoritative product plan
+is the GitHub Project + [`../docs/PRD.md`](../docs/PRD.md).
 
 ## Tasks
 
-Grouped into bootstrap milestones (Track A — no product version). Product versions
-(v0.1 CLI, GUI, v1.0 stable) are a separate track — see [`RELEASE-MAP.md`](RELEASE-MAP.md).
+Grouped into the (now closed) bootstrap milestones.
 
 ### Scaffold
 
@@ -34,20 +34,8 @@ Grouped into bootstrap milestones (Track A — no product version). Product vers
 
 - [`11-plugins.md`](11-plugins.md) — Pinned dev plugins, wired into `.claude/settings.json`
 
-## Usage with Claude Code
-
-From inside the `paragon-stats` repo:
-
-```text
-claude
-> Read plan/00-context.md, then execute plan/01-dotnet-projects.md.
-> Stop after each task and let me review the diff before moving on.
-```
-
-Each task is self-contained. After completing one, commit the result and
-move to the next file.
-
 ## Done
 
-Either delete this directory after the bootstrap is complete, or keep it as
-historical record of the setup. Your call.
+The bootstrap is complete; this directory is retained as the historical record
+of the setup. The forward-looking plan lives in the GitHub Project and
+[`../docs/PRD.md`](../docs/PRD.md).
