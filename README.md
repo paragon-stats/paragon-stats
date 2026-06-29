@@ -3,6 +3,7 @@
 A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroStats.
 
 **Status: pre-alpha.** Scaffolding only; parsing engine not yet implemented.
+Product plan and requirements: [docs/PRD.md](docs/PRD.md).
 
 > **Built with AI assistance.** Developed with the help of AI coding tools
 > (Claude Code); all contributions are human-reviewed before merge. You're
@@ -11,7 +12,7 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 
 ## Getting started
 
-- **Requirements**: .NET 10 SDK (Windows or Linux x64)
+- **Requirements**: .NET 10 SDK (Windows x64)
 - **Build**: `dotnet build`
 - **Test**: `dotnet test`
 
@@ -20,7 +21,7 @@ A stats tool for *City of Heroes*. Clean-room reimplementation inspired by HeroS
 | | |
 | --- | --- |
 | Language | C# / .NET 10 LTS |
-| Platform | Windows x64 + Linux x64 (native AOT) |
+| Platform | Windows x64 (native AOT) |
 | License | Apache-2.0 |
 
 ## Contributing
