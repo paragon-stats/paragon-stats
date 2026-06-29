@@ -1,0 +1,48 @@
+name: milestone-reconcile
+
+# Nightly: close milestones whose work is fully done, reopen closed milestones
+# that gained open work. Scheduled (not event-driven) so counts are settled and
+# there are no demilestoned-payload edge cases. See issue #175.
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # daily 07:17 UTC (off the hour to avoid cron congestion)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: milestone-reconcile
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const milestones = await github.paginate(
+              github.rest.issues.listMilestones,
+              { owner, repo, state: "all", per_page: 100 },
+            );
+            for (const m of milestones) {
+              // Done: open milestone with no open issues and at least one closed.
+              if (m.state === "open" && m.open_issues === 0 && m.closed_issues > 0) {
+                await github.rest.issues.updateMilestone({
+                  owner, repo, milestone_number: m.number, state: "closed",
+                });
+                core.info(`closed #${m.number} "${m.title}" (${m.closed_issues} done, 0 open)`);
+              }
+              // Reactivated: closed milestone that gained open work.
+              else if (m.state === "closed" && m.open_issues > 0) {
+                await github.rest.issues.updateMilestone({
+                  owner, repo, milestone_number: m.number, state: "open",
+                });
+                core.info(`reopened #${m.number} "${m.title}" (${m.open_issues} open)`);
+              }
+            }
