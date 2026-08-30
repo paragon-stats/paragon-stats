@@ -18,7 +18,8 @@ jobs:
     timeout-minutes: 5
     steps:
       # Shared with the other org repos so the convention cannot drift between
-      # them; the accepted type set is the action's `types` input default.
-      - uses: paragon-stats/github-actions/branch-name@a6798deeb62043418baff10a0cf45499226d8f35  # v1.0.0
+      # them; the accepted type set comes from the shared repo's commit-types.txt
+      # fact-set (the same file the vendored commit-message check reads).
+      - uses: paragon-stats/github-actions/branch-name@184753ee81aaea12a219c83cceb9d1b0ecae1947  # v2.0.0
         with:
           branch: ${{ github.event.pull_request.head.ref }}
