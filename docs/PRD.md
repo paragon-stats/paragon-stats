@@ -19,7 +19,10 @@ display one.
 
 ## Platform & shape
 
-- .NET 10, native AOT, **Windows-only** (the game is Windows-in-practice; Linux dropped).
+- .NET 10, native AOT, **Windows-only** (`win-x64`; the game is Windows-in-practice).
+  Linux and WINE are **not supported targets** and won't become one unless Homecoming
+  makes Linux first-class. Contributors are free to carry it; the project won't chase it.
+  (Developing *on* Linux is unaffected — that's a dev host, not a ship target.)
 - Two binaries on a shared `ParagonStats.Core`:
   - `paragon-stats` — AOT CLI / TUI
   - `paragon-stats-gui` — Avalonia AOT GUI (tabbed; an overlay window follows in 2.0)
