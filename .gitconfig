@@ -1,0 +1,15 @@
+# Repo-specific git configuration for paragon-stats.
+#
+# Applied by scripts/dev/bootstrap.cs, which runs:
+#     git config --local include.path ../.gitconfig
+#
+# include.path is relative to the .git directory, hence ../.gitconfig.
+#
+# Settings live here rather than being written imperatively by bootstrap, so
+# they are versioned, reviewable in a diff, and can be added without touching
+# code. Nothing here is a secret; this file is committed.
+
+[push]
+    # Pushing a new branch sets its upstream in the same step, instead of
+    # failing with an instruction to re-run using --set-upstream.
+    autoSetupRemote = true
