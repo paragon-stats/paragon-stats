@@ -397,7 +397,7 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 
 # --- paragon-stats StyleCop overrides (added as needs arose during bootstrap) ---
 # PRE-1.0 SUPPRESSIONS: every rule disabled below must be re-evaluated before v1.0.
-# Tracked in issue #11 (milestone: v1.0 — Stable). Do not add to this list without
+# Tracked in issue #11 (milestone: Backlog). Do not add to this list without
 # also updating that issue.
 [*.cs]
 # No per-file copyright/license headers; terse (Sonarr-style). Decide permanence at v1.0. (#11)
