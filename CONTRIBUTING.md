@@ -38,9 +38,10 @@ the source rather than suppressing.
 
 CI scans every push/PR via SonarQube Cloud. Optional local tooling:
 
-- **MCP servers** — `.mcp.json` defines `sonarqube` (needs `python` + Docker) and
-  `github` (Docker, digest-pinned). Both read their token from the environment, so
-  `export SONARQUBE_TOKEN=<token>` and `export GITHUB_PERSONAL_ACCESS_TOKEN=<token>`.
+- **MCP servers** — `.mcp.json` defines `sonarqube` (`python` + Docker; needs
+  `export SONARQUBE_TOKEN=<token>`) and `github` (Docker, digest-pinned), which reads its
+  token from a gitignored `.env` at the repo root — populate it once with
+  `echo "GITHUB_PERSONAL_ACCESS_TOKEN=$(op read 'op://Homelab/paragon-stats-mcp/credential')" >> .env`.
 - **SonarLint connected mode** — `.vscode/settings.json` binds the project; create an IDE
   connection with id `paragon-stats`.
 
