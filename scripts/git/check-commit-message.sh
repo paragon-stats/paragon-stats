@@ -33,23 +33,23 @@ EXEMPT_PATTERN="${EXEMPT_PATTERN:-^(Merge |Revert |fixup!|squash!)}"
 # data, and deriving RELEASE_TYPES from it would silently guard nothing.
 TYPES="${TYPES:-}"
 RELEASE_TYPES="${RELEASE_TYPES:-}"
-if [ -z "$TYPES" ] || [ -z "$RELEASE_TYPES" ]; then
+if [[ -z "$TYPES" ]] || [[ -z "$RELEASE_TYPES" ]]; then
   types_file="${TYPES_FILE:-$(dirname "$0")/commit-types.txt}"
-  if [ ! -f "$types_file" ]; then
+  if [[ ! -f "$types_file" ]]; then
     echo "no commit types: set TYPES and RELEASE_TYPES, or provide $types_file" >&2
     exit 2
   fi
-  [ -n "$TYPES" ] || TYPES="$(awk '!/^[[:space:]]*#/ && NF { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
+  [[ -n "$TYPES" ]] || TYPES="$(awk '!/^[[:space:]]*#/ && NF { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
   # Anything not spelled exactly "none" is release-triggering, so a typo in
   # column 2 over-guards - which fails loudly - rather than under-guarding.
-  [ -n "$RELEASE_TYPES" ] || RELEASE_TYPES="$(awk '!/^[[:space:]]*#/ && NF && $2 != "none" { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
-  if [ -z "$TYPES" ]; then
+  [[ -n "$RELEASE_TYPES" ]] || RELEASE_TYPES="$(awk '!/^[[:space:]]*#/ && NF && $2 != "none" { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
+  if [[ -z "$TYPES" ]]; then
     echo "no commit types found in $types_file" >&2
     exit 2
   fi
 fi
 
-if [ -z "$MESSAGE_FILE" ] || [ ! -f "$MESSAGE_FILE" ]; then
+if [[ -z "$MESSAGE_FILE" ]] || [[ ! -f "$MESSAGE_FILE" ]]; then
   echo "usage: MESSAGE_FILE=<file> [CHANGED_PATHS=...] check-commit-message.sh" >&2
   exit 2
 fi
@@ -59,7 +59,7 @@ fi
 subject="$(grep -vE '^[[:space:]]*(#|$)' "$MESSAGE_FILE" | head -n 1 || true)"
 # A UTF-8 BOM is plausible from Windows editors and would break the anchor below.
 subject="${subject#$'\xef\xbb\xbf'}"
-if [ -z "$subject" ]; then
+if [[ -z "$subject" ]]; then
   echo "commit message is empty" >&2
   exit 1
 fi
@@ -67,7 +67,7 @@ fi
 # git's own generated subjects are not Conventional Commits. The default waves
 # them all through; a repo that wants hand-written revert(scope): subjects
 # instead narrows the pattern to drop "Revert ".
-if [ -n "$EXEMPT_PATTERN" ] && printf '%s' "$subject" | grep -qE "$EXEMPT_PATTERN"; then
+if [[ -n "$EXEMPT_PATTERN" ]] && printf '%s' "$subject" | grep -qE "$EXEMPT_PATTERN"; then
   echo "Exempt subject: $subject"
   exit 0
 fi
@@ -94,7 +94,7 @@ type="${subject%%[^[:alpha:]]*}"
 # defect this guard exists for. Skipped when the caller passes no paths -
 # including a value that is only whitespace, which is what an unstripped
 # `git diff --name-only` yields when nothing is staged.
-if printf '%s' "$type" | grep -qE "^($RELEASE_TYPES)\$" && [ -n "${CHANGED_PATHS//[[:space:]]/}" ]; then
+if printf '%s' "$type" | grep -qE "^($RELEASE_TYPES)\$" && [[ -n "${CHANGED_PATHS//[[:space:]]/}" ]]; then
   # Normalise Windows separators; a local hook passes native paths.
   normalised="${CHANGED_PATHS//\\//}"
   # Word-splitting is intended so each path is its own line; globbing is NOT -
