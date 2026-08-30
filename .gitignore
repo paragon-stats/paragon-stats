@@ -3,8 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
-# dotenv files
+# dotenv files - one per MCP server, so no server sees another's secret
 .env
+.env.*
 
 # User-specific files
 *.rsuser
