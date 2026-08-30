@@ -1,11 +1,22 @@
-feat
-fix
-docs
-chore
-ci
-refactor
-test
-perf
-style
-build
-revert
+# Canonical Conventional Commit types for the paragon-stats org.
+#
+# One row per type: <type> <version bump>, bump is minor | patch | none.
+# This file is the single source of truth. The actions in this repo read it,
+# and each consumer declares its own release config natively and diffs it
+# against this file in CI, so drift fails the build instead of shipping.
+#
+# Pin it the way you pin the actions: by tag or SHA.
+#
+# type      bump
+feat        minor
+fix         patch
+perf        patch
+security    patch
+revert      patch
+docs        none
+chore       none
+ci          none
+refactor    none
+test        none
+style       none
+build       none
