@@ -17,26 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7 -- for commit-types.txt
+      # Shared with the other org repos so the convention cannot drift between
+      # them; the accepted type set is the action's `types` input default.
+      - uses: paragon-stats/github-actions/branch-name@a6798deeb62043418baff10a0cf45499226d8f35  # v1.0.0
         with:
-          persist-credentials: false
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9
-        with:
-          script: |
-            const fs = require('fs');
-            const branch = context.payload.pull_request.head.ref;
-            // Bot-generated branches don't follow the convention.
-            if (/^(dependabot\/|release-please--)/.test(branch)) {
-              console.log(`Exempt automation branch: ${branch}`);
-              return;
-            }
-            // Single source of truth for the type set (shared with check-commit-message.cs).
-            const types = fs.readFileSync('scripts/git/commit-types.txt', 'utf8')
-              .split('\n').map(t => t.trim()).filter(Boolean).join('|');
-            const pattern = new RegExp(`^(${types})/[0-9]+-[a-z0-9-]+$`);
-            if (!pattern.test(branch)) {
-              core.setFailed(
-                `Branch "${branch}" does not match the convention ` +
-                "<type>/<issue#>-<short-kebab-summary> (e.g. ci/14-protected-trunk). " +
-                "See docs/style-guides/commits.md.");
-            }
+          branch: ${{ github.event.pull_request.head.ref }}
