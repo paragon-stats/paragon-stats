@@ -27,8 +27,8 @@ jobs:
         shell: bash
         run: |
           base="https://raw.githubusercontent.com/paragon-stats/github-actions/184753ee81aaea12a219c83cceb9d1b0ecae1947"
-          curl -fsSL "$base/check-commit-message/check-commit-message.sh" -o "$RUNNER_TEMP/upstream.sh"
-          curl -fsSL "$base/commit-types.txt" -o "$RUNNER_TEMP/upstream-types.txt"
+          curl -fsSL --proto '=https' "$base/check-commit-message/check-commit-message.sh" -o "$RUNNER_TEMP/upstream.sh"
+          curl -fsSL --proto '=https' "$base/commit-types.txt" -o "$RUNNER_TEMP/upstream-types.txt"
           drift=0
           diff -u "$RUNNER_TEMP/upstream.sh" scripts/git/check-commit-message.sh || drift=1
           diff -u "$RUNNER_TEMP/upstream-types.txt" scripts/git/commit-types.txt || drift=1
