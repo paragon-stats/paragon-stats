@@ -26,6 +26,11 @@ indent_size = 2
 [*.json]
 indent_size = 2
 
+# Make requires a tab to introduce a recipe line; the [*] space rule would
+# otherwise flag correct syntax (the only findings in a full-tree lint).
+[Makefile]
+indent_style = tab
+
 # C# files
 [*.cs]
 

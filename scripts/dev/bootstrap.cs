@@ -108,6 +108,16 @@ if (Run("dotnet", "husky install") != 0)
     return 1;
 }
 
+// git cannot distribute config to clones, so bootstrap is the only honest place to
+// set this for everyone. Without it, pushing a new branch fails with an instruction
+// to re-run using --set-upstream. Advisory: never block an otherwise-working setup.
+Console.WriteLine("[INFO] enabling push.autoSetupRemote ...");
+if (Run("git", "config --local push.autoSetupRemote true") != 0)
+{
+    Console.Error.WriteLine(
+        "[WARN] could not set push.autoSetupRemote - pushing a new branch will ask for --set-upstream.");
+}
+
 // Signed commits are required by the repo ruleset - block until configured.
 if (!SigningConfigured())
 {
