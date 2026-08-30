@@ -34,5 +34,9 @@
         "source": "github"
       }
     }
-  }
+  },
+  "enabledMcpjsonServers": [
+    "sonarqube",
+    "github"
+  ]
 }
