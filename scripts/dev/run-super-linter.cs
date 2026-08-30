@@ -4,10 +4,10 @@
 //
 // Lints the working tree with the SAME super-linter image + config CI uses
 // (.github/super-linter.env), so polyglot/hygiene/secret findings surface locally
-// before they reach CI. The image tag is pinned and immutable (kept in sync with the
-// action in super-linter.yml), so freshness == presence: pull only when it isn't
-// cached - no per-commit registry round-trip. Docker is required; when unavailable the
-// run is skipped, not failed - CI still lints.
+// before they reach CI. The image is pinned by digest (kept in sync with the action in
+// super-linter.yml), so freshness == presence: pull only when it isn't cached - no
+// per-commit registry round-trip. Docker is required; when unavailable the run is
+// skipped, not failed - CI still lints.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -15,8 +15,10 @@
 
 using System.Diagnostics;
 
-// Keep the tag in sync with the super-linter action pin in super-linter.yml.
-const string Image = "ghcr.io/super-linter/super-linter:v8.7.0";
+// Keep in sync with the super-linter action pin in super-linter.yml. The digest is what
+// binds the version; the tag is retained only so the reference is readable.
+const string Image =
+    "ghcr.io/super-linter/super-linter:v8.7.0@sha256:c05768164eed53bac7c82aade7a14a76955206d4962cd41be97118db96fa5996";
 
 // Run docker. When capturing, drain BOTH streams before WaitForExit so a child that
 // fills the stderr pipe buffer can't deadlock; otherwise inherit stdio (live output).
