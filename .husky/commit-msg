@@ -20,9 +20,10 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
-# Word-splitting is intentional: each staged path becomes a separate argument.
-# `set -f` disables glob expansion so a path containing *, ?, or [ ] is passed
-# literally rather than expanded against the working tree.
+# Vendored from paragon-stats/github-actions@0494a4f (v2.0.1); the commitlint CI
+# job runs the same script, and its drift step keeps this copy byte-identical to
+# the tagged upstream. Invoked via `bash` because a core.filemode=false (Windows)
+# clone records the file 100644, which would exit 126 if run by path. `set -f` so
+# the script's own path handling never expands *, ?, or [ ] against the tree.
 set -f
-# shellcheck disable=SC2046
-dotnet run scripts/git/check-commit-message.cs -- "$1" $(git diff --cached --name-only)
+MESSAGE_FILE="$1" CHANGED_PATHS="$(git diff --cached --name-only)" bash scripts/git/check-commit-message.sh

@@ -2,13 +2,16 @@
 
 ## Conventional Commits
 
-Format: `type(scope): subject`. The allowed `type` set is the single source of truth in
-[`scripts/git/commit-types.txt`](../../scripts/git/commit-types.txt) — `feat`, `fix`, `docs`,
-`chore`, `ci`, `refactor`, `test`, `perf`, `style`, `build`, `revert` — read by both the
-commit/PR-title validator and the `branch-name` check.
+Format: `type(scope): subject`. The allowed `type` set is the org-wide fact-set in
+[paragon-stats/github-actions](https://github.com/paragon-stats/github-actions) — `feat`,
+`fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `security`, `style`, `build`,
+`revert`. [`scripts/git/commit-types.txt`](../../scripts/git/commit-types.txt) is the
+vendored copy pinned at v2.0.1 (CI fails on drift), read by the commit/PR-title validator;
+the `branch-name` check reads the same fact-set from the shared action.
 
-- `feat:` → minor bump; `fix:` → patch; `feat!:`/`BREAKING CHANGE:` → major
-  (minor while pre-1.0). This is what Release Please reads to compute the version.
+- `feat:` → minor bump; `fix:`/`perf:`/`security:`/`revert:` → patch;
+  `feat!:`/`BREAKING CHANGE:` → major (minor while pre-1.0). Release-triggering types must
+  touch `src/` — reverting a CI change is written as `ci:`, not `revert:`.
 - Subject in imperative mood, no trailing period, ~72 chars.
 - Reference issues in the body/footer: `Closes #N` (auto-closes on merge) or `Refs #N`.
 
