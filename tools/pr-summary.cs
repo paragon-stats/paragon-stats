@@ -1,12 +1,14 @@
-// pr-summary.cs — regenerate a PR body's auto-summary block from branch commits.
+// pr-summary.cs — regenerate a PR body's auto-summary block from the PR's commits.
 //
-// Run:  dotnet run tools/pr-summary.cs -- --pr <N> --base <branch> [--dry-run]
+// Run:  dotnet run tools/pr-summary.cs -- --pr <N> [--dry-run]
 //       dotnet run tools/pr-summary.cs -- --selftest
 //
-// Parses conventional commits on the branch, groups them by category, and for
-// each linked issue (Closes/Refs #N) pulls the issue's Objective and Acceptance
-// Criteria. Multi-issue PRs get per-issue blocks; the result is written between
-// the <!-- auto-summary:start/end --> markers in the PR body via `gh`.
+// Reads the PR's own commit list from the GitHub API — never the local checkout,
+// which may be on a different branch than the PR being summarized. Parses the
+// conventional commits, groups them by category, and for each linked issue
+// (Closes/Refs #N) pulls the issue's Objective and Acceptance Criteria.
+// Multi-issue PRs get per-issue blocks; the result is written between the
+// <!-- auto-summary:start/end --> markers in the PR body via `gh`.
 // CI tooling, not shipped product code: exempt this one helper from the
 // solution-wide StyleCop/Meziantou analyzers + warnings-as-errors (which target
 // product code). It is not part of ParagonStats.sln, so build/format never see it.
@@ -26,25 +28,37 @@ if (args.Contains("--selftest"))
     return SelfTest();
 }
 
-string? pr = null, baseBranch = null;
+string? pr = null;
 bool dryRun = false;
 for (int i = 0; i < args.Length; i++)
 {
     if (args[i] == "--pr" && i + 1 < args.Length) pr = args[++i];
-    else if (args[i] == "--base" && i + 1 < args.Length) baseBranch = args[++i];
     else if (args[i] == "--dry-run") dryRun = true;
 }
 
-if (pr is null || baseBranch is null)
+if (pr is null)
 {
-    Console.Error.WriteLine("usage: --pr <N> --base <branch> [--dry-run] | --selftest");
+    Console.Error.WriteLine("usage: --pr <N> [--dry-run] | --selftest");
     return 2;
 }
 
-string repo = Environment.GetEnvironmentVariable("GITHUB_REPOSITORY")
-    ?? throw new InvalidOperationException("GITHUB_REPOSITORY is not set");
+// CI sets GITHUB_REPOSITORY; locally fall back to the checkout's remote, and
+// fail with usage rather than a stack trace when neither is available.
+string? repo = Environment.GetEnvironmentVariable("GITHUB_REPOSITORY");
+if (string.IsNullOrEmpty(repo))
+{
+    try
+    {
+        repo = Run("gh", "repo view --json nameWithOwner --jq .nameWithOwner").Trim();
+    }
+    catch (InvalidOperationException)
+    {
+        Console.Error.WriteLine("cannot determine the repository: set GITHUB_REPOSITORY or run inside a repo clone");
+        return 2;
+    }
+}
 
-var commits = GetCommits($"origin/{baseBranch}");
+var commits = GetCommits(repo, pr);
 var issueNumbers = commits.SelectMany(c => c.Issues).Distinct().OrderBy(n => n).ToList();
 var issues = issueNumbers.ToDictionary(n => n, n => FetchIssue(repo, n));
 
@@ -80,18 +94,36 @@ finally
 Console.WriteLine($"Updated PR #{pr} auto-summary ({commits.Count} commits, {issues.Count} issue(s)).");
 return 0;
 
-static List<Commit> GetCommits(string baseRef)
+static List<Commit> GetCommits(string repo, string pr)
 {
-    // %h sha | %s subject | %b body, fields split by US (\x1f), records by RS (\x1e).
-    string raw = Run("git", $"log {baseRef}..HEAD --no-merges --format=%h%x1f%s%x1f%b%x1e");
+    // The PR's own commit list, so the summary can never describe a different
+    // branch than the PR it is written to. --paginate covers >30-commit PRs;
+    // the parents filter drops merge commits (the old `git log --no-merges`).
+    // Fields split by US (\x1f), records by RS (\x1e), same framing as before.
+    // The jq program is one argv element (never shell-parsed), so its inner
+    // quotes need no escaping layer.
+    string jq = ".[] | select((.parents|length) < 2) | .sha[0:7] + \"\\u001f\" + .commit.message + \"\\u001e\"";
+    string raw = RunArgv("gh", "api", "--paginate", $"repos/{repo}/pulls/{pr}/commits", "--jq", jq);
     var commits = new List<Commit>();
     foreach (var record in raw.Split('\x1e', StringSplitOptions.RemoveEmptyEntries))
     {
         var parts = record.Trim('\n', '\r').Split('\x1f');
         if (parts.Length < 2) continue;
-        commits.Add(ParseCommit(parts[0].Trim(), parts[1].Trim(), parts.Length > 2 ? parts[2] : ""));
+        var (subject, body) = SplitMessage(parts[1]);
+        commits.Add(ParseCommit(parts[0].Trim(), subject, body));
     }
     return commits;
+}
+
+// A raw commit message -> (subject, body): the subject is the first line, the
+// body everything after the first blank line (or after the subject when the
+// blank separator is missing).
+static (string Subject, string Body) SplitMessage(string message)
+{
+    string normalized = message.Replace("\r\n", "\n").Trim('\n');
+    int nl = normalized.IndexOf('\n');
+    if (nl < 0) return (normalized.Trim(), "");
+    return (normalized[..nl].Trim(), normalized[(nl + 1)..].TrimStart('\n'));
 }
 
 static Commit ParseCommit(string sha, string subject, string body)
@@ -201,6 +233,26 @@ static string Run(string file, string args)
         RedirectStandardError = true,
         UseShellExecute = false,
     };
+    return Exec(psi);
+}
+
+// Argv variant: each argument is its own element, so content with quotes or
+// spaces (the jq program) is passed verbatim with no string-parsing layer.
+static string RunArgv(string file, params string[] argv)
+{
+    var psi = new ProcessStartInfo(file)
+    {
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+    };
+    foreach (var a in argv) psi.ArgumentList.Add(a);
+    return Exec(psi);
+}
+
+static string Exec(ProcessStartInfo psi)
+{
+    string file = psi.FileName, args = psi.Arguments.Length > 0 ? psi.Arguments : string.Join(' ', psi.ArgumentList);
     using var p = Process.Start(psi) ?? throw new InvalidOperationException($"failed to start {file}");
     string stdout = p.StandardOutput.ReadToEnd();
     string stderr = p.StandardError.ReadToEnd();
@@ -233,6 +285,12 @@ static int SelfTest()
     string roundtrip = ReplaceMarkers($"x\n{Start}\nOLD\n{End}\ny", "NEW");
     if (!roundtrip.Contains("NEW", StringComparison.Ordinal) || roundtrip.Contains("OLD", StringComparison.Ordinal))
         missing.Add("marker-replacement");
+    var (s1, b1) = SplitMessage("feat(core): add parser\n\nLong body.\nCloses #5\n");
+    if (s1 != "feat(core): add parser" || !b1.Contains("Closes #5", StringComparison.Ordinal) || b1.StartsWith('\n'))
+        missing.Add("split-with-body");
+    var (s2, b2) = SplitMessage("chore: subject only");
+    if (s2 != "chore: subject only" || b2.Length != 0)
+        missing.Add("split-subject-only");
     if (missing.Count > 0)
     {
         Console.Error.WriteLine("SELFTEST FAILED, missing: " + string.Join(" | ", missing));
