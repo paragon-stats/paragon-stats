@@ -1,8 +1,11 @@
 # Bootstrap plan (historical record)
 
-Task files that bootstrapped the paragon-stats repo. **Kept as-is** for provenance;
-these are completed-work records, not the live plan. The authoritative product plan
-is the GitHub Project + [`../docs/PRD.md`](../docs/PRD.md).
+Task files that bootstrapped the paragon-stats repo. **Kept as-is** for provenance
+(diverging docs carry a supersession blockquote), with one exception: a plan whose
+tooling is retired org-wide has its implementation body removed so no session mistakes
+it for live guidance (currently plan 10). These are completed-work records, not the
+live plan. The authoritative product plan is the GitHub Project +
+[`../docs/PRD.md`](../docs/PRD.md).
 
 ## Tasks
 

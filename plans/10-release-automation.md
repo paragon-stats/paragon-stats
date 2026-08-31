@@ -24,8 +24,10 @@ plugin repos (`techdocs-authoring`, `unifi-netops`).
 - **Versioning policy**: [`docs/ROADMAP.md#versioning`](../docs/ROADMAP.md#versioning)
   (minors emergent; deliberate cuts at 1.0/2.0 via the action's planned force-level
   input, paragon-stats/github-actions#1).
-- **MinVer** is unchanged from this plan: it stamps assembly/file/AOT versions from the
-  git tag at build; no version literals in code.
+- **MinVer** still stamps assembly/file/AOT versions from the git tag at build, no
+  version literals in code — with one divergence from this plan's original step: live
+  `Directory.Build.props` additionally sets `MinVerAutoIncrement: minor`, so between
+  tags dev builds read `X.(Y+1).0-alpha`.
 
 Deliberate non-goals of the replacement, for the record: no `CHANGELOG.md` file and no
 release PR — main is PR-only with required signatures, so no bot commit can land; the
