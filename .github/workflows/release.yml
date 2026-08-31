@@ -29,6 +29,6 @@ jobs:
       # tag plus the GitHub Release. Merging a feat:/fix:/perf:/security:/
       # revert: branch commit cuts one automatically; other types cut nothing.
       - id: release
-        uses: paragon-stats/github-actions/release@986fa4da50a0cebf4c1937ccb42bd081b646a8c1  # v2.1.0
+        uses: paragon-stats/github-actions/release@e2863b59ed1759f033458bb2c61d57d5eaaeaea5  # v2.1.1
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
