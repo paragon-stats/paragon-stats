@@ -24,7 +24,7 @@ Grouped into the (now closed) bootstrap milestones.
 
 - [`04-github-meta.md`](04-github-meta.md) — CI build workflow, `CODEOWNERS`, Dependabot
 - [`09-issue-pr-automation.md`](09-issue-pr-automation.md) — Issue/PR templates, auto-labeler, triage, Projects
-- [`10-release-automation.md`](10-release-automation.md) — Release Please + MinVer (SemVer)
+- [`10-release-automation.md`](10-release-automation.md) — release automation + MinVer (SemVer; superseded - now the shared release action, tag-only)
 
 ### Protected trunk
 
