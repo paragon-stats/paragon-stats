@@ -93,5 +93,9 @@ jobs:
           elif [ "$state" = "true" ]; then
             gh release delete "$TAG" --yes  # stale draft from a failed run
           fi
-          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --generate-notes
+          # Anchor the notes range explicitly: without it, --generate-notes
+          # baselines against the latest published release, which is wrong
+          # when a dispatch retry recreates an older version's release.
+          prev="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | awk -v t="$TAG" 'found { print; exit } $0 == t { found=1 }')"
+          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --generate-notes ${prev:+--notes-start-tag "$prev"}
           gh release edit "$TAG" --draft=false
