@@ -1,5 +1,10 @@
 # 09 — Full issue/PR automation
 
+> Historical record; superseded where it disagrees with live config. Known divergences: the
+> `dependabot-auto-merge.yml` workflow and PR label-sync step were never built (auto-merge is
+> off and squash merging is disabled, so the prescription no longer applies as written); the
+> label set grew past the six types listed here (see `.github/labels.yml`).
+
 ## Goal
 
 Reduce manual triage to near zero: structured intake, automatic labeling, board

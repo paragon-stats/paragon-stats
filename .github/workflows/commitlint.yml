@@ -54,11 +54,11 @@ jobs:
             fi
           done
           exit "$fail"
-      # The PR title becomes the squash commit subject (repo squash setting is PR_TITLE),
-      # which is what the release tooling parses -- so validate the title with the same
-      # validator, passing the PR's changed files so the release-type-needs-src guard
-      # applies to it too.
-      - name: Validate the PR title (the squash subject)
+      # Merge commits are the only allowed merge method, so the PR title is no
+      # commit's subject and the release tooling parses branch commits instead.
+      # The title still heads the PR page and the pr-summary block, so it keeps
+      # the same rules - including the release-type-needs-src guard.
+      - name: Validate the PR title
         shell: bash
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}

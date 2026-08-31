@@ -1,5 +1,8 @@
 # 04 — GitHub metadata files
 
+> Historical record; superseded where it disagrees with live config. Known divergence:
+> Super-Linter and a separate lint workflow were added later by `08` and are now required CI.
+
 ## Goal
 
 CODEOWNERS, Dependabot config, and a single CI workflow. Keep it minimal —
