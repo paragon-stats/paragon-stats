@@ -37,13 +37,16 @@ jobs:
         with:
           fetch-depth: 0  # semantic-release and MinVer need the full tag history
       # Tag-only python-semantic-release: main is PR-only with required
-      # signatures, so no bot commit ever lands - the release IS the signed
-      # tag plus the GitHub Release. Merging a feat:/fix:/perf:/security:/
-      # revert: branch commit cuts one automatically; other types cut nothing.
+      # signatures, so no bot commit ever lands. Merging a feat:/fix:/perf:/
+      # security:/revert: branch commit cuts one automatically; other types
+      # cut nothing. vcs-release is off because this repo's releases are
+      # immutable: the publish job below creates the Release itself - draft,
+      # binary attached, then published - so it is born complete.
       - id: release
-        uses: paragon-stats/github-actions/release@e2863b59ed1759f033458bb2c61d57d5eaaeaea5  # v2.1.1
+        uses: paragon-stats/github-actions/release@5b870eb7f1f43f07cfc34bed7d7f3a5110314aac  # v2.1.2
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          vcs-release: 'false'
 
   # Same-workflow chaining is what lets GITHUB_TOKEN work end to end: a
   # Release created by it never fires other workflows, so the publish leg
@@ -75,8 +78,20 @@ jobs:
           set -euo pipefail
           dotnet publish src/ParagonStats.Cli -c Release -r win-x64
           cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
-      - name: attach to the release
+      # Releases here are immutable: born complete or not at all. A draft
+      # accepts assets and can be deleted for a retry; publication freezes it.
+      - name: create the release with its asset
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$TAG" paragon-stats-win-x64.exe --clobber
+        run: |
+          set -euo pipefail
+          state="$(gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null || echo missing)"
+          if [ "$state" = "false" ]; then
+            echo "::error::release $TAG is already published; immutable releases accept no further assets"
+            exit 1
+          elif [ "$state" = "true" ]; then
+            gh release delete "$TAG" --yes  # stale draft from a failed run
+          fi
+          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --generate-notes
+          gh release edit "$TAG" --draft=false
