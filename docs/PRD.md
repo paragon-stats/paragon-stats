@@ -27,7 +27,7 @@ display one.
   - `paragon-stats` — AOT CLI / TUI
   - `paragon-stats-gui` — Avalonia AOT GUI (tabbed; an overlay window follows in 2.0)
 
-## Roadmap (capability milestones; Release Please owns minors)
+## Roadmap (capability milestones; Conventional Commits own minors)
 
 Parsing engine → TUI (MVP readout) → GUI (tabbed, Avalonia) → **MVP (= 1.0)** →
 **Overlay (= 2.0)**. Everything else lives in **Backlog** (operator-pull). Explicit
@@ -62,8 +62,10 @@ issues forces dependency evaluation.
 
 ## Releases
 
-Release Please (Conventional Commits) + MinVer stamp the AOT binary from the git tag.
-Mechanics: see [`../plans/10-release-automation.md`](../plans/10-release-automation.md).
+python-semantic-release (Conventional Commits, tag-only in CI) cuts signed tags + GitHub
+Releases; MinVer stamps the AOT binary from the git tag.
+Mechanics: `.github/workflows/release.yml` (shared `release` action) and
+[`ROADMAP.md#versioning`](ROADMAP.md#versioning).
 
 ## Attribution & legal
 
