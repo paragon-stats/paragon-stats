@@ -1,5 +1,10 @@
 # 10 — Release automation (SemVer)
 
+> Historical record; superseded where it disagrees with live config. Known divergences:
+> `Directory.Build.props` also sets `MinVerAutoIncrement: minor`; a `v0.0.0` tag exists, so
+> dev builds stamp `0.1.0-alpha.0.N`; no `version.txt` was ever created; and #197 replaces
+> Release Please with python-semantic-release (tag-only), retiring the release-PR flow.
+
 ## Goal
 
 Hands-off SemVer `major.minor.patch` releases driven by Conventional Commits, with

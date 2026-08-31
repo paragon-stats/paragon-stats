@@ -5,6 +5,8 @@
 > hooks need only the .NET SDK contributors already have — no Python, no `.venv`, no
 > `python`/`py`/`python3` ambiguity. Polyglot linting (markdown/yaml/actions) and secret
 > scanning move to CI (Super-Linter, `08` / #27), keeping the local hooks lean.
+> Divergence since: the pre-commit group now also runs the full Super-Linter image locally
+> (see `.husky/task-runner.json`), trading lean hooks for local/CI lint parity.
 
 ## Goal
 

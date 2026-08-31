@@ -1,5 +1,10 @@
 # 07 — Branch protection (manual, GitHub UI)
 
+> Historical record; superseded where it disagrees with the live ruleset (the tracked export
+> is `docs/ci/github-rulesets/main-ruleset.json`). Known divergences: no admin bypass; linear
+> history removed and merge commits are the only allowed method (#197); required approvals 0;
+> code-owner review off; seven required checks, not one.
+
 ## Goal
 
 Apply a ruleset to `main` so future direct pushes are blocked, PRs require
