@@ -1,0 +1,20 @@
+# python-semantic-release, tag-only: computes the bump from Conventional
+# Commits since the last v* tag, pushes a signed tag, and creates the GitHub
+# Release (.github/workflows/release.yml via the shared `release` action).
+# Nothing here builds or stamps a version - MinVer stamps binaries from the
+# tag at build time (Directory.Build.props).
+#
+# The mapping below restates the vendored fact-set (scripts/git/commit-types.txt,
+# byte-identical to paragon-stats/github-actions); the commitlint job diffs the
+# two and fails on drift, so this file can never quietly disagree with it.
+[tool.semantic_release]
+# v0.0.0 is the seed tag: 0.x until the deliberate 1.0 (#168, docs/ROADMAP.md).
+allow_zero_version = true
+major_on_zero = false
+
+[tool.semantic_release.commit_parser_options]
+# The parser only classifies types it is allowed to see; the default set
+# lacks security and revert, so list all twelve explicitly.
+allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "security", "style", "test"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "security", "revert"]

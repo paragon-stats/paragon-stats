@@ -1,3 +1,9 @@
 # zizmor — GitHub Actions security audit configuration.
 # Default audits run; add per-rule ignores here as specific needs arise.
-rules: {}
+rules:
+  artipacked:
+    # release.yml is the one deliberate credential-persisting checkout: the
+    # shared release action pushes the signed tag over git, which needs the
+    # persisted token. Every other workflow sets persist-credentials: false.
+    ignore:
+      - release.yml

@@ -37,6 +37,39 @@ jobs:
             echo "::error::scripts/git/ has drifted from paragon-stats/github-actions@f4ba448 (v2.0.2). Never edit the vendored copy; re-vendor from the new upstream pin and bump this SHA."
             exit 1
           fi
+      # D2 applied here: pyproject.toml restates the bump mapping for the
+      # release tooling; the vendored commit-types.txt stays the source of
+      # truth, and drift between them fails this required check.
+      - name: Verify the release bump mapping matches the fact-set
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import sys, tomllib
+
+          types = {}
+          bad = [c[0] for c in (l.split("#")[0].split() for l in open("scripts/git/commit-types.txt")) if len(c) == 1]
+          if bad:
+              print(f"::error::commit-types.txt rows missing the bump column: {', '.join(bad)}")
+              sys.exit(1)
+          for line in open("scripts/git/commit-types.txt"):
+              cols = line.split("#")[0].split()
+              if cols:
+                  types[cols[0]] = cols[1]
+
+          opts = tomllib.load(open("pyproject.toml", "rb"))["tool"]["semantic_release"]["commit_parser_options"]
+          checks = {
+              "allowed_tags": sorted(types),
+              "minor_tags": sorted(t for t, b in types.items() if b == "minor"),
+              "patch_tags": sorted(t for t, b in types.items() if b == "patch"),
+          }
+          rc = 0
+          for key, want in checks.items():
+              got = sorted(opts[key])
+              if got != want:
+                  print(f"::error::pyproject {key} drifted: {got} != commit-types.txt {want}")
+                  rc = 1
+          sys.exit(rc)
+          PY
       - name: Validate PR commit messages
         shell: bash
         env:
