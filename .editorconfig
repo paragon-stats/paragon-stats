@@ -418,3 +418,10 @@ dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA1309.severity = none
 # House convention omits `this.` qualification (IDE0003/naming rules make fields unambiguous).
 dotnet_diagnostic.SA1101.severity = none
+
+# Log fixtures are byte-exact excerpts of real game output (CRLF and trailing
+# whitespace are part of the data under test) - exempt from text normalization.
+[tests/**/Fixtures/*.txt]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
