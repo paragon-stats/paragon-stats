@@ -43,7 +43,7 @@ jobs:
       # immutable: the publish job below creates the Release itself - draft,
       # binary attached, then published - so it is born complete.
       - id: release
-        uses: paragon-stats/github-actions/release@5b870eb7f1f43f07cfc34bed7d7f3a5110314aac  # v2.1.2
+        uses: paragon-stats/github-actions/release@c76541e25f76b82f97d2bc23e381eff7c4bd5d9f  # v2.1.3
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           vcs-release: 'false'
