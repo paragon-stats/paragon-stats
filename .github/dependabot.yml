@@ -4,6 +4,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # zizmor dependabot-cooldown: never take a day-0 release; a week of soak
+    # time is cheap insurance against a compromised upstream publish.
+    cooldown:
+      default-days: 7
     # Conventional-Commit prefix so dependabot's commits pass the commitlint
     # check; `chore` is a non-releasing type, so these bumps never cut a release.
     commit-message:
@@ -18,6 +22,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
     groups:
