@@ -1,0 +1,45 @@
+2024-05-12 14:39:39 You Taunt Little Big Dombloo with your Fury.
+2024-05-12 14:39:39 You Taunt Little Big Dombloo with your Fury.
+2024-05-12 14:39:39 You Taunt Little Dombloo with your Fury.
+2024-05-12 14:39:39 You Taunt Little Big Dombloo with your Fury.
+2024-05-12 14:39:39 Little Big Dombloo hits you with their Breath of Fire for 3.59 points of Fire damage over time.
+2024-05-12 14:39:39 Big Dombloo hits you with their Incinerate for 5.39 points of Fire damage over time.
+2024-05-12 14:39:39 Big Dombloo hits you with their Fire Blast for 2.15 points of Fire damage over time.
+2024-05-12 14:39:39 Little Dombloo hits you with their Fire Blast for 1.5 points of Fire damage over time.
+2024-05-12 14:39:39 You activated the Ball Lightning power.
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 You reduce your targets damage resistance temporarily
+2024-05-12 14:39:39 Little Dombloo MISSES! Fire Blast power had a 13.71% chance to hit, but rolled a 83.09.
+2024-05-12 14:39:39 Little Dombloo MISSES! Fire Blast power had a 13.71% chance to hit, but rolled a 25.31.
+2024-05-12 14:39:39 Little Dombloo MISSES! Fire Blast power had a 13.71% chance to hit, but rolled a 62.42.
+2024-05-12 14:39:39 Little Dombloo HITS you! Fire Blast power had a 13.71% chance to hit and rolled a 7.63.
+2024-05-12 14:39:39 Little Dombloo MISSES! Fire Blast power had a 13.71% chance to hit, but rolled a 83.86.
+2024-05-12 14:39:39 Little Dombloo hits you with their Fire Blast for 1.5 points of Fire damage over time.
+2024-05-12 14:39:39 Little Dombloo hits you with their Fire Blast for 10.07 points of Fire damage.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 9.4 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 4.23 points of Fire damage over time.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Degenerative Interface for 6.95 points of Toxic damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Little Big Dombloo with your Irradiated Ground for 6.03 points of Fire damage.
+2024-05-12 14:39:39 You hit Little Dombloo with your Electrifying Fences for 9.4 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Little Dombloo with your Electrifying Fences for 4.23 points of Fire damage over time.
+2024-05-12 14:39:39 You hit Little Dombloo with your Degenerative Interface for 6.95 points of Toxic damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Little Dombloo with your Irradiated Ground for 6.03 points of Fire damage.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 9.4 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 4.23 points of Fire damage over time.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Degenerative Interface for 6.95 points of Toxic damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Little Big Dombloo with your Irradiated Ground for 6.03 points of Fire damage.
+2024-05-12 14:39:39 You hit Big Dombloo with your Electrifying Fences for 10.16 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Big Dombloo with your Electrifying Fences for 4.57 points of Fire damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Big Dombloo with your Irradiated Ground for 6.52 points of Fire damage.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 9.4 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Little Big Dombloo with your Electrifying Fences for 4.23 points of Fire damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Little Big Dombloo with your Irradiated Ground for 6.03 points of Fire damage.
+2024-05-12 14:39:39 You hit Big Dombloo with your Electrifying Fences for 9.4 points of Energy damage over time.
+2024-05-12 14:39:39 You hit Big Dombloo with your Electrifying Fences for 4.23 points of Fire damage over time.
+2024-05-12 14:39:39 Irradiated Ground:  You hit Big Dombloo with your Irradiated Ground for 6.03 points of Fire damage.

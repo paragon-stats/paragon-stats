@@ -1,0 +1,6 @@
+# Test-project conventions layered over the repo root .editorconfig.
+[*.cs]
+# xUnit house style: Snake_case test method names read as specifications.
+dotnet_diagnostic.CA1707.severity = none
+# Test classes need no ordering ceremony; helpers sit where they read best.
+dotnet_diagnostic.SA1202.severity = none

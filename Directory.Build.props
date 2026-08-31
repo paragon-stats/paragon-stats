@@ -32,6 +32,8 @@
     <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" />
     <PackageReference Include="Meziantou.Analyzer" PrivateAssets="all" />
     <PackageReference Include="MinVer" PrivateAssets="all" />
+    <!-- StyleCop settings (usings outside namespaces, per docs/style-guides/csharp.md). -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
   </ItemGroup>
 
 </Project>
