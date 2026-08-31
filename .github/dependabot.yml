@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
     # Conventional-Commit prefix so dependabot's commits pass the commitlint
-    # check; `chore` doesn't trigger a release-please version bump.
+    # check; `chore` is a non-releasing type, so these bumps never cut a release.
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
