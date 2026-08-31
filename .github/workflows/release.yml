@@ -3,6 +3,14 @@ name: release
 on:
   push:
     branches: [main]
+  # Re-publish path: attach assets to an existing release without cutting a
+  # new version (a failed upload must never require a new tag).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing vX.Y.Z tag to (re)publish assets for
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -13,10 +21,14 @@ concurrency:
 
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       # The one deliberate credential-persisting checkout in this repo: the
       # release action pushes the signed tag over git. zizmor's artipacked
@@ -32,3 +44,39 @@ jobs:
         uses: paragon-stats/github-actions/release@e2863b59ed1759f033458bb2c61d57d5eaaeaea5  # v2.1.1
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+
+  # Same-workflow chaining is what lets GITHUB_TOKEN work end to end: a
+  # Release created by it never fires other workflows, so the publish leg
+  # rides the same run instead of listening for a release event.
+  publish:
+    needs: release
+    # !cancelled() lets the dispatch path run even though `release` is
+    # skipped on workflow_dispatch.
+    if: ${{ !cancelled() && (needs.release.outputs.released == 'true' || github.event_name == 'workflow_dispatch') }}
+    # AOT cannot cross-compile; win-x64 is the only ship target (PRD).
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release.outputs.tag }}
+          fetch-depth: 0  # MinVer stamps the version from the tag at HEAD
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: publish win-x64 AOT
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet publish src/ParagonStats.Cli -c Release -r win-x64
+          cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
+      - name: attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" paragon-stats-win-x64.exe --clobber
