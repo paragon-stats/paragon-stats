@@ -30,6 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
+          persist-credentials: false
           fetch-depth: 0  # Super-Linter diffs changed files against the default branch
       # Load the shared VALIDATE_*/config from .github/super-linter.env so CI and the
       # local runner (scripts/dev/run-super-linter.cs) stay in lockstep. Strip comments

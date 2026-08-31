@@ -23,9 +23,10 @@ Catch formatting and commit-message issues before commits leave the machine, usi
 3. **`.husky/task-runner.json`** — a `pre-commit` group task running
    `dotnet format --verify-no-changes --severity error`.
 4. **`.husky/pre-commit`** → `dotnet husky run --group pre-commit`.
-5. **`.husky/commit-msg`** → `dotnet run scripts/git/check-commit-message.cs -- "$1"` —
-   a C# file-based Conventional-Commits validator (allowed types
-   `feat|fix|docs|chore|ci|refactor|test|perf|style|build|revert`).
+5. **`.husky/commit-msg`** → `bash scripts/git/check-commit-message.sh` — the shared
+   Conventional-Commits validator vendored from `paragon-stats/github-actions`; the
+   allowed types live in `scripts/git/commit-types.txt`, vendored from the same pin.
+   (Originally built here in C#; extracted under #198.)
 6. **Bootstrap** (`scripts/dev/bootstrap.cs`, C# file-based): `dotnet tool restore` +
    `dotnet husky install` + toolchain checks; **signed commits are required → hard
    error**. Documented in `CONTRIBUTING.md` as `dotnet run scripts/dev/bootstrap.cs`.

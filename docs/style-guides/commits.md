@@ -6,7 +6,7 @@ Format: `type(scope): subject`. The allowed `type` set is the org-wide fact-set 
 [paragon-stats/github-actions](https://github.com/paragon-stats/github-actions) — `feat`,
 `fix`, `docs`, `chore`, `ci`, `refactor`, `test`, `perf`, `security`, `style`, `build`,
 `revert`. [`scripts/git/commit-types.txt`](../../scripts/git/commit-types.txt) is the
-vendored copy pinned at v2.0.1 (CI fails on drift), read by the commit/PR-title validator;
+vendored copy pinned at v2.0.2 (CI fails on drift), read by the commit/PR-title validator;
 the `branch-name` check reads the same fact-set from the shared action.
 
 - `feat:` → minor bump; `fix:`/`perf:`/`security:`/`revert:` → patch;

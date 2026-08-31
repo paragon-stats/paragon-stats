@@ -20,13 +20,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # The tool reads the PR's commits from the API, so the checkout only has
+      # to provide the tool file itself - no history, no base ref.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
-          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
         with:
           global-json-file: global.json
-      - run: dotnet run tools/pr-summary.cs -- --pr ${{ github.event.pull_request.number }} --base ${{ github.event.pull_request.base.ref }}
+      # Event data crosses into the shell via env, never ${{ }} interpolation
+      # inside run: - a branch name is attacker-controlled text.
+      - run: dotnet run tools/pr-summary.cs -- --pr "$PR_NUMBER"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

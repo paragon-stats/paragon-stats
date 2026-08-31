@@ -77,7 +77,8 @@ plugin repos (`techdocs-authoring`, `unifi-netops`).
    ```
 
 4. **commitlint CI** `.github/workflows/commitlint.yml` — validate each PR commit
-   subject against Conventional Commits (reuse `scripts/check_commit_message.py`).
+   subject against Conventional Commits (reuse `scripts/git/check-commit-message.sh`,
+   vendored from `paragon-stats/github-actions`).
 
 ## Acceptance
 

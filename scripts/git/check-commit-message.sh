@@ -15,6 +15,9 @@
 #   TYPES_FILE     commit-types.txt to read both from         [default: next to this file]
 #   PRODUCT_PATH   path prefix holding product code           [default: src/]
 #   EXEMPT_PATTERN ERE matching subjects to wave through      [default: git's own]
+#                  Empty means the default (the action passes "" for unset
+#                  inputs); to disable exemptions pass a never-matching
+#                  pattern such as 'a^'.
 #
 # A vendored copy must bring commit-types.txt along with it.
 set -euo pipefail
@@ -29,25 +32,42 @@ EXEMPT_PATTERN="${EXEMPT_PATTERN:-^(Merge |Revert |fixup!|squash!)}"
 # the type, column 2 the version bump it triggers (minor|patch|none).
 #
 # Both lists stay overridable so a repo can narrow the set for itself - but a
-# repo overriding one must override both: a bare pipe string carries no bump
-# data, and deriving RELEASE_TYPES from it would silently guard nothing.
+# repo overriding one must override both, and that contract is enforced: a bare
+# type list carries no bump data, so deriving RELEASE_TYPES behind an
+# overridden TYPES would silently guard the wrong set.
 TYPES="${TYPES:-}"
 RELEASE_TYPES="${RELEASE_TYPES:-}"
-if [[ -z "$TYPES" ]] || [[ -z "$RELEASE_TYPES" ]]; then
+if { [[ -n "$TYPES" ]] && [[ -z "$RELEASE_TYPES" ]]; } || { [[ -z "$TYPES" ]] && [[ -n "$RELEASE_TYPES" ]]; }; then
+  echo "TYPES and RELEASE_TYPES must be overridden together: a bare type list carries no bump data" >&2
+  exit 2
+fi
+if [[ -z "$TYPES" ]]; then
   types_file="${TYPES_FILE:-$(dirname "$0")/commit-types.txt}"
   if [[ ! -f "$types_file" ]]; then
     echo "no commit types: set TYPES and RELEASE_TYPES, or provide $types_file" >&2
     exit 2
   fi
-  [[ -n "$TYPES" ]] || TYPES="$(awk '!/^[[:space:]]*#/ && NF { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
+  TYPES="$(awk '!/^[[:space:]]*#/ && NF { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
   # Anything not spelled exactly "none" is release-triggering, so a typo in
   # column 2 over-guards - which fails loudly - rather than under-guarding.
-  [[ -n "$RELEASE_TYPES" ]] || RELEASE_TYPES="$(awk '!/^[[:space:]]*#/ && NF && $2 != "none" { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
+  RELEASE_TYPES="$(awk '!/^[[:space:]]*#/ && NF && $2 != "none" { printf "%s%s", sep, $1; sep = "|" }' "$types_file")"
   if [[ -z "$TYPES" ]]; then
     echo "no commit types found in $types_file" >&2
     exit 2
   fi
 fi
+
+# Every pattern must compile, or the guards that use it fail CLOSED: grep exits
+# 2 on a bad regex, which inside an if-condition reads as "no match" and would
+# silently skip the very check the pattern exists for.
+for pat in "$TYPES" "$RELEASE_TYPES" "$EXEMPT_PATTERN"; do
+  rc=0
+  grep -qE -e "$pat" /dev/null 2>/dev/null || rc=$?
+  if [[ "$rc" -eq 2 ]]; then
+    echo "invalid extended regex in TYPES/RELEASE_TYPES/EXEMPT_PATTERN: $pat" >&2
+    exit 2
+  fi
+done
 
 if [[ -z "$MESSAGE_FILE" ]] || [[ ! -f "$MESSAGE_FILE" ]]; then
   echo "usage: MESSAGE_FILE=<file> [CHANGED_PATHS=...] check-commit-message.sh" >&2
@@ -67,7 +87,7 @@ fi
 # git's own generated subjects are not Conventional Commits. The default waves
 # them all through; a repo that wants hand-written revert(scope): subjects
 # instead narrows the pattern to drop "Revert ".
-if [[ -n "$EXEMPT_PATTERN" ]] && printf '%s' "$subject" | grep -qE "$EXEMPT_PATTERN"; then
+if printf '%s' "$subject" | grep -qE "$EXEMPT_PATTERN"; then
   echo "Exempt subject: $subject"
   exit 0
 fi
@@ -109,7 +129,10 @@ if printf '%s' "$type" | grep -qE "^($RELEASE_TYPES)\$" && [[ -n "${CHANGED_PATH
       echo "'$type:' changes nothing under $PRODUCT_PATH (product code):"
       echo "  $subject"
       echo "Release-triggering types (${RELEASE_TYPES//|/, }) bump the version and must touch $PRODUCT_PATH."
-      echo "Use ci:/chore:/docs:/test:/build:/refactor: for tooling, docs, tests, or CI."
+      # Derived, not restated: the non-releasing types are whatever remains of
+      # TYPES once the release set is removed, so this hint can never go stale.
+      non_release="$(printf '%s' "$TYPES" | tr '|' '\n' | { grep -vxE "($RELEASE_TYPES)" || true; } | sed 's/$/:/' | tr '\n' '/' )"
+      [[ -z "$non_release" ]] || echo "Use ${non_release%/} for tooling, docs, tests, or CI."
     } >&2
     exit 1
   fi
