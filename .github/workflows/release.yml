@@ -3,12 +3,13 @@ name: release
 on:
   push:
     branches: [main]
-  # Re-publish path: attach assets to an existing release without cutting a
-  # new version (a failed upload must never require a new tag).
+  # Retry path: complete a release whose publish leg failed - the tag exists
+  # but the Release is missing or still a draft. A published release is
+  # immutable and final; one already carrying its asset no-ops.
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing vX.Y.Z tag to (re)publish assets for
+        description: Existing vX.Y.Z tag whose release needs completing
         required: true
         type: string
 
@@ -37,13 +38,16 @@ jobs:
         with:
           fetch-depth: 0  # semantic-release and MinVer need the full tag history
       # Tag-only python-semantic-release: main is PR-only with required
-      # signatures, so no bot commit ever lands - the release IS the signed
-      # tag plus the GitHub Release. Merging a feat:/fix:/perf:/security:/
-      # revert: branch commit cuts one automatically; other types cut nothing.
+      # signatures, so no bot commit ever lands. Merging a feat:/fix:/perf:/
+      # security:/revert: branch commit cuts one automatically; other types
+      # cut nothing. vcs-release is off because this repo's releases are
+      # immutable: the publish job below creates the Release itself - draft,
+      # binary attached, then published - so it is born complete.
       - id: release
-        uses: paragon-stats/github-actions/release@e2863b59ed1759f033458bb2c61d57d5eaaeaea5  # v2.1.1
+        uses: paragon-stats/github-actions/release@9d6a83b25463137966f0491c55c553134117a80a  # v2.2.0
         with:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          vcs-release: 'false'
 
   # Same-workflow chaining is what lets GITHUB_TOKEN work end to end: a
   # Release created by it never fires other workflows, so the publish leg
@@ -75,8 +79,54 @@ jobs:
           set -euo pipefail
           dotnet publish src/ParagonStats.Cli -c Release -r win-x64
           cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
-      - name: attach to the release
+      # Releases here are immutable: born complete or not at all. A draft
+      # accepts assets and can be deleted for a retry; publication freezes it.
+      - name: create the release with its asset
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$TAG" paragon-stats-win-x64.exe --clobber
+        run: |
+          set -euo pipefail
+          # One probe answers both questions (published? with which assets?).
+          # Only a real 404 means no published release; any other failure
+          # must not fall through to the guards below.
+          rc=0
+          published_assets="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '[.assets[].name] | join(" ")' 2>&1)" || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            case " $published_assets " in
+              *" paragon-stats-win-x64.exe "*)
+                echo "release $TAG is already published with its asset; nothing to do"
+                exit 0
+                ;;
+              *)
+                echo "::error::release $TAG is already published without its asset; immutable releases accept no further uploads"
+                exit 1
+                ;;
+            esac
+          elif ! printf '%s' "$published_assets" | grep -q "HTTP 404"; then
+            echo "::error::probing release $TAG failed: $published_assets"
+            exit 1
+          fi
+          # The REST by-tag endpoint never returns drafts, and porcelain
+          # resolves only one draft per tag while several can share a
+          # tag_name - so stale drafts from failed runs are enumerated and
+          # deleted by id.
+          gh api "repos/$GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id" |
+            while read -r id; do
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$id"
+              echo "deleted stale draft $id"
+            done
+          # One sorted tag list drives both the notes baseline and the Latest
+          # decision. Without an explicit baseline, --generate-notes anchors
+          # on the newest published release - wrong for a back-filled retry.
+          tags="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname)"
+          prev="$(printf '%s\n' "$tags" | awk -v t="$TAG" 'found { print; exit } $0 == t { found=1 }')"
+          highest="$(printf '%s\n' "$tags" | awk 'NR == 1')"
+          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --generate-notes ${prev:+--notes-start-tag "$prev"}
+          # Publishing a back-filled older version must not steal the Latest
+          # badge, which also feeds /releases/latest binary downloads.
+          if [ "$TAG" = "$highest" ]; then
+            gh release edit "$TAG" --draft=false --latest
+          else
+            gh release edit "$TAG" --draft=false --latest=false
+          fi
