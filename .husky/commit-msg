@@ -20,7 +20,7 @@
 ## or put your custom commands -------------------
 #echo 'Husky.Net is awesome!'
 
-# Vendored from paragon-stats/github-actions@f4ba448 (v2.0.2); the commitlint CI
+# Vendored from paragon-stats/github-actions@8e164c6 (v2.2.1); the commitlint CI
 # job runs the same script, and its drift step keeps this copy byte-identical to
 # the tagged upstream. Invoked via `bash` because a core.filemode=false (Windows)
 # clone records the file 100644, which would exit 126 if run by path. `set -f` so

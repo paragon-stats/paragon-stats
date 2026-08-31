@@ -30,7 +30,7 @@ the source rather than suppressing.
 - Branch from `main`; open PRs against `main`.
 - **Signed commits are required.**
 - Use [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`,
-  `docs:`, ...) — they drive the version; see the [release strategy](docs/release-strategy.md).
+  `docs:`, ...) — they drive the version; see [versioning](docs/ROADMAP.md#versioning).
 - All status checks must pass, and every PR clears two reviews (correctness + over-engineering;
   see the [review workflow](docs/style-guides/review-workflow.md)) before merge.
 

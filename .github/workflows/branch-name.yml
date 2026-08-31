@@ -20,6 +20,6 @@ jobs:
       # Shared with the other org repos so the convention cannot drift between
       # them; the accepted type set comes from the shared repo's commit-types.txt
       # fact-set (the same file the vendored commit-message check reads).
-      - uses: paragon-stats/github-actions/branch-name@f4ba44830e3f80ae6626394fabd383bbf97e1c2a  # v2.0.2
+      - uses: paragon-stats/github-actions/branch-name@8e164c6001e7a28bf2b06e6c528f97cda9af37cb  # v2.2.1
         with:
           branch: ${{ github.event.pull_request.head.ref }}

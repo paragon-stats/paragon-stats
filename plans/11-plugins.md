@@ -25,7 +25,7 @@ The four plugins and their `ref` pins are the single source of truth in
 
 `karpathy-guidelines` is the lean conductor (plan / verify / autonomy / context); it delegates
 minimalism to `ponytail` and problem-framing to `thinking-tools`. The two maintainer-owned
-repos follow the `techdocs-authoring` template (release-please, structural validation, CodeQL)
+repos follow the `techdocs-authoring` template (release automation, structural validation, CodeQL)
 and each carries its own `NOTICE` for source attribution.
 
 ## Wiring

@@ -1,101 +1,34 @@
 # 10 — Release automation (SemVer)
 
-> Historical record; superseded where it disagrees with live config. Known divergences:
-> `Directory.Build.props` also sets `MinVerAutoIncrement: minor`; a `v0.0.0` tag exists, so
-> dev builds stamp `0.1.0-alpha.0.N`; no `version.txt` was ever created; and #197 replaces
-> Release Please with python-semantic-release (tag-only), retiring the release-PR flow.
+> Historical record, fully superseded. The bootstrap-era implementation this plan
+> installed (a release-PR bot maintaining `CHANGELOG.md` and a version manifest) was
+> retired org-wide in 2026-08 (#197, #221); its body is removed rather than preserved
+> so no session mistakes it for live guidance.
 
-## Goal
+## Goal (as originally stated)
 
 Hands-off SemVer `major.minor.patch` releases driven by Conventional Commits, with
 the binary version derived from the git tag. Matches the pattern in the maintainer's
 plugin repos (`techdocs-authoring`, `unifi-netops`).
 
-## Mechanism
+## Where release automation lives now
 
-- **Release Please** = version source of truth. Reads Conventional Commits since the
-  last tag, maintains a **release PR**; merging it tags `vX.Y.Z`, cuts the GitHub
-  Release, and updates `CHANGELOG.md`.
-- **MinVer** = stamps `AssemblyVersion`/`FileVersion`/`InformationalVersion` (and the
-  AOT binary) from the git tag at build. No version literals in code.
-- Conventional Commits are enforced at commit time ([`05`](05-precommit-hooks.md)) and
-  in CI (`commitlint.yml`), so Release Please always has clean input.
+- **Mechanism**: the shared [`release` composite action](https://github.com/paragon-stats/github-actions/tree/main/release)
+  in `paragon-stats/github-actions` — python-semantic-release, tag-only: the bump is
+  computed from branch Conventional Commits since the last `v*` tag, the signed tag is
+  pushed, and this repo's publish job creates the immutable GitHub Release complete
+  with its binary.
+- **Consumer wiring**: [`.github/workflows/release.yml`](../.github/workflows/release.yml);
+  bump policy declared in [`pyproject.toml`](../pyproject.toml) and drift-checked
+  against the vendored fact-set by the `commitlint` job.
+- **Versioning policy**: [`docs/ROADMAP.md#versioning`](../docs/ROADMAP.md#versioning)
+  (minors emergent; deliberate cuts at 1.0/2.0 via the action's planned force-level
+  input, paragon-stats/github-actions#1).
+- **MinVer** still stamps assembly/file/AOT versions from the git tag at build, no
+  version literals in code — with one divergence from this plan's original step: live
+  `Directory.Build.props` additionally sets `MinVerAutoIncrement: minor`, so between
+  tags dev builds read `X.(Y+1).0-alpha`.
 
-## Steps
-
-1. **MinVer** — add to `Directory.Build.props` as an analyzer-style dev dependency:
-
-   ```xml
-   <ItemGroup>
-     <PackageReference Include="MinVer" PrivateAssets="all" />
-   </ItemGroup>
-   <PropertyGroup>
-     <MinVerTagPrefix>v</MinVerTagPrefix>
-   </PropertyGroup>
-   ```
-
-   Pin the version in `Directory.Packages.props`. With no tags yet, MinVer reports
-   `0.0.0-alpha.0.N`; after `v0.1.0` it reports `0.1.0`.
-
-2. **Release Please config** at the repo root:
-
-   `release-please-config.json`:
-
-   ```json
-   {
-     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-     "release-type": "simple",
-     "packages": { ".": { "package-name": "paragon-stats" } },
-     "include-component-in-tag": false,
-     "bump-minor-pre-major": true,
-     "bump-patch-for-minor-pre-major": false
-   }
-   ```
-
-   `.release-please-manifest.json`:
-
-   ```json
-   { ".": "0.0.0" }
-   ```
-
-   `release-type: simple` keeps the version in the manifest + a `version.txt`
-   (MinVer ignores it; the **tag** is what stamps the build, so they stay aligned).
-
-3. **Workflow** `.github/workflows/release-please.yml`:
-
-   ```yaml
-   name: release-please
-   on:
-     push:
-       branches: [main]
-   permissions:
-     contents: write
-     pull-requests: write
-   jobs:
-     release-please:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: googleapis/release-please-action@v4
-           with:
-             config-file: release-please-config.json
-             manifest-file: .release-please-manifest.json
-   ```
-
-4. **commitlint CI** `.github/workflows/commitlint.yml` — validate each PR commit
-   subject against Conventional Commits (reuse `scripts/git/check-commit-message.sh`,
-   vendored from `paragon-stats/github-actions`).
-
-## Acceptance
-
-- Merging a `feat:` commit makes Release Please open/refresh a release PR proposing
-  the next minor (`v0.1.0` first).
-- Merging that release PR creates the tag, GitHub Release, and CHANGELOG entry.
-- `dotnet publish` after the tag produces a binary whose `--version` reports `X.Y.Z`
-  (MinVer).
-
-## Commit
-
-```text
-git add .
-git commit -S -m "ci: add Release Please + MinVer for SemVer releases"
-```
+Deliberate non-goals of the replacement, for the record: no `CHANGELOG.md` file and no
+release PR — main is PR-only with required signatures, so no bot commit can land; the
+GitHub Release carries the notes.
