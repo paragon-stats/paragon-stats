@@ -5,12 +5,12 @@ failing test before the code that makes it pass.
 
 ## Why tests-first is the rule, not a preference
 
-New code must be covered, and that's enforced, not aspirational:
+New code must be covered. Enforcement today is Sonar-first, with a ratchet tracked in #37:
 
-- The **SonarQube quality gate** enforces the new-code coverage requirement and
+- The **SonarQube quality gate** evaluates new-code conditions and
   **blocks the merge** when it isn't met. Coverage is collected with
   `dotnet-coverage` and reported to SonarCloud on every PR.
-- A red test or a coverage gap fails CI before review — caught in the pipeline,
+- A red test fails CI before review — caught in the pipeline,
   not in someone's head.
 
 Writing the test first is the only dependable way to keep new code covered
