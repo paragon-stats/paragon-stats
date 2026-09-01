@@ -55,7 +55,6 @@ public sealed class ChatLogTailer : IDisposable
     private CollectionVerdict _verdict = CollectionVerdict.Undecided;
     private bool _lastPollWasEmpty;
     private int _stalePolls;
-    private bool _hasMore;
 
     public ChatLogTailer(string path)
     {
@@ -69,7 +68,7 @@ public sealed class ChatLogTailer : IDisposable
     /// account's files in order: a newer file must not be read past an older
     /// one that is still catching up.
     /// </summary>
-    public bool HasMore => _hasMore;
+    public bool HasMore { get; private set; }
 
     public IReadOnlyList<string> Poll()
     {
@@ -92,12 +91,12 @@ public sealed class ChatLogTailer : IDisposable
 
                 if (lines.Count >= MaxLinesPerPoll)
                 {
-                    _hasMore = true;
+                    HasMore = true;
                     break; // resume from _position on the next poll
                 }
             }
 
-            _hasMore = _hasMore && lines.Count >= MaxLinesPerPoll;
+            HasMore = HasMore && lines.Count >= MaxLinesPerPoll;
             _lastPollWasEmpty = !any;
             if (any)
             {
