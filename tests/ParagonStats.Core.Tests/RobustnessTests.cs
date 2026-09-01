@@ -136,7 +136,7 @@ public sealed class RobustnessTests : IDisposable
         MessageLog log = new();
         for (int i = 0; i <= MessageLog.Capacity; i++)
         {
-            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, null, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
+            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, channel: null, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
         }
 
         Assert.Equal(MessageLog.Capacity, log.Messages.Count);
@@ -148,7 +148,7 @@ public sealed class RobustnessTests : IDisposable
     {
         SessionStats stats = new();
         stats.Apply(new Defeat("Teammate", "Foe"));
-        stats.Apply(new Defeat(null, "Foe"));
+        stats.Apply(new Defeat(Attacker: null, "Foe"));
         stats.Apply(new UncategorizedLine("anything"));
 
         Assert.Equal(1, stats.Defeats); // own killing blows only

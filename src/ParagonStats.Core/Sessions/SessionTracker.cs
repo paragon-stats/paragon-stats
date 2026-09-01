@@ -45,7 +45,7 @@ public sealed class SessionTracker
             // The banner belongs to the session it opens: counted and captured
             // like every other line, so nothing is ever dropped.
             opened.Stats.Apply(logEvent);
-            opened.Messages.Add(line.Timestamp, logEvent.Category, null, line.Payload);
+            opened.Messages.Add(line.Timestamp, logEvent.Category, channel: null, line.Payload);
             return;
         }
 
