@@ -149,16 +149,12 @@ public sealed class LiveWatchTests : IDisposable
     public void Tailer_reopens_a_deleted_and_recreated_file()
     {
         string path = LogPath();
-        File.WriteAllText(path, "2026-08-31 08:00:00 You gain 10 experience.\n");
+        File.WriteAllText(path, "2026-08-31 08:00:00 You gain 10 experience.\n2026-08-31 08:00:01 You gain 15 experience.\n");
         using ChatLogTailer tailer = new(path);
-        Assert.Single(tailer.Poll());
+        Assert.Equal(2, tailer.Poll().Count);
 
         File.Delete(path);
         File.WriteAllText(path, "2026-08-31 09:00:00 You gain 20 experience.\n");
-
-        // NTFS tunnels creation time for same-name recreations within ~15s;
-        // force a distinct identity the way a real next-day file would have one.
-        File.SetCreationTimeUtc(path, DateTime.UtcNow.AddMinutes(1));
 
         Assert.Equal(["2026-08-31 09:00:00 You gain 20 experience."], tailer.Poll());
     }

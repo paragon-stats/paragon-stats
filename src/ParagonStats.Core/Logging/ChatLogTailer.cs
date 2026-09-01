@@ -7,7 +7,8 @@ namespace ParagonStats.Core.Logging;
 /// <summary>
 /// Incremental reader for a chatlog the game may still be writing: emits only
 /// complete lines, a truncated file restarts from the top, and a deleted-
-/// then-recreated file is detected by its creation time and reopened.
+/// then-recreated file is detected by the path length falling below the read
+/// position and reopened.
 /// Pull-based - the caller owns all timing; no threads in Core.
 /// The zero-collection ruling is enforced HERE, before materialization:
 /// a line <see cref="CollectionPolicy"/> refuses is discarded from the char
@@ -28,7 +29,6 @@ public sealed class ChatLogTailer : IDisposable
     private readonly StringBuilder _partial = new();
     private Decoder _decoder = Encoding.UTF8.GetDecoder();
     private FileStream _stream;
-    private DateTime _created;
     private long _position;
     private bool _discarding;
     private bool _classified;
@@ -37,24 +37,21 @@ public sealed class ChatLogTailer : IDisposable
     {
         _path = path;
         _stream = Open(path);
-        _created = File.GetCreationTimeUtc(path);
     }
 
     public IReadOnlyList<string> Poll()
     {
-        DateTime created = File.GetCreationTimeUtc(_path);
-        if (created != _created)
+        // The file AT THE PATH shrinking below our position means truncation
+        // or delete-and-recreate (the old handle would keep reading the dead
+        // file, its length frozen). Length-vs-position is deterministic on
+        // every platform - creation time is not (Linux ctime moves on write).
+        // Recreate-to-equal-or-longer within one poll is the accepted blind
+        // spot, as with in-place truncate-then-regrow.
+        if (new FileInfo(_path).Length < _position)
         {
-            // Deleted and recreated: the old handle reads a dead file whose
-            // length never changes, so swap to the new identity from the top.
             _stream.Dispose();
             _stream = Open(_path);
-            _created = created;
             Restart();
-        }
-        else if (_stream.Length < _position)
-        {
-            Restart(); // truncated in place: start over
         }
 
         List<string> lines = [];
