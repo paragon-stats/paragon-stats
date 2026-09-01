@@ -110,22 +110,24 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
-    public void Idle_gap_closes_the_session_and_resumption_keeps_the_character()
+    public void Idle_gap_closes_the_session_and_bannerless_lines_wait_unattributed()
     {
         string log = WriteLog(
             Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
             "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
             "2024-05-12 08:05:00 You gain 10 experience.",
-            "2024-05-12 09:00:00 You gain 20 experience."); // 55 min silent: logged out, banner missed the log
+            "2024-05-12 09:00:00 You gain 20 experience.", // 55 min silent: logged out; who is this? Wait for a banner.
+            "2024-05-12 09:01:00 Welcome to City of Heroes, Luna!",
+            "2024-05-12 09:02:00 You gain 30 experience.");
 
         ReplayResult result = LogReplayer.Replay([log]);
 
         Assert.Equal(2, result.Sessions.Count);
         Assert.Equal(10, result.Sessions[0].Stats.Experience);
         Assert.Equal(new DateTime(2024, 5, 12, 8, 5, 0), result.Sessions[0].LastSeen);
-        Assert.Equal("Nova", result.Sessions[1].Character);
-        Assert.Equal(new DateTime(2024, 5, 12, 9, 0, 0), result.Sessions[1].Start);
-        Assert.Equal(0, result.UnattributedCount);
+        Assert.Equal(1, result.UnattributedCount);
+        Assert.Equal("Luna", result.Sessions[1].Character);
+        Assert.Equal(30, result.Sessions[1].Stats.Experience);
     }
 
     [Fact]
@@ -138,6 +140,67 @@ public sealed class RobustnessTests : IDisposable
 
         ReplayResult result = LogReplayer.Replay([log]);
         Assert.Equal(10, Assert.Single(result.Sessions).Stats.Experience);
+    }
+
+    [Fact]
+    public void Heartbeat_after_idle_gap_opens_the_session_it_identifies()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
+            "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!",
+            "2026-08-31 08:05:00 You gain 10 experience.",
+            "2026-08-31 09:00:00 [SuperGroup] AnonSG Message of the Day -- redacted", // post-gap: who? wait
+            "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",            // proof: Luna is active
+            "2026-08-31 09:00:02 You gain 20 experience.");
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        Assert.Equal(2, result.Sessions.Count);
+        Assert.Equal(1, result.UnattributedCount); // only the pre-proof MOTD line
+        Assert.Equal("Luna", result.Sessions[1].Character);
+        Assert.Equal(20, result.Sessions[1].Stats.Experience);
+        Assert.Equal(new DateTime(2026, 8, 31, 9, 0, 1), result.Sessions[1].Start);
+    }
+
+    [Fact]
+    public void Heartbeat_naming_a_different_character_switches_the_session()
+    {
+        // The observed banner-lag swap: the new character's lines precede its
+        // banner; the heartbeat closes the old session at the swap point.
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
+            "2026-08-31 20:00:07 Welcome to City of Heroes, Laser - PRIME!",
+            "2026-08-31 20:00:55 You gain 10 experience.",
+            "2026-08-31 20:01:21 HIT Laser - SPARK! Your Health power is autohit.",
+            "2026-08-31 20:01:21 Welcome to City of Heroes, Laser - SPARK!",
+            "2026-08-31 20:01:23 You gain 20 experience.");
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        // PRIME, the pulse-opened SPARK sliver, and the banner-opened SPARK session.
+        Assert.Equal(3, result.Sessions.Count);
+        Assert.Equal(10, result.Sessions[0].Stats.Experience);
+        Assert.Equal(new DateTime(2026, 8, 31, 20, 0, 55), result.Sessions[0].LastSeen);
+        Assert.Equal("Laser - SPARK", result.Sessions[1].Character);
+        Assert.Equal("Laser - SPARK", result.Sessions[2].Character);
+        Assert.Equal(20, result.Sessions[2].Stats.Experience);
+    }
+
+    [Fact]
+    public void Heartbeat_naming_the_current_character_does_not_split_the_session()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
+            "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!",
+            "2026-08-31 08:00:15 HIT Nova! Your Health power is autohit.",
+            "2026-08-31 08:00:30 Nova HITS you! Stamina power was autohit.",
+            "2026-08-31 08:00:45 You gain 10 experience.");
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Equal(10, session.Stats.Experience);
+        Assert.Equal(2, session.Stats.CategoryCounts[EventCategory.Identity]);
     }
 
     [Fact]

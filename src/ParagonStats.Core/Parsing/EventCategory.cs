@@ -6,6 +6,7 @@ public enum EventCategory
     Uncategorized,
     Chat,
     Session,
+    Identity,
     PowerActivation,
     Damage,
     Defeat,

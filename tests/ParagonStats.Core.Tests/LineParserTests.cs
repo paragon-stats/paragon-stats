@@ -16,6 +16,25 @@ public sealed class LineParserTests
         Assert.Equal("Nova - PRIME", s.CharacterName);
     }
 
+    [Theory]
+    [InlineData("HIT Laser - QUANTUM! Your Health power is autohit.", "Laser - QUANTUM")]
+    [InlineData("HIT Laser - SPARK! Your Stamina power is autohit.", "Laser - SPARK")]
+    [InlineData("Laser - ALT F4 HITS you! Health power was autohit.", "Laser - ALT F4")]
+    [InlineData("Nova HITS you! Stamina power was autohit.", "Nova")]
+    public void Self_inherent_autohit_yields_identity_pulse(string payload, string name)
+    {
+        IdentityPulse pulse = Assert.IsType<IdentityPulse>(Parse(payload));
+        Assert.Equal(name, pulse.CharacterName);
+    }
+
+    [Theory]
+    [InlineData("HIT Laser - SPARK! Your Hasten power is autohit.")] // not a self-only inherent
+    [InlineData("HIT Gravedigger Slicer! Your Atom Smasher power had a 95.00% chance to hit, you rolled a 12.04.")]
+    public void Other_autohit_and_hit_roll_lines_are_not_identity(string payload)
+    {
+        Assert.IsNotType<IdentityPulse>(Parse(payload));
+    }
+
     [Fact]
     public void Activation_yields_power()
     {

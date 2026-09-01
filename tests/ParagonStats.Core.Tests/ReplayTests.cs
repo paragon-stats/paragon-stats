@@ -6,9 +6,32 @@ using ParagonStats.Core.Stats;
 
 namespace ParagonStats.Core.Tests;
 
-public sealed class ReplayTests
+public sealed class ReplayTests : IDisposable
 {
+    private readonly string _root = Directory.CreateTempSubdirectory("ps-replay-").FullName;
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
+
     private static string Fixture(string name) => Path.Join(AppContext.BaseDirectory, "Fixtures", name);
+
+    /// <summary>
+    /// The fixture files are byte-exact mid-session excerpts; a session needs a
+    /// banner to attribute them (lines outside a banner-anchored session are
+    /// unattributed by design). The harness supplies that context: a banner one
+    /// minute before the excerpt's first line, followed by the untouched bytes.
+    /// </summary>
+    private string WithBanner(string name)
+    {
+        byte[] raw = File.ReadAllBytes(Fixture(name));
+        string first = File.ReadLines(Fixture(name)).First();
+        DateTime open = DateTime.ParseExact(first[..19], "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture).AddMinutes(-1);
+        string banner = string.Create(CultureInfo.InvariantCulture, $"{open:yyyy-MM-dd HH:mm:ss} Welcome to City of Heroes, Nova - PRIME!\n");
+        string path = Path.Join(_root, name);
+        using FileStream output = File.Create(path);
+        output.Write(System.Text.Encoding.UTF8.GetBytes(banner));
+        output.Write(raw);
+        return path;
+    }
 
     [Fact]
     public void Session_banner_fixture_attributes_lines_and_counts_preamble()
@@ -33,11 +56,8 @@ public sealed class ReplayTests
     [Fact]
     public void Attack_chain_fixture_folds_damage_and_activations()
     {
-        // The fixtures are hours apart: the idle timeout splits them into a
-        // banner session and a bannerless resumption of the same character.
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-attack-chain.txt")]);
-        Assert.Equal(2, result.Sessions.Count);
-        CharacterSession session = result.Sessions[1];
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-attack-chain.txt")]);
+        CharacterSession session = Assert.Single(result.Sessions);
         Assert.Equal("Nova - PRIME", session.Character);
         Assert.Equal(1, session.Stats.Activations);
         Assert.True(session.Stats.TotalDamage > 0);
@@ -47,26 +67,27 @@ public sealed class ReplayTests
     [Fact]
     public void Same_second_storm_lines_all_count_no_dedupe()
     {
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-same-second-storm.txt")]);
-        Assert.Equal(2, result.Sessions.Count);
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-same-second-storm.txt")]);
+        CharacterSession session = Assert.Single(result.Sessions);
 
-        // All 45 storm lines land in the resumed session: exact count, because
-        // ANY dedupe of the byte-identical same-second lines (AoE + DoT ticks
-        // + proc rolls) must fail this.
-        Assert.Equal(45, result.Sessions[1].Messages.TotalCaptured);
+        // The banner plus all 45 storm lines: exact count, because ANY dedupe
+        // of the byte-identical same-second lines (AoE + DoT ticks + proc
+        // rolls) must fail this.
+        Assert.Equal(46, session.Messages.TotalCaptured);
     }
 
     [Fact]
     public void Crlf_fixture_parses_identically_to_lf()
     {
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-crlf-storm.txt")]);
-        Assert.All(result.Sessions.SelectMany(x => x.Messages.Messages), m => Assert.False(m.Payload.EndsWith('\r')));
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-crlf-storm.txt")]);
+        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.All(session.Messages.Messages, m => Assert.False(m.Payload.EndsWith('\r')));
     }
 
     [Fact]
     public void Rewards_fixture_sums_experience_and_infamy()
     {
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-rewards.txt")]);
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-rewards.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
         Assert.True(session.Stats.Experience > 0);
         Assert.True(session.Stats.Influence > 0);
@@ -75,7 +96,7 @@ public sealed class ReplayTests
     [Fact]
     public void Captured_chat_lines_retain_their_channel()
     {
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-chat-channels.txt")]);
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-chat-channels.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
         Assert.Contains(session.Messages.Messages, m => string.Equals(m.Channel, "Tell", StringComparison.Ordinal));
         Assert.Contains(session.Messages.Messages, m => m.Channel is null);
@@ -84,10 +105,10 @@ public sealed class ReplayTests
     [Fact]
     public void Formatter_renders_ascii_summary()
     {
-        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-attack-chain.txt")]);
+        ReplayResult result = LogReplayer.Replay([WithBanner("real-attack-chain.txt")]);
         string text = SummaryFormatter.Format(result);
         Assert.Contains("Nova - PRIME", text, StringComparison.Ordinal);
-        Assert.Contains("sessions 2", text, StringComparison.Ordinal);
+        Assert.Contains("sessions 1", text, StringComparison.Ordinal);
         Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
         Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
     }
@@ -106,7 +127,7 @@ public sealed class ReplayTests
         Assert.True(total > 0);
 
         // The drift canary: if the grammar rots, everything degrades into
-        // Uncategorized. A majority-uncategorized corpus means the parser no
+        // Uncategorized. A majority-uncategorized source means the parser no
         // longer recognizes the game's output.
         double ratio = (double)uncategorized / total;
         Assert.True(ratio < 0.75, string.Create(CultureInfo.InvariantCulture, $"uncategorized ratio {ratio:P1} ({uncategorized}/{total}) - grammar drift?"));

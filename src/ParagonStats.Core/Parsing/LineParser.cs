@@ -29,6 +29,11 @@ public static partial class LineParser
     [GeneratedRegex(@"^Welcome to City of Heroes, (?<name>.+)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Banner { get; }
 
+    // Self-only inherent autohits, both directions: the named character is
+    // always the logged-in one (see IdentityPulse).
+    [GeneratedRegex(@"^(?:HIT (?<name>.+)! Your (?:Health|Stamina) power is autohit|(?<name>.+) HITS you! (?:Health|Stamina) power was autohit)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Pulse { get; }
+
     [GeneratedRegex(@"^You activated the (?<power>.+) power\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Activation { get; }
 
@@ -55,6 +60,12 @@ public static partial class LineParser
         if (m.Success)
         {
             return new SessionStart(m.Groups["name"].Value);
+        }
+
+        m = Pulse.Match(payload);
+        if (m.Success)
+        {
+            return new IdentityPulse(m.Groups["name"].Value);
         }
 
         m = Activation.Match(payload);
