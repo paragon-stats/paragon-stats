@@ -26,6 +26,13 @@ public sealed class CliEnvironment
     /// collision keeps sessions open (idle timeout and in-log triggers still
     /// close them); a miss is edge-guarded in LiveMonitor.
     /// </summary>
+    public static CliEnvironment Production(CancellationToken token) => new()
+    {
+        Input = Console.In,
+        ClientRunning = static () => AnyRunning(System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
+        Token = token,
+    };
+
     /// <summary>Disposes the handles it was given; testable with any real process list.</summary>
     internal static bool AnyRunning(System.Diagnostics.Process[] processes)
     {
@@ -36,11 +43,4 @@ public sealed class CliEnvironment
 
         return processes.Length > 0;
     }
-
-    public static CliEnvironment Production(CancellationToken token) => new()
-    {
-        Input = Console.In,
-        ClientRunning = static () => AnyRunning(System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
-        Token = token,
-    };
 }
