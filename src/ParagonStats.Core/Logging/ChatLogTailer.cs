@@ -62,6 +62,14 @@ public sealed class ChatLogTailer : IDisposable
         _stream = Open(path);
     }
 
+    /// <summary>
+    /// True when the last poll stopped at its line cap with the file still
+    /// ahead of the read position. The caller needs this to keep one
+    /// account's files in order: a newer file must not be read past an older
+    /// one that is still catching up.
+    /// </summary>
+    public bool HasMore { get; private set; }
+
     public IReadOnlyList<string> Poll()
     {
         List<string> lines = [];
@@ -83,10 +91,12 @@ public sealed class ChatLogTailer : IDisposable
 
                 if (lines.Count >= MaxLinesPerPoll)
                 {
+                    HasMore = true;
                     break; // resume from _position on the next poll
                 }
             }
 
+            HasMore = HasMore && lines.Count >= MaxLinesPerPoll;
             _lastPollWasEmpty = !any;
             if (any)
             {

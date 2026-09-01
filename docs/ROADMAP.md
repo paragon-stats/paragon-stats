@@ -11,16 +11,16 @@ Minors are emergent: Conventional Commits drive them (`feat:` → minor;
 `fix:`/`perf:`/`security:`/`revert:` → patch), cut automatically as signed
 tags + GitHub Releases by python-semantic-release running tag-only in CI
 (#197). Explicit version targets exist only at deliberate majors: **1.0**
-(#168, the MVP gate) and **2.0** (Overlay). Current state: one tag
-(`v0.0.0`), no product code yet — the first parsing-engine `feat:` merge
-cuts `v0.1.0` and exercises the whole pipeline.
+(#168, the MVP gate) and **2.0** (Overlay). Shipped versions live on the
+[Releases page](https://github.com/paragon-stats/paragon-stats/releases); the
+checkpoint table below is the live view of where the work is.
 
 ## Checkpoints
 
 | CP | Milestone | Spine | Exit gate |
 | --- | --- | --- | --- |
 | **CP0 Groundwork** | [Release pipeline (v0.1.0)](https://github.com/paragon-stats/paragon-stats/milestone/16) | #211, #197, #73 | Signed win-x64 AOT binary on a real GitHub Release, MinVer-stamped, cut automatically |
-| **CP1 Parsing engine** | [Parsing engine](https://github.com/paragon-stats/paragon-stats/milestone/9) | #142 capture/watch/parse + #123–#131 mechanics | Live Homecoming chat logs parsed into the account → character → session model |
+| **CP1 Parsing engine** | [Parsing engine](https://github.com/paragon-stats/paragon-stats/milestone/9) | #142 capture/watch/parse + #123–#131 mechanics | Live Homecoming chat logs parsed into the account → character → session model, and replaying those logs reproduces the same statistics exactly |
 | **CP2 MVP metrics** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #86 #87 #88 #90 #96 #99 #100 #127 | The ~7 metrics verified against a captured log corpus |
 | **CP3 TUI** | [TUI - MVP readout](https://github.com/paragon-stats/paragon-stats/milestone/10) | #213 | Live metric readout usable during play, multibox-aware |
 | **CP4 GUI** | [GUI - tabbed (Avalonia)](https://github.com/paragon-stats/paragon-stats/milestone/11) | #214 scaffold + #153 tabs | Tabbed Avalonia readout at parity with the TUI |
