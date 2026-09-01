@@ -1,0 +1,12 @@
+2024-05-12 08:16:48 [SuperGroup] AnonSG Message of the Day -- redacted!!!
+| redacted continuation line kept for format
+2024-05-12 08:16:49 Welcome to City of Heroes, Nova - PRIME!
+2024-05-12 08:16:49 You may ask for help from other players by using the Help chat tab.
+2024-05-12 08:16:49 <a href='cmd:gmotd'><b>Click Here</b></a> or type /gmotd to see the global message of the day again.
+2024-05-12 08:16:49 Using global chat handle @anon
+2024-05-12 08:16:49 Joined channel 'ChannelA'
+2024-05-12 08:16:49 Joined channel 'ChannelB'
+2024-05-12 08:16:49 Joined channel 'ChannelC'
+2024-05-12 08:16:49 You have 3 unclaimed respecs available. Type /respec in the chat window to begin respecing your character.
+2024-05-12 08:16:49 You have 9 unclaimed free tailor sessions available.
+2024-05-12 08:16:55 [Looking For Group] PlayerOne: redacted

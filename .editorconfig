@@ -411,3 +411,17 @@ dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA0001.severity = none
 # Members not required to be documented pre-1.0 (consistent with SA0001); re-enable at v1.0. (#11)
 dotnet_diagnostic.SA1600.severity = none
+
+# --- Permanent convention alignments (not pre-1.0 items; see csharp.md) ---
+[*.cs]
+# House convention is _camelCase private fields (naming rules above; csharp.md).
+dotnet_diagnostic.SA1309.severity = none
+# House convention omits `this.` qualification (IDE0003/naming rules make fields unambiguous).
+dotnet_diagnostic.SA1101.severity = none
+
+# Log fixtures are byte-exact excerpts of real game output (CRLF and trailing
+# whitespace are part of the data under test) - exempt from text normalization.
+[tests/**/Fixtures/*.txt]
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

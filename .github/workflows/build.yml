@@ -46,13 +46,18 @@ jobs:
       - name: Test with coverage
         run: dotnet tool run dotnet-coverage collect "dotnet test --no-build" -f xml -o coverage.xml
       - name: Coverage report
-        run: dotnet tool run reportgenerator -reports:coverage.xml -targetdir:coveragereport -reporttypes:"MarkdownSummaryGithub;JsonSummary" -assemblyfilters:"-*.Tests.dll"
+        run: >
+          dotnet tool run reportgenerator -reports:coverage.xml
+          -targetdir:coveragereport
+          -reporttypes:"MarkdownSummaryGithub;JsonSummary"
+          -assemblyfilters:"-*.Tests.dll"
+          -classfilters:"-System.Text.RegularExpressions.Generated.*"
       - name: Publish coverage summary
         if: always()
         run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }
       - name: Coverage gate
         env:
-          MIN_COVERAGE: '0'  # bootstrap: Core has no production code yet; ratchet to 100% (#37)
+          MIN_COVERAGE: '100'  # every human-written line; generated regex internals are class-filtered (#37)
         run: |
           $s = (Get-Content coveragereport/Summary.json -Raw | ConvertFrom-Json).summary
           if ($null -eq $s.linecoverage -or $s.coverablelines -eq 0) {
