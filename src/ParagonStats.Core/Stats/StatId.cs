@@ -8,4 +8,6 @@ public enum StatId
     Experience,
     Influence,
     Activations,
+    Tickets,
+    MarketIncome,
 }

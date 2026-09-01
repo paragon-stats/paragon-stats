@@ -20,6 +20,12 @@ public sealed class SessionStats
 
     public long Activations { get; private set; }
 
+    public long Tickets { get; private set; }
+
+    public long MarketIncome { get; private set; }
+
+    public long MarketSpent { get; private set; }
+
     public decimal TotalDamage { get; private set; }
 
     public IReadOnlyDictionary<string, decimal> DamageByPower => _damageByPower;
@@ -47,6 +53,15 @@ public sealed class SessionStats
                 break;
             case PowerActivated:
                 Activations++;
+                break;
+            case TicketsEarned tickets:
+                Tickets += tickets.Count;
+                break;
+            case MarketTransaction { Income: true } sale:
+                MarketIncome += sale.Amount;
+                break;
+            case MarketTransaction purchase:
+                MarketSpent += purchase.Amount;
                 break;
             default:
                 break;

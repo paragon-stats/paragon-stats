@@ -35,6 +35,34 @@ public sealed class LineParserTests
         Assert.IsNotType<IdentityPulse>(Parse(payload));
     }
 
+    [Theory]
+    [InlineData("You earned 12 architect tickets!", 12)]
+    [InlineData("You have received 250 bonus architect tickets for completing the mission!", 250)]
+    public void Architect_tickets_yield_reward(string payload, long count)
+    {
+        TicketsEarned t = Assert.IsType<TicketsEarned>(Parse(payload));
+        Assert.Equal(count, t.Count);
+    }
+
+    [Theory]
+    [InlineData("You got 4,500,000 influence from the Consignment House.", 4500000, true)]
+    [InlineData("You got 971 infamy from the Black Market.", 971, true)]
+    [InlineData("You paid 245,000 to the Consignment House.", 245000, false)]
+    public void Market_transactions_track_direction(string payload, long amount, bool income)
+    {
+        MarketTransaction m = Assert.IsType<MarketTransaction>(Parse(payload));
+        Assert.Equal(amount, m.Amount);
+        Assert.Equal(income, m.Income);
+    }
+
+    [Theory]
+    [InlineData("One or more architect tickets were not rewarded because you have reached your inventory cap.")]
+    [InlineData("One or more architect tickets were not rewarded because you have reached the ticket limit for this map.")]
+    public void Capped_ticket_lines_stay_uncategorized(string payload)
+    {
+        Assert.IsType<UncategorizedLine>(Parse(payload));
+    }
+
     [Fact]
     public void Activation_yields_power()
     {

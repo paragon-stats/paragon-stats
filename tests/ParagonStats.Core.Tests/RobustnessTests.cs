@@ -265,9 +265,16 @@ public sealed class RobustnessTests : IDisposable
         stats.Apply(new Defeat("Teammate", "Foe"));
         stats.Apply(new Defeat(Attacker: null, "Foe"));
         stats.Apply(new UncategorizedLine("anything"));
+        stats.Apply(new TicketsEarned(12));
+        stats.Apply(new MarketTransaction(1000, Income: true));
+        stats.Apply(new MarketTransaction(400, Income: false));
 
         Assert.Equal(1, stats.Defeats); // own killing blows only
         Assert.Equal(2, stats.CategoryCounts[EventCategory.Defeat]);
+        Assert.Equal(12, stats.Tickets);
+        Assert.Equal(1000, stats.MarketIncome); // never folded into combat influence
+        Assert.Equal(400, stats.MarketSpent);
+        Assert.Equal(0, stats.Influence);
     }
 
     [Fact]

@@ -22,8 +22,8 @@ public static class SummaryFormatter
             }
 
             sb.AppendLine(CultureInfo.InvariantCulture, $"{Ascii(session.Character)} ({Ascii(session.Account)}) {session.Start:yyyy-MM-dd HH:mm} +{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  damage {session.Stats.TotalDamage:0.##} | defeats {session.Stats.Defeats} | xp {session.Stats.Experience} | inf {session.Stats.Influence} | activations {session.Stats.Activations}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  rates/hr: damage {Rate(session.Stats.TotalDamage, span)} | defeats {Rate(session.Stats.Defeats, span)} | xp {Rate(session.Stats.Experience, span)} | inf {Rate(session.Stats.Influence, span)} | activations {Rate(session.Stats.Activations, span)}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  damage {session.Stats.TotalDamage:0.##} | defeats {session.Stats.Defeats} | xp {session.Stats.Experience} | inf {session.Stats.Influence} | activations {session.Stats.Activations} | tickets {session.Stats.Tickets} | market +{session.Stats.MarketIncome}/-{session.Stats.MarketSpent}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  rates/hr: damage {Rate(session.Stats.TotalDamage, span)} | defeats {Rate(session.Stats.Defeats, span)} | xp {Rate(session.Stats.Experience, span)} | inf {Rate(session.Stats.Influence, span)} | activations {Rate(session.Stats.Activations, span)} | tickets {Rate(session.Stats.Tickets, span)}");
             string categories = string.Join(
                 " | ",
                 session.Stats.CategoryCounts
