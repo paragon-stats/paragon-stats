@@ -11,4 +11,6 @@ public enum EventCategory
     Damage,
     Defeat,
     Reward,
+    Market,
+    Zone,
 }

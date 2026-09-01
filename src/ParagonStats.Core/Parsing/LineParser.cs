@@ -43,6 +43,17 @@ public static partial class LineParser
     [GeneratedRegex(@"^(?:You have defeated (?<foe>.+)|(?<attacker>.+) has defeated (?<foe>.+))$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex DefeatLine { get; }
 
+    // Colon excluded: "Entering WARNING: You are about to exit this zone." is
+    // the exit-warning popup, not a zone name.
+    [GeneratedRegex(@"^Entering (?<zone>[^.:]+)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Zone { get; }
+
+    [GeneratedRegex(@"^You (?:earned (?<count>[0-9,]+) architect tickets|have received (?<count>[0-9,]+) bonus architect tickets for completing the mission)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Tickets { get; }
+
+    [GeneratedRegex(@"^You (?:(?<got>got) (?<amount>[0-9,]+) (?:influence|infamy) from|paid (?<amount>[0-9,]+) to) the (?:Consignment House|Black Market)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Market { get; }
+
     [GeneratedRegex(@"^You gain (?:(?<xp>[0-9,]+) experience(?:, work off [0-9,]+ debt, and gain (?<inf>[0-9,]+) (?:influence|infamy)| and (?<inf>[0-9,]+) (?:influence|infamy))?|(?<inf>[0-9,]+) (?:influence|infamy))\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Reward { get; }
 
@@ -66,6 +77,12 @@ public static partial class LineParser
         if (m.Success)
         {
             return new IdentityPulse(m.Groups["name"].Value);
+        }
+
+        m = Zone.Match(payload);
+        if (m.Success)
+        {
+            return new ZoneEntered(m.Groups["zone"].Value);
         }
 
         m = Activation.Match(payload);
@@ -93,6 +110,24 @@ public static partial class LineParser
             return new Defeat(attacker, m.Groups["foe"].Value);
         }
 
+        return ParseEconomy(payload) ?? new UncategorizedLine(line.Payload);
+    }
+
+    /// <summary>The reward grammars: combat gains, architect tickets, market money.</summary>
+    private static LogEvent? ParseEconomy(string payload)
+    {
+        Match m = Tickets.Match(payload);
+        if (m.Success)
+        {
+            return new TicketsEarned(ParseCount(m.Groups["count"].Value));
+        }
+
+        m = Market.Match(payload);
+        if (m.Success)
+        {
+            return new MarketTransaction(ParseCount(m.Groups["amount"].Value), m.Groups["got"].Success);
+        }
+
         m = Reward.Match(payload);
         if (m.Success)
         {
@@ -101,7 +136,7 @@ public static partial class LineParser
             return new RewardGained(xp, inf);
         }
 
-        return new UncategorizedLine(line.Payload);
+        return null;
     }
 
     /// <summary>
