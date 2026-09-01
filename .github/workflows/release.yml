@@ -117,12 +117,35 @@ jobs:
               echo "deleted stale draft $id"
             done
           # One sorted tag list drives both the notes baseline and the Latest
-          # decision. Without an explicit baseline, --generate-notes anchors
+          # decision. Without an explicit baseline the generated notes anchor
           # on the newest published release - wrong for a back-filled retry.
           tags="$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname)"
           prev="$(printf '%s\n' "$tags" | awk -v t="$TAG" 'found { print; exit } $0 == t { found=1 }')"
           highest="$(printf '%s\n' "$tags" | awk 'NR == 1')"
-          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --generate-notes ${prev:+--notes-start-tag "$prev"}
+          # GitHub's generator lists merged PULL REQUESTS, so a release that
+          # merged one PR reads as a single line however much landed inside
+          # it. Every commit is on main, so the notes lead with the commits,
+          # grouped by Conventional Commit type, and keep the generated PR
+          # links underneath.
+          {
+            printf '## Changes\n\n'
+            for spec in feat:Features fix:Fixes security:Security perf:Performance revert:Reverts refactor:Refactoring test:Tests docs:Documentation ci:CI build:Build chore:Chores; do
+              heading="${spec#*:}"
+              body="$(git log --no-merges --reverse --format='%s|%h' "${prev:+$prev..}$TAG" |
+                awk -F'|' -v want="${spec%%:*}" '
+                  { subject = $1
+                    prefix = subject
+                    sub(/[(:].*/, "", prefix)
+                    if (prefix != want) { next }
+                    sub(/^[a-z]+(\([^)]*\))?: */, "", subject)
+                    printf "- %s (%s)\n", subject, $2 }')"
+              if [ -n "$body" ]; then
+                printf '### %s\n%s\n\n' "$heading" "$body"
+              fi
+            done
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" ${prev:+-f previous_tag_name="$prev"} --jq .body
+          } > release-notes.md
+          gh release create "$TAG" paragon-stats-win-x64.exe --draft --verify-tag --title "$TAG" --notes-file release-notes.md
           # Publishing a back-filled older version must not steal the Latest
           # badge, which also feeds /releases/latest binary downloads.
           if [ "$TAG" = "$highest" ]; then
