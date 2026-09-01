@@ -7,22 +7,12 @@ namespace ParagonStats.Core.Parsing;
 
 /// <summary>
 /// Stateless single-line categorizer. Grammar is compiled in (source-generated
-/// regex: AOT-safe, culture-invariant); unknown lines become
-/// <see cref="UncategorizedLine"/> so the parser can never lose data or throw
-/// on grammar drift.
+/// regex: AOT-safe, culture-invariant). Unknown DATA lines become
+/// <see cref="UncategorizedLine"/> so grammar drift surfaces in the canary;
+/// communication-channel lines are refused entirely (see TryParse).
 /// </summary>
 public static partial class LineParser
 {
-    // Speaker markers: incoming tells lead with ':', outgoing with '-->'.
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?:-->|:)?(?<speaker>[^:]+): ?(?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Chat { get; }
-
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex ChatChannelOnly { get; }
-
-    [GeneratedRegex(@"<b>|</b>|<color #[0-9A-Za-z]+>|<bgcolor #[0-9A-Za-z]+>", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Markup { get; }
-
     [GeneratedRegex(@"^(?<pet>[^:\[]{1,60}):  (?=\S)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex PseudopetPrefix { get; }
 
@@ -57,14 +47,40 @@ public static partial class LineParser
     [GeneratedRegex(@"^You gain (?:(?<xp>[0-9,]+) experience(?:, work off [0-9,]+ debt, and gain (?<inf>[0-9,]+) (?:influence|infamy)| and (?<inf>[0-9,]+) (?:influence|infamy))?|(?<inf>[0-9,]+) (?:influence|infamy))\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Reward { get; }
 
-    public static LogEvent Parse(in LogLine line)
+    /// <summary>
+    /// False for lines the tool refuses to collect (mirrors
+    /// <see cref="LogLineReader.TryParse"/> - one non-result idiom through
+    /// the pipeline). Collection policy (operator ruling): communication
+    /// channels are not harvested AT ALL - bracketed lines (allowlist empty;
+    /// [NPC]/[Caption] would join only by deliberate decision on #225) and
+    /// communication metadata (the player's global handle, channel
+    /// membership) are dumped: no event, no capture, no count.
+    /// </summary>
+    public static bool TryParse(in LogLine line, out LogEvent logEvent)
     {
         string payload = line.Payload;
-        if (payload.StartsWith('['))
+        if (CollectionPolicy.RefusesPayload(payload))
         {
-            return ParseChat(line.Payload);
+            logEvent = UncategorizedLine.Empty;
+            return false;
         }
 
+        try
+        {
+            logEvent = Parse(payload, line.Payload);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // A crafted line can make a grammar backtrack; the per-pattern
+            // timeout turns that into a miss, never a crash.
+            logEvent = new UncategorizedLine(line.Payload);
+        }
+
+        return true;
+    }
+
+    private static LogEvent Parse(string payload, string raw)
+    {
         string? sourcePrefix = StripPseudopetDamagePrefix(ref payload);
 
         Match m = Banner.Match(payload);
@@ -92,12 +108,13 @@ public static partial class LineParser
         }
 
         m = Damage.Match(payload);
-        if (m.Success)
+        if (m.Success
+            && decimal.TryParse(m.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal amount))
         {
             return new DamageDealt(
                 m.Groups["target"].Value,
                 m.Groups["power"].Value,
-                decimal.Parse(m.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture),
+                amount,
                 m.Groups["type"].Value,
                 m.Groups["overtime"].Success,
                 sourcePrefix);
@@ -110,30 +127,33 @@ public static partial class LineParser
             return new Defeat(attacker, m.Groups["foe"].Value);
         }
 
-        return ParseEconomy(payload) ?? new UncategorizedLine(line.Payload);
+        return ParseEconomy(payload) ?? new UncategorizedLine(raw);
     }
 
     /// <summary>The reward grammars: combat gains, architect tickets, market money.</summary>
     private static LogEvent? ParseEconomy(string payload)
     {
         Match m = Tickets.Match(payload);
-        if (m.Success)
+        if (m.Success && TryCount(m.Groups["count"].Value, out long tickets))
         {
-            return new TicketsEarned(ParseCount(m.Groups["count"].Value));
+            return new TicketsEarned(tickets);
         }
 
         m = Market.Match(payload);
-        if (m.Success)
+        if (m.Success && TryCount(m.Groups["amount"].Value, out long money))
         {
-            return new MarketTransaction(ParseCount(m.Groups["amount"].Value), m.Groups["got"].Success);
+            return new MarketTransaction(money, m.Groups["got"].Success);
         }
 
         m = Reward.Match(payload);
         if (m.Success)
         {
-            long? xp = m.Groups["xp"].Success ? ParseCount(m.Groups["xp"].Value) : null;
-            long? inf = m.Groups["inf"].Success ? ParseCount(m.Groups["inf"].Value) : null;
-            return new RewardGained(xp, inf);
+            long? xp = TryCount(m.Groups["xp"], out long x) ? x : null;
+            long? inf = TryCount(m.Groups["inf"], out long i) ? i : null;
+            if (xp is not null || inf is not null)
+            {
+                return new RewardGained(xp, inf);
+            }
         }
 
         return null;
@@ -158,29 +178,16 @@ public static partial class LineParser
         return null;
     }
 
-    private static long ParseCount(string text) =>
-        long.Parse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+    /// <summary>
+    /// A number too large for the game to have produced is treated as no
+    /// number at all - a hand-edited log can never overflow the fold.
+    /// </summary>
+    private static bool TryCount(string text, out long value) =>
+        long.TryParse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value);
 
-    private static LogEvent ParseChat(string payload)
+    private static bool TryCount(Group group, out long value)
     {
-        Match m = Chat.Match(payload);
-        if (!m.Success)
-        {
-            // "[Channel] free text" without a speaker (system MOTD style).
-            Match c = ChatChannelOnly.Match(payload);
-
-            // A bracketed line matching no chat shape is a parse failure, not
-            // a chat message - it must surface in the drift canary.
-            return c.Success
-                ? new ChatMessage(c.Groups["channel"].Value, string.Empty, StripMarkup(c.Groups["text"].Value))
-                : new UncategorizedLine(payload);
-        }
-
-        return new ChatMessage(
-            m.Groups["channel"].Value,
-            m.Groups["speaker"].Value,
-            StripMarkup(m.Groups["text"].Value));
+        value = 0;
+        return group.Success && TryCount(group.Value, out value);
     }
-
-    private static string StripMarkup(string text) => Markup.Replace(text, string.Empty);
 }

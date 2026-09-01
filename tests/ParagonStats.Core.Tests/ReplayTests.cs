@@ -40,16 +40,19 @@ public sealed class ReplayTests : IDisposable
         CharacterSession session = Assert.Single(result.Sessions);
         Assert.Equal("Nova - PRIME", session.Character);
 
-        // The MOTD chat line precedes the banner: unattributable by design.
-        Assert.Equal(1, result.UnattributedCount);
+        // The pre-banner MOTD is a communication line: dumped by policy, so
+        // nothing is unattributed here.
+        Assert.Equal(0, result.UnattributedCount);
 
         // The banner itself is counted and captured in the session it opens.
         Assert.Equal(1, session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Session));
         Assert.Contains(session.Messages.Messages, m => m.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
 
-        // The timestamp-less continuation line is skipped by the reader entirely:
-        // 12 fixture lines - 1 continuation - 1 pre-banner MOTD = 10 captured.
-        Assert.Equal(10, session.Messages.TotalCaptured);
+        // Zero collection: the continuation line, the bracketed lines, the
+        // markup-opening gmotd line, the global-handle line, and the three
+        // channel-membership lines are all refused before materialization -
+        // 12 fixture lines, 4 captured.
+        Assert.Equal(4, session.Messages.TotalCaptured);
         Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("continuation", StringComparison.Ordinal));
     }
 
@@ -94,12 +97,17 @@ public sealed class ReplayTests : IDisposable
     }
 
     [Fact]
-    public void Captured_chat_lines_retain_their_channel()
+    public void Communication_lines_are_never_collected()
     {
+        // The fixture is four real tell lines. Zero collection (operator
+        // ruling): only the harness banner is captured; no bracketed payload,
+        // no channel, no content survives anywhere in the session.
         ReplayResult result = LogReplayer.Replay([WithBanner("real-chat-channels.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
-        Assert.Contains(session.Messages.Messages, m => string.Equals(m.Channel, "Tell", StringComparison.Ordinal));
-        Assert.Contains(session.Messages.Messages, m => m.Channel is null);
+        Assert.Equal(1, session.Messages.TotalCaptured);
+        Assert.DoesNotContain(session.Messages.Messages, static m => m.Payload.StartsWith('['));
+        Assert.DoesNotContain(session.Messages.Messages, static m => m.Payload.Contains("redacted", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(0, result.UnattributedCount);
     }
 
     [Fact]

@@ -51,7 +51,7 @@ jobs:
           -targetdir:coveragereport
           -reporttypes:"MarkdownSummaryGithub;JsonSummary"
           -assemblyfilters:"-*.Tests.dll"
-          -classfilters:"-System.Text.RegularExpressions.Generated.*"
+          -classfilters:"-System.Text.RegularExpressions.Generated.*;-ParagonStats.Core.Config.AppConfigContext"
       - name: Publish coverage summary
         if: always()
         run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }

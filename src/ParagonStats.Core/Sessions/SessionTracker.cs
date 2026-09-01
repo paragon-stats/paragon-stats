@@ -32,6 +32,8 @@ public sealed class SessionTracker
 
     public long UnattributedCount { get; private set; }
 
+    public IReadOnlyCollection<CharacterSession> Open => _current.Values;
+
     public IReadOnlyList<CharacterSession> Sessions
     {
         get
@@ -40,6 +42,35 @@ public sealed class SessionTracker
             all.Sort((a, b) => a.Start.CompareTo(b.Start));
             return all;
         }
+    }
+
+    /// <summary>
+    /// The live-watch stop authority: the game client exited, so every open
+    /// session closes at its last-line timestamp.
+    /// </summary>
+    public void CloseAll()
+    {
+        foreach (CharacterSession session in _current.Values)
+        {
+            _closed.Add(session);
+        }
+
+        _current.Clear();
+    }
+
+    /// <summary>
+    /// Raw-line entry: reader then parser then fold, one idiom for batch and
+    /// live. False when the line was skipped or refused (never collected).
+    /// </summary>
+    public bool Accept(string account, string rawLine)
+    {
+        if (LogLineReader.TryParse(rawLine, out LogLine line) && LineParser.TryParse(line, out LogEvent logEvent))
+        {
+            Accept(account, line, logEvent);
+            return true;
+        }
+
+        return false;
     }
 
     public void Accept(string account, in LogLine line, LogEvent logEvent)
@@ -81,10 +112,10 @@ public sealed class SessionTracker
         }
 
         // The trigger line belongs to the session it opens: counted and
-        // captured like every other line, so nothing is ever dropped.
+        // captured like every other line. Communication channels never reach
+        // this point - the parser dumps them (zero collection, by ruling).
         session.LastSeen = line.Timestamp;
         session.Stats.Apply(logEvent);
-        string? channel = logEvent is ChatMessage chat ? chat.Channel : null;
-        session.Messages.Add(line.Timestamp, logEvent.Category, channel, line.Payload);
+        session.Messages.Add(line.Timestamp, logEvent.Category, line.Payload);
     }
 }

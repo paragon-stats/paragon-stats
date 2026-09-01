@@ -149,14 +149,14 @@ public sealed class RobustnessTests : IDisposable
             Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
             "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!",
             "2026-08-31 08:05:00 You gain 10 experience.",
-            "2026-08-31 09:00:00 [SuperGroup] AnonSG Message of the Day -- redacted", // post-gap: who? wait
-            "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",            // proof: Luna is active
+            "2026-08-31 09:00:00 You are flying!",                          // post-gap data line: who? wait
+            "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",  // proof: Luna is active
             "2026-08-31 09:00:02 You gain 20 experience.");
 
         ReplayResult result = LogReplayer.Replay([log]);
 
         Assert.Equal(2, result.Sessions.Count);
-        Assert.Equal(1, result.UnattributedCount); // only the pre-proof MOTD line
+        Assert.Equal(1, result.UnattributedCount); // only the pre-proof data line
         Assert.Equal("Luna", result.Sessions[1].Character);
         Assert.Equal(20, result.Sessions[1].Stats.Experience);
         Assert.Equal(new DateTime(2026, 8, 31, 9, 0, 1), result.Sessions[1].Start);
@@ -204,6 +204,27 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
+    public void Replay_counts_a_final_line_without_a_trailing_newline()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!");
+        File.AppendAllText(log, "2024-05-12 08:05:00 You gain 10 experience."); // no newline: still a complete line on disk
+
+        ReplayResult result = LogReplayer.Replay([log]);
+        Assert.Equal(10, Assert.Single(result.Sessions).Stats.Experience);
+    }
+
+    [Fact]
+    public void Raw_line_feed_reports_refused_and_skipped_lines_as_uncollected()
+    {
+        SessionTracker tracker = new();
+        Assert.False(tracker.Accept("acct", "no timestamp here"));
+        Assert.False(tracker.Accept("acct", "2024-05-12 08:00:00 [Tell] :x: y"));
+        Assert.True(tracker.Accept("acct", "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!"));
+    }
+
+    [Fact]
     public void Backwards_timestamps_render_a_clamped_duration()
     {
         string log = WriteLog(
@@ -228,16 +249,9 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
-    public void Bracketed_non_chat_lines_surface_as_uncategorized()
-    {
-        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "[unclosed bracket text"));
-        Assert.IsType<UncategorizedLine>(e);
-    }
-
-    [Fact]
     public void Pseudopet_prefix_applies_to_damage_only()
     {
-        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"));
+        Assert.True(LineParser.TryParse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"), out LogEvent e));
         Assert.IsType<UncategorizedLine>(e); // never credited to the player
     }
 
@@ -247,7 +261,7 @@ public sealed class RobustnessTests : IDisposable
         MessageLog log = new();
         for (int i = 0; i <= MessageLog.Capacity; i++)
         {
-            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, channel: null, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
+            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
         }
 
         Assert.Equal(MessageLog.Capacity, log.Messages.Count);
@@ -282,17 +296,18 @@ public sealed class RobustnessTests : IDisposable
     {
         using StringWriter output = new();
         using StringWriter error = new();
+        CliEnvironment env = new() { ConfigPath = Path.Join(_root, "config.json") };
 
-        Assert.Equal(2, CliRunner.Run([], output, error));
+        Assert.Equal(2, CliRunner.Run(["a", "b"], output, error, env));
         Assert.Contains("usage:", error.ToString(), StringComparison.Ordinal);
 
-        Assert.Equal(1, CliRunner.Run([Path.Join(_root, "nope")], output, error));
+        Assert.Equal(1, CliRunner.Run([Path.Join(_root, "nope")], output, error, env));
 
         string log = WriteLog(
             Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
             "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!");
-        Assert.Equal(0, CliRunner.Run([log], output, error));
-        Assert.Equal(0, CliRunner.Run([_root], output, error));
+        Assert.Equal(0, CliRunner.Run([log], output, error, env));
+        Assert.Equal(0, CliRunner.Run([_root], output, error, env));
         Assert.Contains("Nova", output.ToString(), StringComparison.Ordinal);
     }
 }

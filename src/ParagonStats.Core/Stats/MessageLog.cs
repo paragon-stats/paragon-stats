@@ -17,15 +17,25 @@ public sealed class MessageLog
 
     public IReadOnlyCollection<CapturedMessage> Messages => _messages;
 
-    public void Add(DateTime timestamp, EventCategory category, string? channel, string payload)
+    public void Add(DateTime timestamp, EventCategory category, string payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
+
+        // Defense in depth: the reader and the parser both refuse
+        // communication lines, so nothing should arrive here - but this is
+        // the only place a payload is retained for the process lifetime, so
+        // it refuses too rather than trusting the gates upstream.
+        if (CollectionPolicy.RefusesPayload(payload))
+        {
+            return;
+        }
+
         if (_messages.Count == Capacity)
         {
             _messages.Dequeue();
         }
 
-        _messages.Enqueue(new CapturedMessage(timestamp, category, channel, payload));
+        _messages.Enqueue(new CapturedMessage(timestamp, category, payload));
         TotalCaptured++;
     }
 }

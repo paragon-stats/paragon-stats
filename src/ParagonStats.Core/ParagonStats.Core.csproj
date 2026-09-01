@@ -6,4 +6,7 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="ParagonStats.Core.Tests" />
+  </ItemGroup>
 </Project>
