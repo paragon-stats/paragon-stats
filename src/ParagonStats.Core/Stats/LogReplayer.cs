@@ -1,7 +1,4 @@
-using System.Text;
-
 using ParagonStats.Core.Logging;
-using ParagonStats.Core.Parsing;
 using ParagonStats.Core.Sessions;
 
 namespace ParagonStats.Core.Stats;
@@ -31,11 +28,7 @@ public static class LogReplayer
             {
                 ReplayFile(tracker, file);
             }
-            catch (IOException)
-            {
-                skipped.Add(file);
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 skipped.Add(file);
             }
@@ -44,40 +37,23 @@ public static class LogReplayer
         return new ReplayResult(tracker.Sessions, tracker.UnattributedCount, skipped);
     }
 
-    /// <summary>
-    /// The account is the directory above "Logs" ("accounts\name\Logs\chatlog ....txt").
-    /// Files outside that shape key on their own parent directory, so unrelated
-    /// locations can never collapse into one shared account.
-    /// </summary>
-    internal static string AccountFor(string file)
-    {
-        DirectoryInfo? parent = new FileInfo(file).Directory;
-        return parent is not null
-            && string.Equals(parent.Name, "Logs", StringComparison.OrdinalIgnoreCase)
-            && parent.Parent is not null
-            ? parent.Parent.Name
-            : parent?.FullName ?? "unknown";
-    }
-
     private static void ReplayFile(SessionTracker tracker, string file)
     {
-        string account = AccountFor(file);
+        string account = ChatLogTree.AccountFor(file);
 
-        // ReadWrite|Delete sharing: the running game client keeps today's
-        // chatlog open for writing, and that must never block a replay.
-        using FileStream stream = new(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using StreamReader reader = new(stream, Encoding.UTF8);
-        while (reader.ReadLine() is { } raw)
+        // The tailer is the ONE reader: same live-writer sharing, and the
+        // zero-collection policy applied before any refused line becomes a
+        // string (memory-sniffer hardening) - batch and live are identical.
+        using ChatLogTailer tailer = new(file);
+        foreach (string raw in tailer.Poll())
         {
-            if (!LogLineReader.TryParse(raw, out LogLine line))
-            {
-                continue;
-            }
+            tracker.Accept(account, raw);
+        }
 
-            if (LineParser.Parse(line) is { } logEvent)
-            {
-                tracker.Accept(account, line, logEvent);
-            }
+        // A final line without a trailing newline is still a complete line.
+        if (tailer.Drain() is { } tail)
+        {
+            tracker.Accept(account, tail);
         }
     }
 }

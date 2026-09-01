@@ -41,8 +41,21 @@ public static class SummaryFormatter
         return sb.ToString();
     }
 
+    /// <summary>One rolling live-watch line for an open session - rates from the same computation the batch summary uses.</summary>
+    public static string FormatLive(CharacterSession session)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        TimeSpan span = session.LastSeen - session.Start;
+        MetricSnapshot xp = MetricSnapshot.Compute(session.Stats.Experience, span);
+        MetricSnapshot inf = MetricSnapshot.Compute(session.Stats.Influence, span);
+        MetricSnapshot tickets = MetricSnapshot.Compute(session.Stats.Tickets, span);
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"[{session.LastSeen:HH:mm:ss}] {Ascii(session.Character)}: xp {xp.Value:0} ({xp.PerHour:0}/hr) | inf {inf.Value:0} ({inf.PerHour:0}/hr) | tickets {tickets.Value:0} ({tickets.PerHour:0}/hr)");
+    }
+
     /// <summary>Console output stays printable ASCII (docs/style-guides/encoding.md); names may not be.</summary>
-    internal static string Ascii(string text)
+    private static string Ascii(string text)
     {
         return text.All(static c => c >= ' ' && c <= '~')
             ? text

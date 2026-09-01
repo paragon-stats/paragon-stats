@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using ParagonStats.Core.Logging;
+
 namespace ParagonStats.Core.Config;
 
 /// <summary>
@@ -32,8 +34,8 @@ public sealed class AppConfigStore
         foreach (string candidate in (string[])[Path.Join(gameRoot, "accounts"), gameRoot])
         {
             if (Directory.Exists(candidate)
-                && Directory.EnumerateFiles(candidate, "chatlog*.txt", SearchOption.AllDirectories)
-                    .Any(f => string.Equals(new FileInfo(f).Directory?.Name, "Logs", StringComparison.OrdinalIgnoreCase)))
+                && Directory.EnumerateFiles(candidate, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse)
+                    .Any(ChatLogTree.IsUnderLogs))
             {
                 return candidate;
             }
@@ -54,9 +56,18 @@ public sealed class AppConfigStore
         }
     }
 
-    public void SaveGameRoot(string gameRoot)
+    /// <summary>False when the config location is unwritable - the caller warns; the run continues.</summary>
+    public bool TrySaveGameRoot(string gameRoot)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-        File.WriteAllText(_path, JsonSerializer.Serialize(new AppConfig { GameRoot = gameRoot }, AppConfigContext.Default.AppConfig));
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+            File.WriteAllText(_path, JsonSerializer.Serialize(new AppConfig { GameRoot = gameRoot }, AppConfigContext.Default.AppConfig));
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 }

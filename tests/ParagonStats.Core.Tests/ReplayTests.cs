@@ -48,10 +48,10 @@ public sealed class ReplayTests : IDisposable
         Assert.Equal(1, session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Session));
         Assert.Contains(session.Messages.Messages, m => m.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
 
-        // The timestamp-less continuation line is skipped by the reader, and
-        // both bracketed communication lines are dumped by policy:
-        // 12 fixture lines - 1 continuation - 2 communication = 9 captured.
-        Assert.Equal(9, session.Messages.TotalCaptured);
+        // Zero collection: the continuation line, both bracketed lines, the
+        // global-handle line, and the three channel-membership lines are all
+        // refused before materialization - 12 fixture lines, 5 captured.
+        Assert.Equal(5, session.Messages.TotalCaptured);
         Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("continuation", StringComparison.Ordinal));
     }
 

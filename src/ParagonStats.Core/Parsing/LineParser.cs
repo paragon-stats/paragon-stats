@@ -7,9 +7,9 @@ namespace ParagonStats.Core.Parsing;
 
 /// <summary>
 /// Stateless single-line categorizer. Grammar is compiled in (source-generated
-/// regex: AOT-safe, culture-invariant); unknown lines become
-/// <see cref="UncategorizedLine"/> so the parser can never lose data or throw
-/// on grammar drift.
+/// regex: AOT-safe, culture-invariant). Unknown DATA lines become
+/// <see cref="UncategorizedLine"/> so grammar drift surfaces in the canary;
+/// communication-channel lines are refused entirely (see TryParse).
 /// </summary>
 public static partial class LineParser
 {
@@ -48,20 +48,32 @@ public static partial class LineParser
     private static partial Regex Reward { get; }
 
     /// <summary>
-    /// Returns null for lines the tool refuses to collect. Collection policy
-    /// (operator ruling): communication channels are not harvested AT ALL -
-    /// a bracketed line whose tag is not on the data-channel allowlist
-    /// (currently empty; [NPC]/[Caption] would join only by deliberate
-    /// decision on #225) is dumped: no event, no capture, no count.
+    /// False for lines the tool refuses to collect (mirrors
+    /// <see cref="LogLineReader.TryParse"/> - one non-result idiom through
+    /// the pipeline). Collection policy (operator ruling): communication
+    /// channels are not harvested AT ALL - bracketed lines (allowlist empty;
+    /// [NPC]/[Caption] would join only by deliberate decision on #225) and
+    /// communication metadata (the player's global handle, channel
+    /// membership) are dumped: no event, no capture, no count.
     /// </summary>
-    public static LogEvent? Parse(in LogLine line)
+    public static bool TryParse(in LogLine line, out LogEvent logEvent)
     {
         string payload = line.Payload;
-        if (payload.StartsWith('['))
+        if (payload.AsSpan().TrimStart(' ').StartsWith("[", StringComparison.Ordinal)
+            || payload.StartsWith("Using global chat handle ", StringComparison.Ordinal)
+            || payload.StartsWith("Joined channel ", StringComparison.Ordinal)
+            || payload.StartsWith("Left channel ", StringComparison.Ordinal))
         {
-            return null;
+            logEvent = UncategorizedLine.Empty;
+            return false;
         }
 
+        logEvent = Parse(payload, line.Payload);
+        return true;
+    }
+
+    private static LogEvent Parse(string payload, string raw)
+    {
         string? sourcePrefix = StripPseudopetDamagePrefix(ref payload);
 
         Match m = Banner.Match(payload);
@@ -107,7 +119,7 @@ public static partial class LineParser
             return new Defeat(attacker, m.Groups["foe"].Value);
         }
 
-        return ParseEconomy(payload) ?? new UncategorizedLine(line.Payload);
+        return ParseEconomy(payload) ?? new UncategorizedLine(raw);
     }
 
     /// <summary>The reward grammars: combat gains, architect tickets, market money.</summary>

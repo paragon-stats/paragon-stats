@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using ParagonStats.Core.Config;
 using ParagonStats.Core.Logging;
 using ParagonStats.Core.Sessions;
@@ -29,14 +27,20 @@ public static class CliRunner
         List<string> positional = [.. args.Where(a => !string.Equals(a, "--watch", StringComparison.Ordinal))];
         if (positional.Count > 1)
         {
-            error.WriteLine("usage: paragon-stats [--watch] [chatlog-file-or-game-directory]");
+            Fail(error, "usage: paragon-stats [--watch] [chatlog-file-or-game-directory]");
             return 2;
         }
 
         string? target = positional.Count == 1 ? positional[0] : null;
         if (target is not null && File.Exists(target))
         {
-            return watch ? Fail(error, "--watch needs a directory, not a file") : Replay([target], target, output, error);
+            if (watch)
+            {
+                Fail(error, "--watch needs a directory, not a file");
+                return 1;
+            }
+
+            return Replay([target], target, output, error);
         }
 
         string? accounts = ResolveRoot(target, output, error, env);
@@ -60,31 +64,36 @@ public static class CliRunner
         {
             if (!Directory.Exists(target))
             {
-                _ = Fail(error, $"no chatlog files found at: {target}");
+                Fail(error, $"no chatlog files found at: {target}");
                 return null;
             }
 
             string? resolved = AppConfigStore.ResolveAccountsDir(target);
             if (resolved is not null)
             {
-                store.SaveGameRoot(target);
+                Save(store, target, output);
             }
 
             return resolved ?? target;
         }
 
-        string? root = store.LoadGameRoot();
-        string? saved = root;
-        string? accounts = root is null ? null : AppConfigStore.ResolveAccountsDir(root);
+        string? saved = store.LoadGameRoot();
+        string? accounts = saved is null ? null : AppConfigStore.ResolveAccountsDir(saved);
+        string? root = saved;
+        bool fromConfig = saved is not null;
         while (accounts is null)
         {
-            output.WriteLine(root is null
-                ? "First launch: enter the Homecoming install location (e.g. C:\\Games\\Homecoming):"
-                : $"Saved game location has no chatlogs ({root}); enter the Homecoming install location:");
+            output.WriteLine((root, fromConfig) switch
+            {
+                (null, _) => "First launch: enter the Homecoming install location (e.g. C:\\Games\\Homecoming):",
+                (_, true) => $"Saved game location has no chatlogs ({root}); enter the Homecoming install location:",
+                _ => $"No chatlogs found at {root}; enter the Homecoming install location:",
+            });
             root = env.Input?.ReadLine();
+            fromConfig = false;
             if (string.IsNullOrWhiteSpace(root))
             {
-                _ = Fail(error, "no game location provided");
+                Fail(error, "no game location provided");
                 return null;
             }
 
@@ -93,7 +102,7 @@ public static class CliRunner
 
         if (!string.Equals(root, saved, StringComparison.Ordinal))
         {
-            store.SaveGameRoot(root!);
+            Save(store, root!, output);
         }
 
         return accounts;
@@ -101,7 +110,7 @@ public static class CliRunner
 
     private static int ReplayDirectory(string directory, TextWriter output, TextWriter error)
     {
-        string[] files = Directory.GetFiles(directory, "chatlog*.txt", SearchOption.AllDirectories);
+        string[] files = [.. Directory.EnumerateFiles(directory, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse)];
 
         // Daily chatlog names sort ordinally into chronological order per account.
         Array.Sort(files, StringComparer.Ordinal);
@@ -112,7 +121,8 @@ public static class CliRunner
     {
         if (files.Length == 0)
         {
-            return Fail(error, $"no chatlog files found at: {target}");
+            Fail(error, $"no chatlog files found at: {target}");
+            return 1;
         }
 
         output.Write(SummaryFormatter.Format(LogReplayer.Replay(files)));
@@ -121,6 +131,7 @@ public static class CliRunner
 
     private static int Watch(string accountsDir, TextWriter output, CliEnvironment env)
     {
+        output.WriteLine($"watching {accountsDir} - Ctrl+C for the session summary");
         SessionTracker tracker = new();
         using LogWatcher watcher = new(accountsDir);
         LiveMonitor monitor = new(watcher, tracker, env.ClientRunning);
@@ -128,34 +139,26 @@ public static class CliRunner
         {
             if (monitor.Tick() > 0)
             {
-                RenderOpen(tracker, output);
+                foreach (CharacterSession session in tracker.Open)
+                {
+                    output.WriteLine(SummaryFormatter.FormatLive(session));
+                }
             }
 
             env.Sleep(500);
         }
 
-        // Final full summary on exit; live watch skips no files.
-        output.Write(SummaryFormatter.Format(new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [])));
+        output.Write(SummaryFormatter.Format(new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable])));
         return 0;
     }
 
-    private static void RenderOpen(SessionTracker tracker, TextWriter output)
+    private static void Save(AppConfigStore store, string gameRoot, TextWriter output)
     {
-        foreach (CharacterSession session in tracker.Open)
+        if (!store.TrySaveGameRoot(gameRoot))
         {
-            TimeSpan span = session.LastSeen - session.Start;
-            MetricSnapshot xp = MetricSnapshot.Compute(session.Stats.Experience, span);
-            MetricSnapshot inf = MetricSnapshot.Compute(session.Stats.Influence, span);
-            MetricSnapshot tickets = MetricSnapshot.Compute(session.Stats.Tickets, span);
-            output.WriteLine(string.Create(
-                CultureInfo.InvariantCulture,
-                $"[{session.LastSeen:HH:mm:ss}] {SummaryFormatter.Ascii(session.Character)}: xp {xp.Value:0} ({xp.PerHour:0}/hr) | inf {inf.Value:0} ({inf.PerHour:0}/hr) | tickets {tickets.Value:0} ({tickets.PerHour:0}/hr)"));
+            output.WriteLine("warning: could not save the game location; you will be prompted again next launch");
         }
     }
 
-    private static int Fail(TextWriter error, string message)
-    {
-        error.WriteLine(message);
-        return 1;
-    }
+    private static void Fail(TextWriter error, string message) => error.WriteLine(message);
 }

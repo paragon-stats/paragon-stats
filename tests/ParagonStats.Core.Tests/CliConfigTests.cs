@@ -28,7 +28,7 @@ public sealed class CliConfigTests : IDisposable
         AppConfigStore store = new(ConfigPath);
         Assert.Null(store.LoadGameRoot()); // missing file
 
-        store.SaveGameRoot(@"C:\Games\Homecoming");
+        Assert.True(store.TrySaveGameRoot(@"C:\Games\Homecoming"));
         Assert.Equal(@"C:\Games\Homecoming", store.LoadGameRoot());
 
         File.WriteAllText(ConfigPath, "{not json");
@@ -68,7 +68,7 @@ public sealed class CliConfigTests : IDisposable
     public void Saved_location_is_reused_without_prompting()
     {
         string game = GameRoot();
-        new AppConfigStore(ConfigPath).SaveGameRoot(game);
+        new AppConfigStore(ConfigPath).TrySaveGameRoot(game);
         using StringWriter output = new();
         using StringWriter error = new();
 
@@ -83,7 +83,7 @@ public sealed class CliConfigTests : IDisposable
     public void Failed_directory_check_reprompts_for_a_new_location()
     {
         string game = GameRoot();
-        new AppConfigStore(ConfigPath).SaveGameRoot(Path.Join(_root, "unplugged-drive"));
+        new AppConfigStore(ConfigPath).TrySaveGameRoot(Path.Join(_root, "unplugged-drive"));
         using StringWriter output = new();
         using StringWriter error = new();
         using StringReader input = new(game + Environment.NewLine);
@@ -113,7 +113,7 @@ public sealed class CliConfigTests : IDisposable
         string first = GameRoot("first");
         string second = GameRoot("second");
         AppConfigStore store = new(ConfigPath);
-        store.SaveGameRoot(first);
+        store.TrySaveGameRoot(first);
         using StringWriter output = new();
         using StringWriter error = new();
 
@@ -180,6 +180,36 @@ public sealed class CliConfigTests : IDisposable
     }
 
     [Fact]
+    public void Watch_surfaces_unreadable_files_in_the_final_summary()
+    {
+        string game = GameRoot();
+        string locked = Path.Join(game, "accounts", "acct", "Logs", "chatlog 2026-08-30.txt");
+        File.WriteAllText(locked, "2026-08-30 08:00:00 locked\n");
+        using FileStream locker = new(locked, FileMode.Open, FileAccess.Write, FileShare.None);
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        int ticks = 0;
+
+        int exit = CliRunner.Run(["--watch", game], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Token = cancellation.Token,
+            Sleep = _ =>
+            {
+                if (++ticks >= 2)
+                {
+                    cancellation.Cancel();
+                }
+            },
+        });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("watching ", output.ToString(), StringComparison.Ordinal); // startup acknowledgment
+        Assert.Contains("skipped (unreadable)", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Watch_rejects_a_file_target_and_two_positionals_are_usage()
     {
         string game = GameRoot();
@@ -202,5 +232,34 @@ public sealed class CliConfigTests : IDisposable
         env.Sleep(1); // the real Thread.Sleep
         Assert.EndsWith(Path.Join("paragon-stats", "config.json"), env.ConfigPath, StringComparison.Ordinal);
         Assert.Null(env.Input);
+    }
+
+    [Fact]
+    public void Production_environment_wires_console_and_the_process_check()
+    {
+        using CancellationTokenSource cancellation = new();
+        CliEnvironment env = CliEnvironment.Production(cancellation.Token);
+
+        Assert.NotNull(env.Input);
+        Assert.Equal(cancellation.Token, env.Token);
+        Assert.False(env.ClientRunning()); // the real check: no game client in CI or tests
+    }
+
+    [Fact]
+    public void Unwritable_config_location_warns_and_continues()
+    {
+        string blocker = Path.Join(_root, "blocker");
+        File.WriteAllText(blocker, "a file where the config directory should be");
+        string configPath = Path.Join(blocker, "nested", "config.json");
+        Assert.False(new AppConfigStore(configPath).TrySaveGameRoot(@"C:\anything"));
+
+        string game = GameRoot();
+        using StringWriter output = new();
+        using StringWriter error = new();
+
+        int exit = CliRunner.Run([game], output, error, new CliEnvironment { ConfigPath = configPath });
+
+        Assert.Equal(0, exit); // the replay still runs
+        Assert.Contains("could not save the game location", output.ToString(), StringComparison.Ordinal);
     }
 }

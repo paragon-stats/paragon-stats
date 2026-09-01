@@ -204,6 +204,27 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
+    public void Replay_counts_a_final_line_without_a_trailing_newline()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!");
+        File.AppendAllText(log, "2024-05-12 08:05:00 You gain 10 experience."); // no newline: still a complete line on disk
+
+        ReplayResult result = LogReplayer.Replay([log]);
+        Assert.Equal(10, Assert.Single(result.Sessions).Stats.Experience);
+    }
+
+    [Fact]
+    public void Raw_line_feed_reports_refused_and_skipped_lines_as_uncollected()
+    {
+        SessionTracker tracker = new();
+        Assert.False(tracker.Accept("acct", "no timestamp here"));
+        Assert.False(tracker.Accept("acct", "2024-05-12 08:00:00 [Tell] :x: y"));
+        Assert.True(tracker.Accept("acct", "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!"));
+    }
+
+    [Fact]
     public void Backwards_timestamps_render_a_clamped_duration()
     {
         string log = WriteLog(
@@ -230,7 +251,7 @@ public sealed class RobustnessTests : IDisposable
     [Fact]
     public void Pseudopet_prefix_applies_to_damage_only()
     {
-        LogEvent? e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"));
+        Assert.True(LineParser.TryParse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"), out LogEvent e));
         Assert.IsType<UncategorizedLine>(e); // never credited to the player
     }
 

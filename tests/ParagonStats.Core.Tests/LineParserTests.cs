@@ -6,7 +6,7 @@ namespace ParagonStats.Core.Tests;
 public sealed class LineParserTests
 {
     private static LogEvent? Parse(string payload) =>
-        LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 11, 34, 51), payload));
+        LineParser.TryParse(new LogLine(new DateTime(2024, 5, 12, 11, 34, 51), payload), out LogEvent logEvent) ? logEvent : null;
 
     [Fact]
     public void Banner_yields_session_start_with_punctuated_name()
@@ -139,6 +139,9 @@ public sealed class LineParserTests
     [InlineData("[Looking For Group] PlayerOne: recruiting text")]
     [InlineData("[SuperGroup] AnonSG Message of the Day -- greetings")]
     [InlineData("[unclosed bracket garbage")]
+    [InlineData("Using global chat handle @anon")]
+    [InlineData("Joined channel 'ChannelA'")]
+    [InlineData("Left channel 'ChannelA'")]
     public void Communication_channel_lines_are_dumped_entirely(string payload)
     {
         // Collection policy (operator ruling): zero collection - no event,
@@ -155,7 +158,6 @@ public sealed class LineParserTests
     [InlineData("Your combat improves to level 50! Seek a trainer to further your abilities.")]
     [InlineData("You are now fighting at level 17.")]
     [InlineData("You received Nanotech Growth Medium.")]
-    [InlineData("Using global chat handle @anon")]
     public void Non_mvp_lines_pass_through_uncategorized(string payload)
     {
         UncategorizedLine u = Assert.IsType<UncategorizedLine>(Parse(payload));

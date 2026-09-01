@@ -58,6 +58,21 @@ public sealed class SessionTracker
         _current.Clear();
     }
 
+    /// <summary>
+    /// Raw-line entry: reader then parser then fold, one idiom for batch and
+    /// live. False when the line was skipped or refused (never collected).
+    /// </summary>
+    public bool Accept(string account, string rawLine)
+    {
+        if (LogLineReader.TryParse(rawLine, out LogLine line) && LineParser.TryParse(line, out LogEvent logEvent))
+        {
+            Accept(account, line, logEvent);
+            return true;
+        }
+
+        return false;
+    }
+
     public void Accept(string account, in LogLine line, LogEvent logEvent)
     {
         ArgumentNullException.ThrowIfNull(account);
