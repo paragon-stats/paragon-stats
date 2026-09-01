@@ -33,8 +33,12 @@ public sealed class ReplayTests
     [Fact]
     public void Attack_chain_fixture_folds_damage_and_activations()
     {
+        // The fixtures are hours apart: the idle timeout splits them into a
+        // banner session and a bannerless resumption of the same character.
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-attack-chain.txt")]);
-        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Equal(2, result.Sessions.Count);
+        CharacterSession session = result.Sessions[1];
+        Assert.Equal("Nova - PRIME", session.Character);
         Assert.Equal(1, session.Stats.Activations);
         Assert.True(session.Stats.TotalDamage > 0);
         Assert.Contains("Irradiated Ground: Irradiated Ground", (IDictionary<string, decimal>)session.Stats.DamageByPower);
@@ -44,20 +48,19 @@ public sealed class ReplayTests
     public void Same_second_storm_lines_all_count_no_dedupe()
     {
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-same-second-storm.txt")]);
-        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Equal(2, result.Sessions.Count);
 
-        // All 45 storm lines land after the banner (plus the banner fixture's 10):
-        // exact count, because ANY dedupe of the byte-identical same-second
-        // lines (AoE + DoT ticks + proc rolls) must fail this.
-        Assert.Equal(55, session.Messages.TotalCaptured);
+        // All 45 storm lines land in the resumed session: exact count, because
+        // ANY dedupe of the byte-identical same-second lines (AoE + DoT ticks
+        // + proc rolls) must fail this.
+        Assert.Equal(45, result.Sessions[1].Messages.TotalCaptured);
     }
 
     [Fact]
     public void Crlf_fixture_parses_identically_to_lf()
     {
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-crlf-storm.txt")]);
-        CharacterSession session = Assert.Single(result.Sessions);
-        Assert.All(session.Messages.Messages, m => Assert.False(m.Payload.EndsWith('\r')));
+        Assert.All(result.Sessions.SelectMany(x => x.Messages.Messages), m => Assert.False(m.Payload.EndsWith('\r')));
     }
 
     [Fact]
@@ -84,7 +87,7 @@ public sealed class ReplayTests
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-attack-chain.txt")]);
         string text = SummaryFormatter.Format(result);
         Assert.Contains("Nova - PRIME", text, StringComparison.Ordinal);
-        Assert.Contains("sessions 1", text, StringComparison.Ordinal);
+        Assert.Contains("sessions 2", text, StringComparison.Ordinal);
         Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
         Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
     }

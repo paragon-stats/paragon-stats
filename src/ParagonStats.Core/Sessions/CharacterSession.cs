@@ -3,8 +3,9 @@ using ParagonStats.Core.Stats;
 namespace ParagonStats.Core.Sessions;
 
 /// <summary>
-/// One character's play window on one account: opened by a login banner,
-/// closed by the next banner on the same account (or end of input).
+/// One character's play window on one account: opened by a login banner (or
+/// by activity resuming after an idle gap), closed by the next banner on the
+/// same account, an idle gap, or end of input.
 /// </summary>
 public sealed class CharacterSession
 {

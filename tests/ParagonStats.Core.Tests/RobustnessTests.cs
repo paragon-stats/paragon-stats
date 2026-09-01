@@ -110,6 +110,37 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
+    public void Idle_gap_closes_the_session_and_resumption_keeps_the_character()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
+            "2024-05-12 08:05:00 You gain 10 experience.",
+            "2024-05-12 09:00:00 You gain 20 experience."); // 55 min silent: logged out, banner missed the log
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        Assert.Equal(2, result.Sessions.Count);
+        Assert.Equal(10, result.Sessions[0].Stats.Experience);
+        Assert.Equal(new DateTime(2024, 5, 12, 8, 5, 0), result.Sessions[0].LastSeen);
+        Assert.Equal("Nova", result.Sessions[1].Character);
+        Assert.Equal(new DateTime(2024, 5, 12, 9, 0, 0), result.Sessions[1].Start);
+        Assert.Equal(0, result.UnattributedCount);
+    }
+
+    [Fact]
+    public void Gap_under_the_idle_timeout_stays_one_session()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
+            "2024-05-12 08:29:00 You gain 10 experience."); // 29 min: in-game idle, not a logout
+
+        ReplayResult result = LogReplayer.Replay([log]);
+        Assert.Equal(10, Assert.Single(result.Sessions).Stats.Experience);
+    }
+
+    [Fact]
     public void Backwards_timestamps_render_a_clamped_duration()
     {
         string log = WriteLog(

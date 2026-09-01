@@ -9,9 +9,18 @@ namespace ParagonStats.Core.Sessions;
 /// attributed to the current session. Lines seen before the first banner are
 /// counted but unattributable (chat logging can begin mid-session). Sessions are
 /// keyed by account, not by file, so daily log rollover is transparent.
+/// The logs contain no logout line (verified against the full source), so a
+/// silence of <see cref="IdleTimeout"/> also closes the session: an in-game
+/// character emits periodic autohit/status lines, meaning a long-silent
+/// account is logged out. A line arriving after such a gap without a banner
+/// (the banner can miss the log when logging races login) opens a new session
+/// for the account's last-known character.
 /// </summary>
 public sealed class SessionTracker
 {
+    /// <summary>Silence on an account that means the character logged out.</summary>
+    public static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(30);
+
     private readonly Dictionary<string, CharacterSession> _current = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<CharacterSession> _closed = [];
 
@@ -53,6 +62,13 @@ public sealed class SessionTracker
         {
             UnattributedCount++;
             return;
+        }
+
+        if (line.Timestamp - session.LastSeen >= IdleTimeout)
+        {
+            _closed.Add(session);
+            session = new CharacterSession(account, session.Character, line.Timestamp);
+            _current[account] = session;
         }
 
         session.LastSeen = line.Timestamp;
