@@ -149,14 +149,14 @@ public sealed class RobustnessTests : IDisposable
             Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
             "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!",
             "2026-08-31 08:05:00 You gain 10 experience.",
-            "2026-08-31 09:00:00 [SuperGroup] AnonSG Message of the Day -- redacted", // post-gap: who? wait
-            "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",            // proof: Luna is active
+            "2026-08-31 09:00:00 You are flying!",                          // post-gap data line: who? wait
+            "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",  // proof: Luna is active
             "2026-08-31 09:00:02 You gain 20 experience.");
 
         ReplayResult result = LogReplayer.Replay([log]);
 
         Assert.Equal(2, result.Sessions.Count);
-        Assert.Equal(1, result.UnattributedCount); // only the pre-proof MOTD line
+        Assert.Equal(1, result.UnattributedCount); // only the pre-proof data line
         Assert.Equal("Luna", result.Sessions[1].Character);
         Assert.Equal(20, result.Sessions[1].Stats.Experience);
         Assert.Equal(new DateTime(2026, 8, 31, 9, 0, 1), result.Sessions[1].Start);
@@ -228,16 +228,9 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
-    public void Bracketed_non_chat_lines_surface_as_uncategorized()
-    {
-        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "[unclosed bracket text"));
-        Assert.IsType<UncategorizedLine>(e);
-    }
-
-    [Fact]
     public void Pseudopet_prefix_applies_to_damage_only()
     {
-        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"));
+        LogEvent? e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"));
         Assert.IsType<UncategorizedLine>(e); // never credited to the player
     }
 
@@ -247,7 +240,7 @@ public sealed class RobustnessTests : IDisposable
         MessageLog log = new();
         for (int i = 0; i <= MessageLog.Capacity; i++)
         {
-            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, channel: null, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
+            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
         }
 
         Assert.Equal(MessageLog.Capacity, log.Messages.Count);

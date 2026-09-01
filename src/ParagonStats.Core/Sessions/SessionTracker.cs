@@ -97,10 +97,10 @@ public sealed class SessionTracker
         }
 
         // The trigger line belongs to the session it opens: counted and
-        // captured like every other line, so nothing is ever dropped.
+        // captured like every other line. Communication channels never reach
+        // this point - the parser dumps them (zero collection, by ruling).
         session.LastSeen = line.Timestamp;
         session.Stats.Apply(logEvent);
-        string? channel = logEvent is ChatMessage chat ? chat.Channel : null;
-        session.Messages.Add(line.Timestamp, logEvent.Category, channel, line.Payload);
+        session.Messages.Add(line.Timestamp, logEvent.Category, line.Payload);
     }
 }

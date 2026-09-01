@@ -5,13 +5,13 @@ namespace ParagonStats.Core.Tests;
 
 public sealed class LineParserTests
 {
-    private static LogEvent Parse(string payload) =>
+    private static LogEvent? Parse(string payload) =>
         LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 11, 34, 51), payload));
 
     [Fact]
     public void Banner_yields_session_start_with_punctuated_name()
     {
-        LogEvent e = Parse("Welcome to City of Heroes, Nova - PRIME!");
+        LogEvent? e = Parse("Welcome to City of Heroes, Nova - PRIME!");
         SessionStart s = Assert.IsType<SessionStart>(e);
         Assert.Equal("Nova - PRIME", s.CharacterName);
     }
@@ -134,23 +134,16 @@ public sealed class LineParserTests
     }
 
     [Theory]
-    [InlineData("[Tell] :Other Player: redacted", "Tell", "Other Player")]
-    [InlineData("[Tell] -->Other Player: redacted", "Tell", "Other Player")]
-    [InlineData("[Looking For Group] PlayerOne: redacted", "Looking For Group", "PlayerOne")]
-    public void Chat_channels_and_tell_markers_parse(string payload, string channel, string speaker)
+    [InlineData("[Tell] :Other Player: private words")]
+    [InlineData("[Tell] -->Other Player: private words")]
+    [InlineData("[Looking For Group] PlayerOne: recruiting text")]
+    [InlineData("[SuperGroup] AnonSG Message of the Day -- greetings")]
+    [InlineData("[unclosed bracket garbage")]
+    public void Communication_channel_lines_are_dumped_entirely(string payload)
     {
-        ChatMessage c = Assert.IsType<ChatMessage>(Parse(payload));
-        Assert.Equal(channel, c.Channel);
-        Assert.Equal(speaker, c.Speaker);
-        Assert.Equal("redacted", c.Text);
-    }
-
-    [Fact]
-    public void Chat_color_markup_is_stripped()
-    {
-        ChatMessage c = Assert.IsType<ChatMessage>(
-            Parse("[Looking For Group] PlayerOne: <color #010101><bgcolor #019aff>redacted"));
-        Assert.Equal("redacted", c.Text);
+        // Collection policy (operator ruling): zero collection - no event,
+        // no capture, no count. The parser returns nothing at all.
+        Assert.Null(Parse(payload));
     }
 
     [Theory]

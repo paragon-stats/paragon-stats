@@ -17,7 +17,7 @@ public sealed class MessageLog
 
     public IReadOnlyCollection<CapturedMessage> Messages => _messages;
 
-    public void Add(DateTime timestamp, EventCategory category, string? channel, string payload)
+    public void Add(DateTime timestamp, EventCategory category, string payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
         if (_messages.Count == Capacity)
@@ -25,7 +25,7 @@ public sealed class MessageLog
             _messages.Dequeue();
         }
 
-        _messages.Enqueue(new CapturedMessage(timestamp, category, channel, payload));
+        _messages.Enqueue(new CapturedMessage(timestamp, category, payload));
         TotalCaptured++;
     }
 }

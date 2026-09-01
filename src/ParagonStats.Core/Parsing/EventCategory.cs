@@ -4,7 +4,6 @@ namespace ParagonStats.Core.Parsing;
 public enum EventCategory
 {
     Uncategorized,
-    Chat,
     Session,
     Identity,
     PowerActivation,

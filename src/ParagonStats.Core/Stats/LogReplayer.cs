@@ -74,7 +74,10 @@ public static class LogReplayer
                 continue;
             }
 
-            tracker.Accept(account, line, LineParser.Parse(line));
+            if (LineParser.Parse(line) is { } logEvent)
+            {
+                tracker.Accept(account, line, logEvent);
+            }
         }
     }
 }

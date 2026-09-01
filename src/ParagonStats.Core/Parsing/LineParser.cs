@@ -13,16 +13,6 @@ namespace ParagonStats.Core.Parsing;
 /// </summary>
 public static partial class LineParser
 {
-    // Speaker markers: incoming tells lead with ':', outgoing with '-->'.
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?:-->|:)?(?<speaker>[^:]+): ?(?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Chat { get; }
-
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex ChatChannelOnly { get; }
-
-    [GeneratedRegex(@"<b>|</b>|<color #[0-9A-Za-z]+>|<bgcolor #[0-9A-Za-z]+>", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Markup { get; }
-
     [GeneratedRegex(@"^(?<pet>[^:\[]{1,60}):  (?=\S)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex PseudopetPrefix { get; }
 
@@ -57,12 +47,19 @@ public static partial class LineParser
     [GeneratedRegex(@"^You gain (?:(?<xp>[0-9,]+) experience(?:, work off [0-9,]+ debt, and gain (?<inf>[0-9,]+) (?:influence|infamy)| and (?<inf>[0-9,]+) (?:influence|infamy))?|(?<inf>[0-9,]+) (?:influence|infamy))\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Reward { get; }
 
-    public static LogEvent Parse(in LogLine line)
+    /// <summary>
+    /// Returns null for lines the tool refuses to collect. Collection policy
+    /// (operator ruling): communication channels are not harvested AT ALL -
+    /// a bracketed line whose tag is not on the data-channel allowlist
+    /// (currently empty; [NPC]/[Caption] would join only by deliberate
+    /// decision on #225) is dumped: no event, no capture, no count.
+    /// </summary>
+    public static LogEvent? Parse(in LogLine line)
     {
         string payload = line.Payload;
         if (payload.StartsWith('['))
         {
-            return ParseChat(line.Payload);
+            return null;
         }
 
         string? sourcePrefix = StripPseudopetDamagePrefix(ref payload);
@@ -160,27 +157,4 @@ public static partial class LineParser
 
     private static long ParseCount(string text) =>
         long.Parse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
-
-    private static LogEvent ParseChat(string payload)
-    {
-        Match m = Chat.Match(payload);
-        if (!m.Success)
-        {
-            // "[Channel] free text" without a speaker (system MOTD style).
-            Match c = ChatChannelOnly.Match(payload);
-
-            // A bracketed line matching no chat shape is a parse failure, not
-            // a chat message - it must surface in the drift canary.
-            return c.Success
-                ? new ChatMessage(c.Groups["channel"].Value, string.Empty, StripMarkup(c.Groups["text"].Value))
-                : new UncategorizedLine(payload);
-        }
-
-        return new ChatMessage(
-            m.Groups["channel"].Value,
-            m.Groups["speaker"].Value,
-            StripMarkup(m.Groups["text"].Value));
-    }
-
-    private static string StripMarkup(string text) => Markup.Replace(text, string.Empty);
 }

@@ -35,9 +35,9 @@ public sealed class LiveMonitor
             foreach (string raw in batch.Lines)
             {
                 count++;
-                if (LogLineReader.TryParse(raw, out LogLine line))
+                if (LogLineReader.TryParse(raw, out LogLine line) && LineParser.Parse(line) is { } logEvent)
                 {
-                    _tracker.Accept(batch.Account, line, LineParser.Parse(line));
+                    _tracker.Accept(batch.Account, line, logEvent);
                 }
             }
         }
