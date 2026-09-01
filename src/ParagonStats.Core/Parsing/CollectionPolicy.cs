@@ -52,8 +52,26 @@ public static class CollectionPolicy
     /// </summary>
     public static CollectionVerdict Classify(ReadOnlySpan<char> line, bool complete)
     {
-        // Timestamp shape, checked as far as the line has arrived: a mismatch
-        // at any fixed position is a continuation line, refused immediately.
+        if (!TimestampShapeHolds(line))
+        {
+            return CollectionVerdict.Refuse;
+        }
+
+        if (line.Length < TimestampLength)
+        {
+            return complete ? CollectionVerdict.Refuse : CollectionVerdict.Undecided;
+        }
+
+        return ClassifyPayload(line[TimestampLength..], complete || line.Length >= MaxClassifyLength);
+    }
+
+    /// <summary>
+    /// The "yyyy-MM-dd HH:mm:ss " shape, checked as far as the line has
+    /// arrived: a mismatch at any fixed position means a continuation line -
+    /// communication content without a timestamp - refused immediately.
+    /// </summary>
+    private static bool TimestampShapeHolds(ReadOnlySpan<char> line)
+    {
         for (int i = 0; i < TimestampLength && i < line.Length; i++)
         {
             char expected = i switch
@@ -63,18 +81,15 @@ public static class CollectionPolicy
                 13 or 16 => ':',
                 _ => '\0',
             };
-            if (expected == '\0' ? !char.IsAsciiDigit(line[i]) : line[i] != expected)
+
+            bool holds = expected == '\0' ? char.IsAsciiDigit(line[i]) : line[i] == expected;
+            if (!holds)
             {
-                return CollectionVerdict.Refuse;
+                return false;
             }
         }
 
-        if (line.Length < TimestampLength)
-        {
-            return complete ? CollectionVerdict.Refuse : CollectionVerdict.Undecided;
-        }
-
-        return ClassifyPayload(line[TimestampLength..], complete || line.Length >= MaxClassifyLength);
+        return true;
     }
 
     private static CollectionVerdict ClassifyPayload(ReadOnlySpan<char> payload, bool complete)
