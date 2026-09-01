@@ -2,8 +2,10 @@ namespace ParagonStats.Core.Logging;
 
 /// <summary>
 /// Discovers chatlog files under the accounts root and tails each. Watch is a
-/// LIVE monitor: only files written within the last day attach (historical
-/// dailies stay on disk for batch replay), read from the start so session
+/// LIVE monitor: only files written within the attach window join (the
+/// caller passes the session idle timeout - a file silent past it belongs to
+/// a closed session by definition; history stays on disk for batch replay),
+/// read from the start so session
 /// context - the banner - is never missed. New files (daily rollover, first
 /// login of a new account) attach as they appear; a file that cannot be
 /// opened is reported via <see cref="Unreadable"/> and retried, never fatal;
@@ -12,9 +14,8 @@ namespace ParagonStats.Core.Logging;
 /// </summary>
 public sealed class LogWatcher : IDisposable
 {
-    private static readonly TimeSpan AttachWindow = TimeSpan.FromHours(24);
-
     private readonly string _root;
+    private readonly TimeSpan _attachWindow;
     private readonly int _discoveryInterval;
     private readonly SortedDictionary<string, ChatLogTailer> _tailers = new(StringComparer.Ordinal);
     private readonly SortedSet<string> _unreadable = new(StringComparer.Ordinal);
@@ -25,11 +26,12 @@ public sealed class LogWatcher : IDisposable
     /// account per day, so rediscovering every Nth poll (default: roughly
     /// every 10s at the CLI's 500ms cadence) spares two tree walks per second.
     /// </summary>
-    public LogWatcher(string root, int discoveryInterval = 20)
+    public LogWatcher(string root, TimeSpan attachWindow, int discoveryInterval = 20)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentOutOfRangeException.ThrowIfLessThan(discoveryInterval, 1);
         _root = root;
+        _attachWindow = attachWindow;
         _discoveryInterval = discoveryInterval;
     }
 
@@ -79,7 +81,7 @@ public sealed class LogWatcher : IDisposable
 
     private void Discover()
     {
-        DateTime cutoff = DateTime.UtcNow - AttachWindow;
+        DateTime cutoff = DateTime.UtcNow - _attachWindow;
         foreach (string file in Directory.EnumerateFiles(_root, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse))
         {
             if (_tailers.ContainsKey(file) || File.GetLastWriteTimeUtc(file) < cutoff)

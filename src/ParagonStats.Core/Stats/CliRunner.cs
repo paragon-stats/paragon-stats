@@ -133,7 +133,7 @@ public static class CliRunner
     {
         output.WriteLine($"watching {accountsDir} - Ctrl+C for the session summary");
         SessionTracker tracker = new();
-        using LogWatcher watcher = new(accountsDir);
+        using LogWatcher watcher = new(accountsDir, SessionTracker.IdleTimeout);
         LiveMonitor monitor = new(watcher, tracker, env.ClientRunning);
         while (!env.Token.IsCancellationRequested)
         {
@@ -142,6 +142,11 @@ public static class CliRunner
                 foreach (CharacterSession session in tracker.Open)
                 {
                     output.WriteLine(SummaryFormatter.FormatLive(session));
+                }
+
+                if (tracker.Open.Count > 1)
+                {
+                    output.WriteLine(SummaryFormatter.FormatCombined(tracker.Open));
                 }
             }
 

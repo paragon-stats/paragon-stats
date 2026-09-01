@@ -68,7 +68,7 @@ public sealed class LiveWatchTests : IDisposable
     [Fact]
     public void Watcher_attaches_files_created_after_it_started()
     {
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         Assert.Empty(watcher.Poll());
 
         File.WriteAllText(LogPath(), "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!\n");
@@ -84,11 +84,11 @@ public sealed class LiveWatchTests : IDisposable
         using (FileStream locker = new(path, FileMode.Create, FileAccess.Write, FileShare.None))
         {
             locker.Write(Encoding.UTF8.GetBytes("2026-08-31 08:00:00 locked out\n"));
-            using LogWatcher watcher = new(_root, discoveryInterval: 1);
+            using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
             Assert.Empty(watcher.Poll());
         }
 
-        using LogWatcher retry = new(_root, discoveryInterval: 1);
+        using LogWatcher retry = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         Assert.Single(retry.Poll());
     }
 
@@ -96,7 +96,7 @@ public sealed class LiveWatchTests : IDisposable
     public void Daily_rollover_continues_the_same_session()
     {
         File.WriteAllText(LogPath(name: "chatlog 2026-08-30.txt"), "2026-08-30 23:50:00 Welcome to City of Heroes, Nova!\n");
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         SessionTracker tracker = new();
         LiveMonitor monitor = new(watcher, tracker, static () => true);
         Assert.Equal(1, monitor.Tick());
@@ -169,7 +169,7 @@ public sealed class LiveWatchTests : IDisposable
         string live = LogPath();
         File.WriteAllText(live, "2026-08-31 08:00:00 You gain 20 experience.\n");
 
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         WatchBatch batch = Assert.Single(watcher.Poll());
         Assert.Single(batch.Lines); // only the recent file attached
     }
@@ -180,7 +180,7 @@ public sealed class LiveWatchTests : IDisposable
         // Edge-triggered stop authority: a misreading process check (renamed
         // client binary) must not fragment sessions every tick.
         File.WriteAllText(LogPath(), "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!\n");
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         SessionTracker tracker = new();
         LiveMonitor monitor = new(watcher, tracker, static () => false);
 
@@ -205,7 +205,7 @@ public sealed class LiveWatchTests : IDisposable
     {
         string path = LogPath();
         File.WriteAllText(path, "2026-08-31 08:00:00 You gain 10 experience.\n");
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         Assert.Single(watcher.Poll());
 
         File.Delete(path); // allowed by the Delete share; the reopen attempt throws and is contained
@@ -216,7 +216,7 @@ public sealed class LiveWatchTests : IDisposable
     [Fact]
     public void Watcher_rejects_a_nonsense_discovery_interval()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new LogWatcher(_root, discoveryInterval: 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new LogWatcher(_root, TimeSpan.FromMinutes(30), discoveryInterval: 0));
     }
 
     [Fact]
@@ -224,7 +224,7 @@ public sealed class LiveWatchTests : IDisposable
     {
         File.WriteAllText(LogPath(), "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!\n2026-08-31 08:10:00 You gain 10 experience.\n");
         bool running = true;
-        using LogWatcher watcher = new(_root, discoveryInterval: 1);
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30), discoveryInterval: 1);
         SessionTracker tracker = new();
         LiveMonitor monitor = new(watcher, tracker, () => running);
 

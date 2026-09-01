@@ -14,8 +14,9 @@ original — concept only.
 ## Who it's for
 
 CoH players who want live performance and income stats while playing — especially
-farmers and build-testers. Multibox-aware: monitor several accounts at once,
-display one.
+farmers and build-testers. Multibox-aware: monitor several accounts at once
+and display them all - a live line per box plus a combined farm total
+(e.g. influence gain across all three boxes at once).
 
 ## Platform & shape
 
@@ -45,10 +46,17 @@ Delivered across engine + TUI + tabbed GUI. **The overlay is excluded from 1.0.*
 - **Storage = two-tier**: in-memory fold for the live path (bounded memory) + **SQLite**
   as a derived history/query store. The CoH chat logs are the source of truth; everything
   in SQLite is recomputable from them.
-- **Identity = account → character → session**, segmented by the login banner. Multibox:
-  monitor all active log streams, select one to display; attach new streams dynamically.
-- **Income = kill income only** (`You gain … influence`); market/vendor (Consignment
-  House) is a separate source → Backlog.
+- **Identity = account → character → session**, opened by identity triggers (login
+  banner or the self-only Health/Stamina heartbeat), closed by the next trigger, 30
+  minutes of silence (the game's AFK-logout safety), or client exit. Multibox: monitor
+  all active log streams and display each, with cross-box aggregates; attach new
+  streams dynamically. Live watch is live-only - it attaches only files written within
+  the idle window; history belongs to batch replay.
+- **Income = distinct sources, never conflated**: kill income (`You gain … influence`),
+  architect tickets (the AE farm economy's primary reward), and market money
+  (Consignment House / Black Market) each tracked as their own stat - market income
+  realizes when goods sell, not when the play happened, so it never folds into combat
+  rates.
 - **Build data is not in the logs** (respec/level-up emit no power/IO placement) →
   OCR / pop-menu-to-log only, post-1.0.
 - **UI = Avalonia** (AOT production-ready, MIT). WPF (no AOT) and WinUI 3 (AOT preview) rejected.

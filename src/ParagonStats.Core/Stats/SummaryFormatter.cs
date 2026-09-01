@@ -54,6 +54,34 @@ public static class SummaryFormatter
             $"[{session.LastSeen:HH:mm:ss}] {Ascii(session.Character)}: xp {xp.Value:0} ({xp.PerHour:0}/hr) | inf {inf.Value:0} ({inf.PerHour:0}/hr) | tickets {tickets.Value:0} ({tickets.PerHour:0}/hr)");
     }
 
+    /// <summary>
+    /// The multibox farm total: one line summing every open session (operator
+    /// use case: influence gain across all boxes at once). Rates add because
+    /// the sessions run concurrently.
+    /// </summary>
+    public static string FormatCombined(IReadOnlyCollection<CharacterSession> sessions)
+    {
+        ArgumentNullException.ThrowIfNull(sessions);
+        decimal xp = 0m, xpRate = 0m, inf = 0m, infRate = 0m, tickets = 0m, ticketRate = 0m;
+        foreach (CharacterSession session in sessions)
+        {
+            TimeSpan span = session.LastSeen - session.Start;
+            MetricSnapshot x = MetricSnapshot.Compute(session.Stats.Experience, span);
+            MetricSnapshot i = MetricSnapshot.Compute(session.Stats.Influence, span);
+            MetricSnapshot t = MetricSnapshot.Compute(session.Stats.Tickets, span);
+            xp += x.Value;
+            xpRate += x.PerHour;
+            inf += i.Value;
+            infRate += i.PerHour;
+            tickets += t.Value;
+            ticketRate += t.PerHour;
+        }
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"[all {sessions.Count} boxes] xp {xp:0} ({xpRate:0}/hr) | inf {inf:0} ({infRate:0}/hr) | tickets {tickets:0} ({ticketRate:0}/hr)");
+    }
+
     /// <summary>Console output stays printable ASCII (docs/style-guides/encoding.md); names may not be.</summary>
     private static string Ascii(string text)
     {

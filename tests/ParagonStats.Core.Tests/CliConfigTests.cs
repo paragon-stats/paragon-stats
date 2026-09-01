@@ -153,6 +153,42 @@ public sealed class CliConfigTests : IDisposable
     }
 
     [Fact]
+    public void Watch_sums_all_boxes_into_a_combined_farm_line()
+    {
+        // The operator's multibox use case: influence gain across every box
+        // at once - one line per box plus the combined total.
+        string game = GameRoot();
+        string second = Path.Join(game, "accounts", "acct2", "Logs");
+        Directory.CreateDirectory(second);
+        File.WriteAllText(
+            Path.Join(second, "chatlog 2026-08-31.txt"),
+            "2026-08-31 08:00:00 Welcome to City of Heroes, Luna!\n2026-08-31 08:10:00 You gain 20 influence.\n");
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        int ticks = 0;
+
+        int exit = CliRunner.Run(["--watch", game], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Token = cancellation.Token,
+            Sleep = _ =>
+            {
+                if (++ticks >= 2)
+                {
+                    cancellation.Cancel();
+                }
+            },
+        });
+
+        Assert.Equal(0, exit);
+        string text = output.ToString();
+        Assert.Contains("Nova:", text, StringComparison.Ordinal);
+        Assert.Contains("Luna:", text, StringComparison.Ordinal);
+        Assert.Contains("[all 2 boxes] xp 10 (60/hr) | inf 20 (120/hr)", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Watch_closes_sessions_when_the_client_process_exits()
     {
         string game = GameRoot();
