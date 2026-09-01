@@ -6,7 +6,7 @@ namespace ParagonStats.Core.Tests;
 
 public sealed class ReplayTests
 {
-    private static string Fixture(string name) => Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
+    private static string Fixture(string name) => Path.Join(AppContext.BaseDirectory, "Fixtures", name);
 
     [Fact]
     public void Session_banner_fixture_attributes_lines_and_counts_preamble()
@@ -77,9 +77,16 @@ public sealed class ReplayTests
         Assert.SkipWhen(string.IsNullOrEmpty(corpus), "PARAGON_CORPUS_DIR not set");
 
         string[] files = Directory.GetFiles(corpus!, "chatlog*.txt", SearchOption.AllDirectories);
+        Array.Sort(files, StringComparer.Ordinal);
         ReplayResult result = LogReplayer.Replay(files);
         long total = result.Sessions.Sum(s => s.Messages.TotalCaptured);
         long uncategorized = result.Sessions.Sum(s => s.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Uncategorized));
         Assert.True(total > 0);
+
+        // The drift canary: if the grammar rots, everything degrades into
+        // Uncategorized. A majority-uncategorized corpus means the parser no
+        // longer recognizes the game's output.
+        double ratio = (double)uncategorized / total;
+        Assert.True(ratio < 0.75, $"uncategorized ratio {ratio:P1} ({uncategorized}/{total}) - grammar drift?");
     }
 }

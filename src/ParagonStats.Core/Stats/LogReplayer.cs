@@ -43,13 +43,10 @@ public static class LogReplayer
     internal static string AccountFor(string file)
     {
         DirectoryInfo? logs = new FileInfo(file).Directory;
-        if (logs is not null
+        return logs is not null
             && string.Equals(logs.Name, "Logs", StringComparison.OrdinalIgnoreCase)
-            && logs.Parent is not null)
-        {
-            return logs.Parent.Name;
-        }
-
-        return "unknown";
+            && logs.Parent is not null
+            ? logs.Parent.Name
+            : "unknown";
     }
 }

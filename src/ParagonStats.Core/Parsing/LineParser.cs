@@ -13,6 +13,34 @@ namespace ParagonStats.Core.Parsing;
 /// </summary>
 public static partial class LineParser
 {
+    // Speaker markers: incoming tells lead with ':', outgoing with '-->'.
+    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?:-->|:)?(?<speaker>[^:]+): ?(?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Chat { get; }
+
+    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex ChatChannelOnly { get; }
+
+    [GeneratedRegex(@"<b>|</b>|<color #[0-9A-Za-z]+>|<bgcolor #[0-9A-Za-z]+>", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Markup { get; }
+
+    [GeneratedRegex(@"^(?<pet>[^:\[]{1,60}):  (?=\S)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PseudopetPrefix { get; }
+
+    [GeneratedRegex(@"^Welcome to City of Heroes, (?<name>.+)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Banner { get; }
+
+    [GeneratedRegex(@"^You activated the (?<power>.+) power\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Activation { get; }
+
+    [GeneratedRegex(@"^You hit (?<target>.+) with your (?<power>.+) for (?<amount>[0-9,]+(?:\.[0-9]+)?) points of (?<type>.+?) damage(?<overtime> over time)?\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Damage { get; }
+
+    [GeneratedRegex(@"^(?:You have defeated (?<foe>.+)|(?<attacker>.+) has defeated (?<foe>.+))$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex DefeatLine { get; }
+
+    [GeneratedRegex(@"^You gain (?:(?<xp>[0-9,]+) experience(?: and (?<inf>[0-9,]+) (?:influence|infamy))?|(?<inf>[0-9,]+) (?:influence|infamy))\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Reward { get; }
+
     public static LogEvent Parse(in LogLine line)
     {
         string payload = line.Payload;
@@ -23,26 +51,26 @@ public static partial class LineParser
 
         // A pseudopet source prefixes normal grammar with "Name:  " (two spaces).
         string? sourcePrefix = null;
-        Match pet = PseudopetPrefix().Match(payload);
+        Match pet = PseudopetPrefix.Match(payload);
         if (pet.Success)
         {
             sourcePrefix = pet.Groups["pet"].Value;
             payload = payload[pet.Length..];
         }
 
-        Match m = Banner().Match(payload);
+        Match m = Banner.Match(payload);
         if (m.Success)
         {
             return new SessionStart(m.Groups["name"].Value);
         }
 
-        m = Activation().Match(payload);
+        m = Activation.Match(payload);
         if (m.Success)
         {
             return new PowerActivated(m.Groups["power"].Value);
         }
 
-        m = Damage().Match(payload);
+        m = Damage.Match(payload);
         if (m.Success)
         {
             return new DamageDealt(
@@ -54,14 +82,14 @@ public static partial class LineParser
                 sourcePrefix);
         }
 
-        m = DefeatLine().Match(payload);
+        m = DefeatLine.Match(payload);
         if (m.Success)
         {
             string? attacker = m.Groups["attacker"].Success ? m.Groups["attacker"].Value : null;
             return new Defeat(attacker, m.Groups["foe"].Value);
         }
 
-        m = Reward().Match(payload);
+        m = Reward.Match(payload);
         if (m.Success)
         {
             long? xp = m.Groups["xp"].Success ? ParseCount(m.Groups["xp"].Value) : null;
@@ -77,11 +105,11 @@ public static partial class LineParser
 
     private static ChatMessage ParseChat(string payload)
     {
-        Match m = Chat().Match(payload);
+        Match m = Chat.Match(payload);
         if (!m.Success)
         {
             // "[Channel] free text" without a speaker (system MOTD style).
-            Match c = ChatChannelOnly().Match(payload);
+            Match c = ChatChannelOnly.Match(payload);
             return c.Success
                 ? new ChatMessage(c.Groups["channel"].Value, string.Empty, StripMarkup(c.Groups["text"].Value))
                 : new ChatMessage(string.Empty, string.Empty, StripMarkup(payload));
@@ -93,33 +121,5 @@ public static partial class LineParser
             StripMarkup(m.Groups["text"].Value));
     }
 
-    private static string StripMarkup(string text) => Markup().Replace(text, string.Empty);
-
-    // Speaker markers: incoming tells lead with ':', outgoing with '-->'.
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?:-->|:)?(?<speaker>[^:]+): ?(?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Chat();
-
-    [GeneratedRegex(@"^\[(?<channel>[^\]]+)\] (?<text>.*)$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex ChatChannelOnly();
-
-    [GeneratedRegex(@"<b>|</b>|<color #[0-9A-Za-z]+>|<bgcolor #[0-9A-Za-z]+>", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Markup();
-
-    [GeneratedRegex(@"^(?<pet>[^:\[]{1,60}):  (?=\S)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex PseudopetPrefix();
-
-    [GeneratedRegex(@"^Welcome to City of Heroes, (?<name>.+)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Banner();
-
-    [GeneratedRegex(@"^You activated the (?<power>.+) power\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Activation();
-
-    [GeneratedRegex(@"^You hit (?<target>.+) with your (?<power>.+) for (?<amount>[0-9,]+(?:\.[0-9]+)?) points of (?<type>.+?) damage(?<overtime> over time)?\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Damage();
-
-    [GeneratedRegex(@"^(?:You have defeated (?<foe>.+)|(?<attacker>.+) has defeated (?<foe>.+))$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex DefeatLine();
-
-    [GeneratedRegex(@"^You gain (?:(?<xp>[0-9,]+) experience(?: and (?<inf>[0-9,]+) (?:influence|infamy))?|(?<inf>[0-9,]+) (?:influence|infamy))\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex Reward();
+    private static string StripMarkup(string text) => Markup.Replace(text, string.Empty);
 }
