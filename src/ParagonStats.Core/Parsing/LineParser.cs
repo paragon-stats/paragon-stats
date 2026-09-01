@@ -43,6 +43,11 @@ public static partial class LineParser
     [GeneratedRegex(@"^(?:You have defeated (?<foe>.+)|(?<attacker>.+) has defeated (?<foe>.+))$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex DefeatLine { get; }
 
+    // Colon excluded: "Entering WARNING: You are about to exit this zone." is
+    // the exit-warning popup, not a zone name.
+    [GeneratedRegex(@"^Entering (?<zone>[^.:]+)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex Zone { get; }
+
     [GeneratedRegex(@"^You (?:earned (?<count>[0-9,]+) architect tickets|have received (?<count>[0-9,]+) bonus architect tickets for completing the mission)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Tickets { get; }
 
@@ -72,6 +77,12 @@ public static partial class LineParser
         if (m.Success)
         {
             return new IdentityPulse(m.Groups["name"].Value);
+        }
+
+        m = Zone.Match(payload);
+        if (m.Success)
+        {
+            return new ZoneEntered(m.Groups["zone"].Value);
         }
 
         m = Activation.Match(payload);

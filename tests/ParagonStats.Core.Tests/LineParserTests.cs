@@ -63,6 +63,21 @@ public sealed class LineParserTests
         Assert.IsType<UncategorizedLine>(Parse(payload));
     }
 
+    [Theory]
+    [InlineData("Entering Bronze Way.", "Bronze Way")]
+    [InlineData("Entering Architect Entertainment.", "Architect Entertainment")]
+    public void Zone_entry_yields_the_map_name(string payload, string zone)
+    {
+        ZoneEntered z = Assert.IsType<ZoneEntered>(Parse(payload));
+        Assert.Equal(zone, z.Zone);
+    }
+
+    [Fact]
+    public void Zone_exit_warning_is_not_a_zone()
+    {
+        Assert.IsType<UncategorizedLine>(Parse("Entering WARNING: You are about to exit this zone."));
+    }
+
     [Fact]
     public void Activation_yields_power()
     {
