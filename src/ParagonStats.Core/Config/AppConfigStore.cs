@@ -40,8 +40,7 @@ public sealed class AppConfigStore
         return Qualifies(gameRoot) ? gameRoot : null;
 
         static bool Qualifies(string candidate) =>
-            Directory.Exists(candidate)
-            && Directory.EnumerateFiles(candidate, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse).Any(ChatLogTree.IsUnderLogs);
+            Directory.Exists(candidate) && ChatLogTree.EnumerateLogs(candidate).Count > 0;
     }
 
     public string? LoadGameRoot()

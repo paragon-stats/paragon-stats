@@ -59,10 +59,7 @@ public static partial class LineParser
     public static bool TryParse(in LogLine line, out LogEvent logEvent)
     {
         string payload = line.Payload;
-        if (payload.AsSpan().TrimStart(' ').StartsWith("[", StringComparison.Ordinal)
-            || payload.StartsWith("Using global chat handle ", StringComparison.Ordinal)
-            || payload.StartsWith("Joined channel ", StringComparison.Ordinal)
-            || payload.StartsWith("Left channel ", StringComparison.Ordinal))
+        if (CollectionPolicy.RefusesPayload(payload))
         {
             logEvent = UncategorizedLine.Empty;
             return false;

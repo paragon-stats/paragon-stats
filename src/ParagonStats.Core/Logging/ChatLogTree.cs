@@ -11,14 +11,39 @@ public static class ChatLogTree
     public const string FilePattern = "chatlog*.txt";
 
     /// <summary>
-    /// Enumeration that survives access-denied subdirectories (junctions,
-    /// permissions, cloud placeholders) instead of throwing mid-iteration.
+    /// Bounded enumeration: survives access-denied subdirectories instead of
+    /// throwing mid-iteration, refuses to follow reparse points (a junction
+    /// or symlink cycle would otherwise be walked until the path length
+    /// explodes, opening a handle per synthetic path), and stops well below
+    /// the real layout's depth (accounts/name/Logs = 3).
     /// </summary>
     public static readonly EnumerationOptions SafeRecurse = new()
     {
         IgnoreInaccessible = true,
         RecurseSubdirectories = true,
+        MaxRecursionDepth = 8,
+        AttributesToSkip = FileAttributes.Hidden | FileAttributes.System | FileAttributes.ReparsePoint,
     };
+
+    /// <summary>
+    /// Every chatlog under a root that this tool will read: the game's shape
+    /// only (least collection - a chatlog elsewhere under the root is not
+    /// ours), bounded by <see cref="SafeRecurse"/>, and empty rather than
+    /// fatal when the tree cannot be walked (a drive pulled mid-scan, a root
+    /// that is not a directory). The one discovery path: watcher, batch
+    /// replay, and the game-location check all come through here.
+    /// </summary>
+    public static IReadOnlyList<string> EnumerateLogs(string root)
+    {
+        try
+        {
+            return [.. Directory.EnumerateFiles(root, FilePattern, SafeRecurse).Where(IsUnderLogs)];
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
 
     /// <summary>
     /// The account is the directory above "Logs". Files outside that shape

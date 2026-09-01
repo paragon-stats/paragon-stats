@@ -2,29 +2,38 @@ namespace ParagonStats.Core.Logging;
 
 /// <summary>
 /// Discovers chatlog files under the accounts root and tails each. Watch is a
-/// LIVE monitor: only files written within the attach window join (the
-/// caller passes the session idle timeout - a file silent past it belongs to
-/// a closed session by definition; history stays on disk for batch replay),
-/// read from the start so session
-/// context - the banner - is never missed. New files (daily rollover, first
-/// login of a new account) attach as they appear; a file that cannot be
-/// opened is reported via <see cref="Unreadable"/> and retried, never fatal;
-/// a transient read failure skips that file for one poll. Files never detach;
-/// account = the directory above Logs.
+/// LIVE monitor: only files written within the attach window join (the caller
+/// passes the session idle timeout - a file silent past it belongs to a
+/// closed session by definition; history stays on disk for batch replay),
+/// read from the start so session context - the banner - is never missed.
+/// Discovery is bounded on every axis a hostile or merely unusual filesystem
+/// could exploit: it skips reparse points (so junction cycles cannot be
+/// walked forever), caps recursion depth, ignores inaccessible subtrees,
+/// takes only files under a "Logs" directory, and stops attaching past
+/// <see cref="MaxTailers"/>. A file that cannot be opened - or that keeps
+/// failing after it was opened - is reported via <see cref="Unreadable"/> and
+/// retried on a later discovery, never fatal.
+/// Account = the directory above Logs.
 /// </summary>
 public sealed class LogWatcher : IDisposable
 {
+    /// <summary>Multiboxing is a handful of clients; anything beyond this is a runaway tree, not play.</summary>
+    public const int MaxTailers = 64;
+
+    private const int FailuresBeforeDetach = 5;
+
     private readonly string _root;
     private readonly TimeSpan _attachWindow;
     private readonly int _discoveryInterval;
     private readonly SortedDictionary<string, ChatLogTailer> _tailers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _failures = new(StringComparer.Ordinal);
     private readonly SortedSet<string> _unreadable = new(StringComparer.Ordinal);
     private int _pollsSinceDiscovery;
 
     /// <summary>
-    /// Discovery walks the whole tree; new files appear about once per
-    /// account per day, so rediscovering every Nth poll (default: roughly
-    /// every 10s at the CLI's 500ms cadence) spares two tree walks per second.
+    /// Discovery walks the tree; new files appear about once per account per
+    /// day, so rediscovering every Nth poll (default: roughly every 10s at
+    /// the CLI's 500ms cadence) spares two tree walks per second.
     /// </summary>
     public LogWatcher(string root, TimeSpan attachWindow, int discoveryInterval = 20)
     {
@@ -35,7 +44,7 @@ public sealed class LogWatcher : IDisposable
         _discoveryInterval = discoveryInterval;
     }
 
-    /// <summary>Files that repeatedly fail to open; surfaced in the final summary like batch skips.</summary>
+    /// <summary>Files that could not be read; surfaced in the final summary like batch skips.</summary>
     public IReadOnlyCollection<string> Unreadable => _unreadable;
 
     public IReadOnlyList<WatchBatch> Poll()
@@ -48,6 +57,7 @@ public sealed class LogWatcher : IDisposable
         _pollsSinceDiscovery = (_pollsSinceDiscovery + 1) % _discoveryInterval;
 
         List<WatchBatch> batches = [];
+        List<string> detached = [];
         foreach ((string file, ChatLogTailer tailer) in _tailers)
         {
             IReadOnlyList<string> lines;
@@ -55,15 +65,30 @@ public sealed class LogWatcher : IDisposable
             {
                 lines = tailer.Poll();
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
             {
-                continue; // transient (disk, AV, share change): retry next poll
+                // Transient (disk, AV, share change) at first; a file that
+                // keeps failing is dropped so discovery can re-attach it, and
+                // reported so it never vanishes silently from the summary.
+                if (Fail(file))
+                {
+                    detached.Add(file);
+                }
+
+                continue;
             }
 
+            _failures.Remove(file);
             if (lines.Count > 0)
             {
                 batches.Add(new WatchBatch(ChatLogTree.AccountFor(file), lines));
             }
+        }
+
+        foreach (string file in detached)
+        {
+            _tailers[file].Dispose();
+            _tailers.Remove(file);
         }
 
         return batches;
@@ -79,11 +104,30 @@ public sealed class LogWatcher : IDisposable
         _tailers.Clear();
     }
 
+    private bool Fail(string file)
+    {
+        int count = _failures.GetValueOrDefault(file) + 1;
+        _failures[file] = count;
+        if (count < FailuresBeforeDetach)
+        {
+            return false;
+        }
+
+        _failures.Remove(file);
+        _unreadable.Add(file);
+        return true;
+    }
+
     private void Discover()
     {
         DateTime cutoff = DateTime.UtcNow - _attachWindow;
-        foreach (string file in Directory.EnumerateFiles(_root, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse))
+        foreach (string file in ChatLogTree.EnumerateLogs(_root))
         {
+            if (_tailers.Count >= MaxTailers)
+            {
+                return;
+            }
+
             if (_tailers.ContainsKey(file) || File.GetLastWriteTimeUtc(file) < cutoff)
             {
                 continue;

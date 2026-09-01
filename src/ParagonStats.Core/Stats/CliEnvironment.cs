@@ -29,11 +29,23 @@ public sealed class CliEnvironment
     public static CliEnvironment Production(CancellationToken token) => new()
     {
         Input = Console.In,
-        ClientRunning = static () => AnyRunning(System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
+        ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
         Token = token,
     };
 
     /// <summary>Disposes the handles it was given; testable with any real process list.</summary>
+    internal static bool ClientProcessRunning(Func<System.Diagnostics.Process[]> query)
+    {
+        try
+        {
+            return AnyRunning(query());
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return true; // cannot tell: never force-close a live session over it
+        }
+    }
+
     internal static bool AnyRunning(System.Diagnostics.Process[] processes)
     {
         foreach (System.Diagnostics.Process process in processes)

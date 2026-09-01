@@ -110,7 +110,7 @@ public static class CliRunner
 
     private static int ReplayDirectory(string directory, TextWriter output, TextWriter error)
     {
-        string[] files = [.. Directory.EnumerateFiles(directory, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse)];
+        string[] files = [.. ChatLogTree.EnumerateLogs(directory)];
 
         // Daily chatlog names sort ordinally into chronological order per account.
         Array.Sort(files, StringComparer.Ordinal);
