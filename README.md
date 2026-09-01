@@ -24,6 +24,16 @@ Product plan and requirements: [docs/PRD.md](docs/PRD.md).
 | Platform | Windows x64 (native AOT) |
 | License | Apache-2.0 |
 
+## Usage
+
+```text
+paragon-stats <chatlog-file-or-directory>
+```
+
+Point it at a chatlog file or your Homecoming install's `accounts` folder; it
+prints per-character session summaries (damage, defeats, XP, influence, line
+categories). Enable in-game logging first: Options > Windows > Chat > Log Chat.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

@@ -46,7 +46,12 @@ jobs:
       - name: Test with coverage
         run: dotnet tool run dotnet-coverage collect "dotnet test --no-build" -f xml -o coverage.xml
       - name: Coverage report
-        run: dotnet tool run reportgenerator -reports:coverage.xml -targetdir:coveragereport -reporttypes:"MarkdownSummaryGithub;JsonSummary" -assemblyfilters:"-*.Tests.dll" -classfilters:"-System.Text.RegularExpressions.Generated.*"
+        run: >
+          dotnet tool run reportgenerator -reports:coverage.xml
+          -targetdir:coveragereport
+          -reporttypes:"MarkdownSummaryGithub;JsonSummary"
+          -assemblyfilters:"-*.Tests.dll"
+          -classfilters:"-System.Text.RegularExpressions.Generated.*"
       - name: Publish coverage summary
         if: always()
         run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }
