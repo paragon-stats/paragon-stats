@@ -37,6 +37,9 @@ categories). `--watch` follows the live logs while you play and prints rolling
 per-session rates. With no path it uses the saved game location, prompting on
 first launch. Enable in-game logging first: Options > Windows > Chat > Log Chat.
 
+Re-running recalculates from scratch over the logs on disk - nothing is cached,
+so the same files always produce the same numbers.
+
 ### Collection policy
 
 paragon-stats harvests **data channels only**, and refuses anything it
