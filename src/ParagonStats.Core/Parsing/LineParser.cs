@@ -46,17 +46,10 @@ public static partial class LineParser
         string payload = line.Payload;
         if (payload.StartsWith('['))
         {
-            return ParseChat(payload);
+            return ParseChat(line.Payload);
         }
 
-        // A pseudopet source prefixes normal grammar with "Name:  " (two spaces).
-        string? sourcePrefix = null;
-        Match pet = PseudopetPrefix.Match(payload);
-        if (pet.Success)
-        {
-            sourcePrefix = pet.Groups["pet"].Value;
-            payload = payload[pet.Length..];
-        }
+        string? sourcePrefix = StripPseudopetDamagePrefix(ref payload);
 
         Match m = Banner.Match(payload);
         if (m.Success)
@@ -100,19 +93,41 @@ public static partial class LineParser
         return new UncategorizedLine(line.Payload);
     }
 
+    /// <summary>
+    /// A pseudopet source prefixes damage grammar with "Name:  " (two spaces).
+    /// Only damage lines carry attribution this way in real logs (1.5M corpus
+    /// lines; zero prefixed defeats/activations/rewards), so the prefix
+    /// applies to the damage grammar alone - anything else a prefixed line
+    /// says falls through as its unprefixed self.
+    /// </summary>
+    private static string? StripPseudopetDamagePrefix(ref string payload)
+    {
+        Match pet = PseudopetPrefix.Match(payload);
+        if (pet.Success && Damage.IsMatch(payload[pet.Length..]))
+        {
+            payload = payload[pet.Length..];
+            return pet.Groups["pet"].Value;
+        }
+
+        return null;
+    }
+
     private static long ParseCount(string text) =>
         long.Parse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
 
-    private static ChatMessage ParseChat(string payload)
+    private static LogEvent ParseChat(string payload)
     {
         Match m = Chat.Match(payload);
         if (!m.Success)
         {
             // "[Channel] free text" without a speaker (system MOTD style).
             Match c = ChatChannelOnly.Match(payload);
+
+            // A bracketed line matching no chat shape is a parse failure, not
+            // a chat message - it must surface in the drift canary.
             return c.Success
                 ? new ChatMessage(c.Groups["channel"].Value, string.Empty, StripMarkup(c.Groups["text"].Value))
-                : new ChatMessage(string.Empty, string.Empty, StripMarkup(payload));
+                : new UncategorizedLine(payload);
         }
 
         return new ChatMessage(

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using ParagonStats.Core.Parsing;
 using ParagonStats.Core.Sessions;
 using ParagonStats.Core.Stats;
@@ -17,6 +19,10 @@ public sealed class ReplayTests
 
         // The MOTD chat line precedes the banner: unattributable by design.
         Assert.Equal(1, result.UnattributedCount);
+
+        // The banner itself is counted and captured in the session it opens.
+        Assert.Equal(1, session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Session));
+        Assert.Contains(session.Messages.Messages, m => m.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
 
         // The timestamp-less continuation line is skipped by the reader entirely.
         Assert.True(session.Messages.TotalCaptured > 0);
@@ -77,7 +83,7 @@ public sealed class ReplayTests
         Assert.Contains("Nova - PRIME", text, StringComparison.Ordinal);
         Assert.Contains("sessions 1", text, StringComparison.Ordinal);
         Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
-        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), $"non-ASCII char: {(int)c}"));
+        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
     }
 
     [Fact]
@@ -97,6 +103,6 @@ public sealed class ReplayTests
         // Uncategorized. A majority-uncategorized corpus means the parser no
         // longer recognizes the game's output.
         double ratio = (double)uncategorized / total;
-        Assert.True(ratio < 0.75, $"uncategorized ratio {ratio:P1} ({uncategorized}/{total}) - grammar drift?");
+        Assert.True(ratio < 0.75, string.Create(CultureInfo.InvariantCulture, $"uncategorized ratio {ratio:P1} ({uncategorized}/{total}) - grammar drift?"));
     }
 }

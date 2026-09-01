@@ -2,5 +2,5 @@ using ParagonStats.Core.Sessions;
 
 namespace ParagonStats.Core.Stats;
 
-/// <summary>Result of replaying files: the sessions plus unattributable-line count.</summary>
-public sealed record ReplayResult(IReadOnlyList<CharacterSession> Sessions, long UnattributedCount);
+/// <summary>Result of replaying files: sessions, unattributable-line count, and files skipped as unreadable.</summary>
+public sealed record ReplayResult(IReadOnlyList<CharacterSession> Sessions, long UnattributedCount, IReadOnlyList<string> SkippedFiles);

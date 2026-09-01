@@ -26,6 +26,6 @@ public sealed class MessageLog
         }
 
         _messages.Enqueue(new CapturedMessage(timestamp, category, channel, payload));
-        this.TotalCaptured++;
+        TotalCaptured++;
     }
 }

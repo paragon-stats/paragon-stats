@@ -19,5 +19,5 @@ constructed line for a grammar not yet captured in real play, and must be replac
 real excerpt when one is captured.
 
 The full raw corpus lives outside the repo (the game install is read-only reference).
-`CorpusSmokeTest` reads `PARAGON_CORPUS_DIR` when set and reports the uncategorized ratio
+The corpus smoke test (`ReplayTests.Corpus_smoke_reports_uncategorized_ratio_when_configured`) reads `PARAGON_CORPUS_DIR` when set and reports the uncategorized ratio
 as the grammar-drift canary.

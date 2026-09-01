@@ -39,7 +39,13 @@ public sealed class SessionTracker
                 _closed.Add(finished);
             }
 
-            _current[account] = new CharacterSession(account, start.CharacterName, line.Timestamp);
+            CharacterSession opened = new(account, start.CharacterName, line.Timestamp);
+            _current[account] = opened;
+
+            // The banner belongs to the session it opens: counted and captured
+            // like every other line, so nothing is ever dropped.
+            opened.Stats.Apply(logEvent);
+            opened.Messages.Add(line.Timestamp, logEvent.Category, null, line.Payload);
             return;
         }
 

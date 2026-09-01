@@ -36,17 +36,17 @@ public sealed class SessionStats
             case DamageDealt damage:
                 string key = damage.SourcePrefix is null ? damage.Power : damage.SourcePrefix + ": " + damage.Power;
                 _damageByPower[key] = _damageByPower.GetValueOrDefault(key) + damage.Amount;
-                this.TotalDamage += damage.Amount;
+                TotalDamage += damage.Amount;
                 break;
             case Defeat { Attacker: null }:
-                this.Defeats++;
+                Defeats++;
                 break;
             case RewardGained reward:
-                this.Experience += reward.Experience ?? 0;
-                this.Influence += reward.Influence ?? 0;
+                Experience += reward.Experience ?? 0;
+                Influence += reward.Influence ?? 0;
                 break;
             case PowerActivated:
-                this.Activations++;
+                Activations++;
                 break;
             default:
                 break;

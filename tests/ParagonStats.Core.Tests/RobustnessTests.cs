@@ -1,0 +1,176 @@
+using System.Globalization;
+
+using ParagonStats.Core.Logging;
+using ParagonStats.Core.Parsing;
+using ParagonStats.Core.Sessions;
+using ParagonStats.Core.Stats;
+
+namespace ParagonStats.Core.Tests;
+
+/// <summary>Review-wave behaviors: unreadable files, account keying, parse fallbacks, formatter edges.</summary>
+public sealed class RobustnessTests : IDisposable
+{
+    private readonly string _root = Directory.CreateTempSubdirectory("ps-tests-").FullName;
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    private string WriteLog(string relative, params string[] lines)
+    {
+        string path = Path.Join(_root, relative);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllLines(path, lines);
+        return path;
+    }
+
+    [Fact]
+    public void Locked_file_is_skipped_and_reported_not_fatal()
+    {
+        string good = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
+            "2024-05-12 08:00:05 You gain 100 experience.");
+        string locked = WriteLog(Path.Join("acct", "Logs", "chatlog 2024-05-13.txt"), "2024-05-13 08:00:00 locked");
+
+        using FileStream writer = new(locked, FileMode.Open, FileAccess.Write, FileShare.None);
+        ReplayResult result = LogReplayer.Replay([good, locked]);
+
+        Assert.Equal(locked, Assert.Single(result.SkippedFiles));
+        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Equal(100, session.Stats.Experience);
+        Assert.Contains("skipped (unreadable)", SummaryFormatter.Format(result), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Empty_directory_reports_no_files()
+    {
+        using StringWriter output = new();
+        using StringWriter error = new();
+        string empty = Path.Join(_root, "empty");
+        Directory.CreateDirectory(empty);
+
+        Assert.Equal(1, CliRunner.Run([empty], output, error));
+        Assert.Contains("no chatlog files", error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Unreadable_path_is_skipped_like_a_locked_file()
+    {
+        // A directory path in the file list throws UnauthorizedAccessException on open.
+        string dir = Path.Join(_root, "not-a-file");
+        Directory.CreateDirectory(dir);
+
+        ReplayResult result = LogReplayer.Replay([dir]);
+        Assert.Equal(dir, Assert.Single(result.SkippedFiles));
+    }
+
+    [Fact]
+    public void Files_outside_the_logs_shape_key_on_their_own_directory()
+    {
+        string a = WriteLog(Path.Join("flatA", "chatlog 2024-05-12.txt"), "2024-05-12 08:00:00 Welcome to City of Heroes, Alpha!");
+        string b = WriteLog(Path.Join("flatB", "chatlog 2024-05-12.txt"), "2024-05-12 09:00:00 Welcome to City of Heroes, Beta!");
+
+        ReplayResult result = LogReplayer.Replay([a, b]);
+
+        Assert.Equal(2, result.Sessions.Count);
+        Assert.NotEqual(result.Sessions[0].Account, result.Sessions[1].Account, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void Second_banner_closes_the_first_session()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
+            "2024-05-12 08:10:00 You gain 10 experience.",
+            "2024-05-12 09:00:00 Welcome to City of Heroes, Luna!",
+            "2024-05-12 09:10:00 You gain 20 experience.");
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        Assert.Equal(2, result.Sessions.Count);
+        Assert.Equal(10, result.Sessions[0].Stats.Experience);
+        Assert.Equal(20, result.Sessions[1].Stats.Experience);
+    }
+
+    [Fact]
+    public void Backwards_timestamps_render_a_clamped_duration()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-11-03.txt"),
+            "2024-11-03 01:30:00 Welcome to City of Heroes, Nova!",
+            "2024-11-03 01:05:00 You gain 10 experience."); // DST fall-back: naive local time runs backwards
+
+        string text = SummaryFormatter.Format(LogReplayer.Replay([log]));
+        Assert.Contains("+00:00:00", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Non_ascii_names_are_sanitized_in_the_summary()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Ñova!");
+
+        string text = SummaryFormatter.Format(LogReplayer.Replay([log]));
+        Assert.Contains("?ova", text, StringComparison.Ordinal);
+        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
+    }
+
+    [Fact]
+    public void Bracketed_non_chat_lines_surface_as_uncategorized()
+    {
+        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "[unclosed bracket text"));
+        Assert.IsType<UncategorizedLine>(e);
+    }
+
+    [Fact]
+    public void Pseudopet_prefix_applies_to_damage_only()
+    {
+        LogEvent e = LineParser.Parse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"));
+        Assert.IsType<UncategorizedLine>(e); // never credited to the player
+    }
+
+    [Fact]
+    public void Message_log_ring_drops_oldest_beyond_capacity()
+    {
+        MessageLog log = new();
+        for (int i = 0; i <= MessageLog.Capacity; i++)
+        {
+            log.Add(new DateTime(2024, 5, 12, 8, 0, 0), EventCategory.Uncategorized, null, string.Create(CultureInfo.InvariantCulture, $"line {i}"));
+        }
+
+        Assert.Equal(MessageLog.Capacity, log.Messages.Count);
+        Assert.Equal(MessageLog.Capacity + 1, log.TotalCaptured);
+    }
+
+    [Fact]
+    public void Stats_fold_covers_teammate_defeats_and_unknown_events()
+    {
+        SessionStats stats = new();
+        stats.Apply(new Defeat("Teammate", "Foe"));
+        stats.Apply(new Defeat(null, "Foe"));
+        stats.Apply(new UncategorizedLine("anything"));
+
+        Assert.Equal(1, stats.Defeats); // own killing blows only
+        Assert.Equal(2, stats.CategoryCounts[EventCategory.Defeat]);
+    }
+
+    [Fact]
+    public void Cli_runner_handles_usage_missing_and_happy_paths()
+    {
+        using StringWriter output = new();
+        using StringWriter error = new();
+
+        Assert.Equal(2, CliRunner.Run([], output, error));
+        Assert.Contains("usage:", error.ToString(), StringComparison.Ordinal);
+
+        Assert.Equal(1, CliRunner.Run([Path.Join(_root, "nope")], output, error));
+
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!");
+        Assert.Equal(0, CliRunner.Run([log], output, error));
+        Assert.Equal(0, CliRunner.Run([_root], output, error));
+        Assert.Contains("Nova", output.ToString(), StringComparison.Ordinal);
+    }
+}

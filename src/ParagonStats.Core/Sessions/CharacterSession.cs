@@ -10,10 +10,10 @@ public sealed class CharacterSession
 {
     internal CharacterSession(string account, string character, DateTime start)
     {
-        this.Account = account;
-        this.Character = character;
-        this.Start = start;
-        this.LastSeen = start;
+        Account = account;
+        Character = character;
+        Start = start;
+        LastSeen = start;
     }
 
     public string Account { get; }

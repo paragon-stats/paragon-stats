@@ -16,7 +16,12 @@ public static class SummaryFormatter
         foreach (CharacterSession session in result.Sessions)
         {
             TimeSpan span = session.LastSeen - session.Start;
-            sb.AppendLine(CultureInfo.InvariantCulture, $"{session.Character} ({session.Account}) {session.Start:yyyy-MM-dd HH:mm} +{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}");
+            if (span < TimeSpan.Zero)
+            {
+                span = TimeSpan.Zero; // naive local timestamps can run backwards (DST)
+            }
+
+            sb.AppendLine(CultureInfo.InvariantCulture, $"{Ascii(session.Character)} ({Ascii(session.Account)}) {session.Start:yyyy-MM-dd HH:mm} +{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}");
             sb.AppendLine(CultureInfo.InvariantCulture, $"  damage {session.Stats.TotalDamage:0.##} | defeats {session.Stats.Defeats} | xp {session.Stats.Experience} | inf {session.Stats.Influence} | activations {session.Stats.Activations}");
             string categories = string.Join(
                 " | ",
@@ -27,6 +32,19 @@ public static class SummaryFormatter
         }
 
         sb.AppendLine(CultureInfo.InvariantCulture, $"sessions {result.Sessions.Count} | unattributed lines {result.UnattributedCount}");
+        foreach (string skipped in result.SkippedFiles)
+        {
+            sb.AppendLine(CultureInfo.InvariantCulture, $"skipped (unreadable): {Ascii(skipped)}");
+        }
+
         return sb.ToString();
+    }
+
+    /// <summary>Console output stays printable ASCII (docs/style-guides/encoding.md); names may not be.</summary>
+    private static string Ascii(string text)
+    {
+        return text.All(static c => c >= ' ' && c <= '~')
+            ? text
+            : string.Concat(text.Select(static c => c >= ' ' && c <= '~' ? c : '?'));
     }
 }
