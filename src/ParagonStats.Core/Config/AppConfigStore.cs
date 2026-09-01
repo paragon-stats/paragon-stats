@@ -31,17 +31,14 @@ public sealed class AppConfigStore
             return null;
         }
 
-        foreach (string candidate in (string[])[Path.Join(gameRoot, "accounts"), gameRoot])
-        {
-            if (Directory.Exists(candidate)
-                && Directory.EnumerateFiles(candidate, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse)
-                    .Any(ChatLogTree.IsUnderLogs))
-            {
-                return candidate;
-            }
-        }
+        string accountsChild = Path.Join(gameRoot, "accounts");
+        return Qualifies(accountsChild) ? accountsChild
+            : Qualifies(gameRoot) ? gameRoot
+            : null;
 
-        return null;
+        static bool Qualifies(string candidate) =>
+            Directory.Exists(candidate)
+            && Directory.EnumerateFiles(candidate, ChatLogTree.FilePattern, ChatLogTree.SafeRecurse).Any(ChatLogTree.IsUnderLogs);
     }
 
     public string? LoadGameRoot()
