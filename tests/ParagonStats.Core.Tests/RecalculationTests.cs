@@ -100,6 +100,12 @@ public sealed class RecalculationTests : IDisposable
     [Fact]
     public void Live_watch_reproduces_the_batch_replay_of_the_same_logs()
     {
+        // The plumbing check: every file fits in one poll, so the live path
+        // sees the same line order batch does. The ordering guarantee itself
+        // is carried by the two tests below, which make the orders diverge.
+        // One documented exception to "reproduces exactly" is out of scope
+        // here: batch drains a final line with no trailing newline, live does
+        // not, because live a newline-less tail is an in-progress write.
         string[] files = WriteCorpus();
         ReplayResult batch = LogReplayer.Replay(files);
 
@@ -112,6 +118,39 @@ public sealed class RecalculationTests : IDisposable
         }
 
         AssertSameResult(batch, new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable]));
+    }
+
+    [Fact]
+    public void Live_watch_keeps_an_accounts_files_in_order_across_the_line_cap()
+    {
+        // A tailer stops at its per-poll line cap, so an account whose older
+        // log has a big backlog must not have its newer log read first: that
+        // would hand the tracker one account's lines out of order and fold the
+        // backlog into the wrong session. Watch started shortly after midnight
+        // rollover, after a long farming day, is exactly this shape.
+        List<string> busy = ["2026-09-01 10:00:00 Welcome to City of Heroes, Nova!"];
+        for (int line = 0; line < 51_000; line++)
+        {
+            busy.Add("2026-09-01 10:00:01 You gain 1 experience.");
+        }
+
+        List<string> files =
+        [
+            Write("acctA", Days[0], busy),
+            Write("acctA", Days[^1], DayLines(Days[^1], leadWithUnattributed: false)),
+        ];
+
+        SessionTracker tracker = new();
+        using LogWatcher watcher = new(_root, TimeSpan.FromDays(3650), discoveryInterval: 1);
+        LiveMonitor monitor = new(watcher, tracker, static () => true);
+        for (int tick = 0; tick < 6; tick++)
+        {
+            monitor.Tick();
+        }
+
+        AssertSameResult(
+            LogReplayer.Replay(files),
+            new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable]));
     }
 
     [Fact]
@@ -172,9 +211,10 @@ public sealed class RecalculationTests : IDisposable
         Assert.Equal(first.ToString(), second.ToString());
 
         // Nothing is cached between runs: change the logs and the next run
-        // reports the change.
+        // reports the change. Append to the FIRST account's NEWEST file so the
+        // fixture keeps the per-account chronology LogReplayer asks for.
         File.AppendAllText(
-            files[0],
+            files[1],
             "2026-09-03 12:00:00 Welcome to City of Heroes, Afterwards!\n2026-09-03 12:00:05 You gain 500 experience.\n");
 
         using StringWriter third = new();

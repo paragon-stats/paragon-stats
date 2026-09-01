@@ -58,18 +58,23 @@ public sealed class LogWatcher : IDisposable
 
         List<WatchBatch> batches = [];
         List<string> detached = [];
+
+        // Files are keyed by full path, so one account's daily logs are
+        // contiguous and in chronological order. If an older one stops at its
+        // line cap, its newer siblings wait: reading them first would hand the
+        // tracker an account's lines out of order, and the whole
+        // replay-equals-live guarantee rests on that never happening.
+        string? backlogged = null;
         foreach ((string file, ChatLogTailer tailer) in _tailers)
         {
-            IReadOnlyList<string> lines;
-            try
+            string account = ChatLogTree.AccountFor(file);
+            if (string.Equals(account, backlogged, StringComparison.OrdinalIgnoreCase))
             {
-                lines = tailer.Poll();
+                continue;
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
+
+            if (!TryPoll(tailer, out IReadOnlyList<string> lines))
             {
-                // Transient (disk, AV, share change) at first; a file that
-                // keeps failing is dropped so discovery can re-attach it, and
-                // reported so it never vanishes silently from the summary.
                 if (Fail(file))
                 {
                     detached.Add(file);
@@ -79,9 +84,14 @@ public sealed class LogWatcher : IDisposable
             }
 
             _failures.Remove(file);
+            if (tailer.HasMore)
+            {
+                backlogged = account;
+            }
+
             if (lines.Count > 0)
             {
-                batches.Add(new WatchBatch(ChatLogTree.AccountFor(file), lines));
+                batches.Add(new WatchBatch(account, lines));
             }
         }
 
@@ -102,6 +112,25 @@ public sealed class LogWatcher : IDisposable
         }
 
         _tailers.Clear();
+    }
+
+    /// <summary>
+    /// Transient read failures (disk, AV, a share change) are the caller's to
+    /// count: a file that keeps failing is dropped so discovery can re-attach
+    /// it, and reported so it never vanishes silently from the summary.
+    /// </summary>
+    private static bool TryPoll(ChatLogTailer tailer, out IReadOnlyList<string> lines)
+    {
+        try
+        {
+            lines = tailer.Poll();
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
+        {
+            lines = [];
+            return false;
+        }
     }
 
     private bool Fail(string file)

@@ -43,8 +43,14 @@ public sealed class SessionTracker
     /// character, then open order separates every pair. The first three are
     /// properties of the content, so the order never depends on which file or
     /// which tick delivered a session; open order is only ever consulted
-    /// within one account, where it is the same in batch and live because an
-    /// account's lines arrive in the same order either way.
+    /// within one account, where it is the same in batch and live because the
+    /// watcher holds an account's newer files back until its older ones have
+    /// caught up (see LogWatcher.Poll), so an account's lines arrive in the
+    /// same order either way.
+    /// Account strings are compared case-sensitively here while the open-session
+    /// map keys them case-insensitively; that only matters if a caller supplies
+    /// one account directory under two casings, and the result stays
+    /// deterministic either way because the comparison is on content.
     /// </summary>
     public IReadOnlyList<CharacterSession> Sessions
     {
@@ -140,13 +146,13 @@ public sealed class SessionTracker
             return order;
         }
 
-        order = string.CompareOrdinal(left.Account, right.Account);
+        order = StringComparer.Ordinal.Compare(left.Account, right.Account);
         if (order != 0)
         {
             return order;
         }
 
-        order = string.CompareOrdinal(left.Character, right.Character);
+        order = StringComparer.Ordinal.Compare(left.Character, right.Character);
         return order != 0 ? order : left.Sequence.CompareTo(right.Sequence);
     }
 }

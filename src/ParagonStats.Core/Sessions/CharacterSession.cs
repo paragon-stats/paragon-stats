@@ -32,8 +32,9 @@ public sealed class CharacterSession
 
     /// <summary>
     /// Open order within the tracker - the last tiebreak of the session sort,
-    /// for the pair the content keys cannot separate: a relog of the same
-    /// character on the same account inside one second.
+    /// for the pairs the content keys cannot separate: a relog of the same
+    /// character on the same account inside one second, and a pulse-opened
+    /// sliver followed by the banner that lands in the same second.
     /// </summary>
     internal int Sequence { get; }
 }
