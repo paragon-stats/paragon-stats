@@ -84,7 +84,7 @@ public sealed class RecalculationTests : IDisposable
         List<string> expected = [];
         foreach (string account in Accounts)
         {
-            foreach (string character in characters.OrderBy(name => name, StringComparer.Ordinal))
+            foreach (string character in characters.Order(StringComparer.Ordinal))
             {
                 // Experience pins the tiebreak direction: the first session
                 // opened carries 10, its relog carries 20.
