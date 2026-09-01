@@ -282,17 +282,18 @@ public sealed class RobustnessTests : IDisposable
     {
         using StringWriter output = new();
         using StringWriter error = new();
+        CliEnvironment env = new() { ConfigPath = Path.Join(_root, "config.json") };
 
-        Assert.Equal(2, CliRunner.Run([], output, error));
+        Assert.Equal(2, CliRunner.Run(["a", "b"], output, error, env));
         Assert.Contains("usage:", error.ToString(), StringComparison.Ordinal);
 
-        Assert.Equal(1, CliRunner.Run([Path.Join(_root, "nope")], output, error));
+        Assert.Equal(1, CliRunner.Run([Path.Join(_root, "nope")], output, error, env));
 
         string log = WriteLog(
             Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
             "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!");
-        Assert.Equal(0, CliRunner.Run([log], output, error));
-        Assert.Equal(0, CliRunner.Run([_root], output, error));
+        Assert.Equal(0, CliRunner.Run([log], output, error, env));
+        Assert.Equal(0, CliRunner.Run([_root], output, error, env));
         Assert.Contains("Nova", output.ToString(), StringComparison.Ordinal);
     }
 }

@@ -41,14 +41,14 @@ public static class SummaryFormatter
         return sb.ToString();
     }
 
-    private static string Rate(decimal value, TimeSpan window) =>
-        string.Create(CultureInfo.InvariantCulture, $"{MetricSnapshot.Compute(value, window).PerHour:0.#}");
-
     /// <summary>Console output stays printable ASCII (docs/style-guides/encoding.md); names may not be.</summary>
-    private static string Ascii(string text)
+    internal static string Ascii(string text)
     {
         return text.All(static c => c >= ' ' && c <= '~')
             ? text
             : string.Concat(text.Select(static c => c >= ' ' && c <= '~' ? c : '?'));
     }
+
+    private static string Rate(decimal value, TimeSpan window) =>
+        string.Create(CultureInfo.InvariantCulture, $"{MetricSnapshot.Compute(value, window).PerHour:0.#}");
 }

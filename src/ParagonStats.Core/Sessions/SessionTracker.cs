@@ -32,6 +32,8 @@ public sealed class SessionTracker
 
     public long UnattributedCount { get; private set; }
 
+    public IReadOnlyCollection<CharacterSession> Open => _current.Values;
+
     public IReadOnlyList<CharacterSession> Sessions
     {
         get
@@ -40,6 +42,20 @@ public sealed class SessionTracker
             all.Sort((a, b) => a.Start.CompareTo(b.Start));
             return all;
         }
+    }
+
+    /// <summary>
+    /// The live-watch stop authority: the game client exited, so every open
+    /// session closes at its last-line timestamp.
+    /// </summary>
+    public void CloseAll()
+    {
+        foreach (CharacterSession session in _current.Values)
+        {
+            _closed.Add(session);
+        }
+
+        _current.Clear();
     }
 
     public void Accept(string account, in LogLine line, LogEvent logEvent)
