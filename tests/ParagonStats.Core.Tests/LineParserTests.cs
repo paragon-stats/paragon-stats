@@ -62,6 +62,8 @@ public sealed class LineParserTests
     [InlineData("You gain 84,057 experience and 28,019 influence.", 84057L, 28019L)]
     [InlineData("You gain 17,940 experience.", 17940L, null)]
     [InlineData("You gain 218 influence.", null, 218L)]
+    [InlineData("You gain 638 experience, work off 638 debt, and gain 1,786 influence.", 638L, 1786L)]
+    [InlineData("You gain 638 experience, work off 638 debt, and gain 1,786 infamy.", 638L, 1786L)]
     public void Rewards_parse_experience_influence_and_infamy(string payload, long? xp, long? inf)
     {
         RewardGained r = Assert.IsType<RewardGained>(Parse(payload));

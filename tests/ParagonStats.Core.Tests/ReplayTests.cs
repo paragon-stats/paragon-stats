@@ -61,12 +61,22 @@ public sealed class ReplayTests
     }
 
     [Fact]
+    public void Captured_chat_lines_retain_their_channel()
+    {
+        ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-chat-channels.txt")]);
+        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Contains(session.Messages.Messages, m => string.Equals(m.Channel, "Tell", StringComparison.Ordinal));
+        Assert.Contains(session.Messages.Messages, m => m.Channel is null);
+    }
+
+    [Fact]
     public void Formatter_renders_ascii_summary()
     {
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-attack-chain.txt")]);
         string text = SummaryFormatter.Format(result);
         Assert.Contains("Nova - PRIME", text, StringComparison.Ordinal);
         Assert.Contains("sessions 1", text, StringComparison.Ordinal);
+        Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
         Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), $"non-ASCII char: {(int)c}"));
     }
 

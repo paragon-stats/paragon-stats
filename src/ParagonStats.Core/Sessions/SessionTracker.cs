@@ -51,6 +51,7 @@ public sealed class SessionTracker
 
         session.LastSeen = line.Timestamp;
         session.Stats.Apply(logEvent);
-        session.Messages.Add(line.Timestamp, logEvent.Category, line.Payload);
+        string? channel = logEvent is ChatMessage chat ? chat.Channel : null;
+        session.Messages.Add(line.Timestamp, logEvent.Category, channel, line.Payload);
     }
 }
