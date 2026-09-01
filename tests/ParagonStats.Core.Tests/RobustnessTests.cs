@@ -53,6 +53,23 @@ public sealed class RobustnessTests : IDisposable
     }
 
     [Fact]
+    public void File_held_open_for_writing_by_the_game_still_replays()
+    {
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2024-05-12.txt"),
+            "2024-05-12 08:00:00 Welcome to City of Heroes, Nova!",
+            "2024-05-12 08:00:05 You gain 100 experience.");
+
+        // The live client keeps today's log open for appending; the replay's
+        // ReadWrite|Delete share must coexist with that writer handle.
+        using FileStream writer = new(log, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        Assert.Empty(result.SkippedFiles);
+        Assert.Equal(100, Assert.Single(result.Sessions).Stats.Experience);
+    }
+
+    [Fact]
     public void Unreadable_path_is_skipped_like_a_locked_file()
     {
         // A directory path in the file list throws UnauthorizedAccessException on open.
@@ -141,6 +158,10 @@ public sealed class RobustnessTests : IDisposable
 
         Assert.Equal(MessageLog.Capacity, log.Messages.Count);
         Assert.Equal(MessageLog.Capacity + 1, log.TotalCaptured);
+
+        // The OLDEST entry is the one dropped: "line 0" gone, newest retained.
+        Assert.Equal("line 1", log.Messages.First().Payload);
+        Assert.Equal(string.Create(CultureInfo.InvariantCulture, $"line {MessageLog.Capacity}"), log.Messages.Last().Payload);
     }
 
     [Fact]

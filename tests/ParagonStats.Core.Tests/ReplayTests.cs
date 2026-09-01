@@ -24,8 +24,10 @@ public sealed class ReplayTests
         Assert.Equal(1, session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Session));
         Assert.Contains(session.Messages.Messages, m => m.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
 
-        // The timestamp-less continuation line is skipped by the reader entirely.
-        Assert.True(session.Messages.TotalCaptured > 0);
+        // The timestamp-less continuation line is skipped by the reader entirely:
+        // 12 fixture lines - 1 continuation - 1 pre-banner MOTD = 10 captured.
+        Assert.Equal(10, session.Messages.TotalCaptured);
+        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("continuation", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -44,9 +46,10 @@ public sealed class ReplayTests
         ReplayResult result = LogReplayer.Replay([Fixture("real-session-banner.txt"), Fixture("real-same-second-storm.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
 
-        // 45 storm lines land after the banner; every one must be captured even
-        // though many are byte-identical within the same second (AoE + DoT + procs).
-        Assert.True(session.Messages.TotalCaptured >= 45);
+        // All 45 storm lines land after the banner (plus the banner fixture's 10):
+        // exact count, because ANY dedupe of the byte-identical same-second
+        // lines (AoE + DoT ticks + proc rolls) must fail this.
+        Assert.Equal(55, session.Messages.TotalCaptured);
     }
 
     [Fact]
