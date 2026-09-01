@@ -279,6 +279,31 @@ public sealed class CliConfigTests : IDisposable
         Assert.NotNull(env.Input);
         Assert.Equal(cancellation.Token, env.Token);
         Assert.False(env.ClientRunning()); // the real check: no game client in CI or tests
+
+        // The found-and-dispose path, deterministic on every machine: this
+        // test process is always a real running process.
+        string self = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+        Assert.True(CliEnvironment.AnyRunning(System.Diagnostics.Process.GetProcessesByName(self)));
+        Assert.False(CliEnvironment.AnyRunning([]));
+    }
+
+    [Fact]
+    public void Typed_invalid_location_reprompts_with_the_typed_path()
+    {
+        // First launch, user typos a path: the re-prompt names what THEY
+        // typed, never claiming it was a saved config value.
+        string game = GameRoot();
+        string typo = Path.Join(_root, "typo");
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using StringReader input = new(typo + Environment.NewLine + game + Environment.NewLine);
+
+        int exit = CliRunner.Run([], output, error, new CliEnvironment { Input = input, ConfigPath = ConfigPath });
+
+        Assert.Equal(0, exit);
+        Assert.Contains($"No chatlogs found at {typo}", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Saved game location", output.ToString(), StringComparison.Ordinal);
+        Assert.Equal(game, new AppConfigStore(ConfigPath).LoadGameRoot());
     }
 
     [Fact]
