@@ -32,9 +32,12 @@ public sealed class AppConfigStore
         }
 
         string accountsChild = Path.Join(gameRoot, "accounts");
-        return Qualifies(accountsChild) ? accountsChild
-            : Qualifies(gameRoot) ? gameRoot
-            : null;
+        if (Qualifies(accountsChild))
+        {
+            return accountsChild;
+        }
+
+        return Qualifies(gameRoot) ? gameRoot : null;
 
         static bool Qualifies(string candidate) =>
             Directory.Exists(candidate)

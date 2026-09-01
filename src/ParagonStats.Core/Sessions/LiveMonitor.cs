@@ -38,10 +38,7 @@ public sealed class LiveMonitor
         {
             foreach (string raw in batch.Lines)
             {
-                if (_tracker.Accept(batch.Account, raw))
-                {
-                    count++;
-                }
+                count += _tracker.Accept(batch.Account, raw) ? 1 : 0;
             }
         }
 

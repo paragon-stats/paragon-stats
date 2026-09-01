@@ -416,6 +416,16 @@ dotnet_diagnostic.SA1600.severity = none
 [*.cs]
 # House convention is _camelCase private fields (naming rules above; csharp.md).
 dotnet_diagnostic.SA1309.severity = none
+
+# Explicit constructors are the codebase convention (every class with a
+# constructor validates or does work in it); primary-constructor suggestions
+# would fork the style for the simplest classes only.
+dotnet_diagnostic.IDE0290.severity = none
+
+# IDE0046 pushes returns into ternaries, which collides with Sonar S3358
+# (no nested ternaries) the moment a second branch exists - the pair cannot
+# both be satisfied, and S3358 is the one with a readability argument.
+dotnet_diagnostic.IDE0046.severity = none
 # House convention omits `this.` qualification (IDE0003/naming rules make fields unambiguous).
 dotnet_diagnostic.SA1101.severity = none
 
