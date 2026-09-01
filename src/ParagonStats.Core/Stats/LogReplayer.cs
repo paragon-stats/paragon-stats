@@ -45,9 +45,12 @@ public static class LogReplayer
         // zero-collection policy applied before any refused line becomes a
         // string (memory-sniffer hardening) - batch and live are identical.
         using ChatLogTailer tailer = new(file);
-        foreach (string raw in tailer.Poll())
+        for (IReadOnlyList<string> lines = tailer.Poll(); lines.Count > 0; lines = tailer.Poll())
         {
-            tracker.Accept(account, raw);
+            foreach (string raw in lines)
+            {
+                tracker.Accept(account, raw);
+            }
         }
 
         // A final line without a trailing newline is still a complete line.

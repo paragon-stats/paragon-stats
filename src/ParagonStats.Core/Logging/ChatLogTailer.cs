@@ -29,6 +29,14 @@ public sealed class ChatLogTailer : IDisposable
 
     private const int ReadSize = 8192;
 
+    /// <summary>
+    /// Peak lines materialized per poll, checked once per read chunk (so the
+    /// true bound is this plus at most one chunk's worth). A hand-crafted
+    /// multi-gigabyte log cannot be turned into one enormous list; the caller
+    /// simply polls again, and live watch already does.
+    /// </summary>
+    private const int MaxLinesPerPoll = 50_000;
+
     private readonly string _path;
 
     // GetMaxCharCount covers a pending multi-byte sequence carried by the
@@ -71,6 +79,11 @@ public sealed class ChatLogTailer : IDisposable
                 for (int i = 0; i < decoded; i++)
                 {
                     Accept(_chars[i], lines);
+                }
+
+                if (lines.Count >= MaxLinesPerPoll)
+                {
+                    break; // resume from _position on the next poll
                 }
             }
 

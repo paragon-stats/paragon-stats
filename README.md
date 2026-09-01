@@ -39,11 +39,17 @@ first launch. Enable in-game logging first: Options > Windows > Chat > Log Chat.
 
 ### Collection policy
 
-paragon-stats harvests **data channels only**. Communication channels (tells,
+paragon-stats harvests **data channels only**, and refuses anything it
+cannot positively classify as a data line. Communication channels (tells,
 team, supergroup, league, local, broadcast, global channels) are not collected
 at all: the parser dumps every bracketed communication line outright - no
 event, no capture, no count, in memory or anywhere else. No use case justifies
 collecting what players say to each other, and this tool cannot.
+
+What data lines *do* carry, stated plainly: other players' character names
+appear in the game's own combat text (a teammate's killing blow, a foe you
+damaged, a pet's name), and those lines are kept because team and farm stats
+are computed from them. Nothing is retained from a communication channel.
 
 ## Contributing
 

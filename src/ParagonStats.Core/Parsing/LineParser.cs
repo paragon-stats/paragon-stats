@@ -65,7 +65,17 @@ public static partial class LineParser
             return false;
         }
 
-        logEvent = Parse(payload, line.Payload);
+        try
+        {
+            logEvent = Parse(payload, line.Payload);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // A crafted line can make a grammar backtrack; the per-pattern
+            // timeout turns that into a miss, never a crash.
+            logEvent = new UncategorizedLine(line.Payload);
+        }
+
         return true;
     }
 
@@ -98,12 +108,13 @@ public static partial class LineParser
         }
 
         m = Damage.Match(payload);
-        if (m.Success)
+        if (m.Success
+            && decimal.TryParse(m.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal amount))
         {
             return new DamageDealt(
                 m.Groups["target"].Value,
                 m.Groups["power"].Value,
-                decimal.Parse(m.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture),
+                amount,
                 m.Groups["type"].Value,
                 m.Groups["overtime"].Success,
                 sourcePrefix);
@@ -123,23 +134,26 @@ public static partial class LineParser
     private static LogEvent? ParseEconomy(string payload)
     {
         Match m = Tickets.Match(payload);
-        if (m.Success)
+        if (m.Success && TryCount(m.Groups["count"].Value, out long tickets))
         {
-            return new TicketsEarned(ParseCount(m.Groups["count"].Value));
+            return new TicketsEarned(tickets);
         }
 
         m = Market.Match(payload);
-        if (m.Success)
+        if (m.Success && TryCount(m.Groups["amount"].Value, out long money))
         {
-            return new MarketTransaction(ParseCount(m.Groups["amount"].Value), m.Groups["got"].Success);
+            return new MarketTransaction(money, m.Groups["got"].Success);
         }
 
         m = Reward.Match(payload);
         if (m.Success)
         {
-            long? xp = m.Groups["xp"].Success ? ParseCount(m.Groups["xp"].Value) : null;
-            long? inf = m.Groups["inf"].Success ? ParseCount(m.Groups["inf"].Value) : null;
-            return new RewardGained(xp, inf);
+            long? xp = TryCount(m.Groups["xp"], out long x) ? x : null;
+            long? inf = TryCount(m.Groups["inf"], out long i) ? i : null;
+            if (xp is not null || inf is not null)
+            {
+                return new RewardGained(xp, inf);
+            }
         }
 
         return null;
@@ -164,6 +178,16 @@ public static partial class LineParser
         return null;
     }
 
-    private static long ParseCount(string text) =>
-        long.Parse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+    /// <summary>
+    /// A number too large for the game to have produced is treated as no
+    /// number at all - a hand-edited log can never overflow the fold.
+    /// </summary>
+    private static bool TryCount(string text, out long value) =>
+        long.TryParse(text, NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out value);
+
+    private static bool TryCount(Group group, out long value)
+    {
+        value = 0;
+        return group.Success && TryCount(group.Value, out value);
+    }
 }

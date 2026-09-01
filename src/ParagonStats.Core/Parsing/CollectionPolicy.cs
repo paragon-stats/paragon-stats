@@ -102,6 +102,17 @@ public static class CollectionPolicy
             return complete ? CollectionVerdict.Refuse : CollectionVerdict.Undecided;
         }
 
+        // Every line the game states as data opens with a letter or a digit -
+        // "You gain", "HIT", a character name, "Entering". Anything else
+        // opening a line is markup or a channel tag, including bracket
+        // characters ASCII TrimStart/StartsWith would never recognise
+        // (fullwidth, angle, or any other confusable). Fail closed: an
+        // unrecognised opener is refused, not collected.
+        if (!char.IsLetterOrDigit(trimmed[0]))
+        {
+            return CollectionVerdict.Refuse;
+        }
+
         bool couldStillMatch = false;
         foreach (string prefix in RefusedPrefixes)
         {

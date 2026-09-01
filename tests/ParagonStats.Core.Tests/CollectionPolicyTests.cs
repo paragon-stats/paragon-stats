@@ -54,11 +54,26 @@ public sealed class CollectionPolicyTests : IDisposable
     }
 
     [Theory]
+
+    // Confusable and markup openers: TrimStart/StartsWith are ASCII-only, so
+    // anything that is not a letter or digit opens a refused line.
+    [InlineData("2026-09-01 12:00:00 ［Tell］ Someone: private words")]
+    [InlineData("2026-09-01 12:00:00 <Tell> Someone: private words")]
+    [InlineData("2026-09-01 12:00:00 (Tell) Someone: private words")]
+    [InlineData("2026-09-01 12:00:00 <a href='cmd:gmotd'><b>Click Here</b></a> or type /gmotd")]
+    public void Non_alphanumeric_openers_are_refused(string raw)
+    {
+        Assert.True(CollectionPolicy.Refuses(raw));
+    }
+
+    [Theory]
     [InlineData("2026-09-01 12:00:00 You gain 10 experience.")]
     [InlineData("2026-09-01 12:00:00 Welcome to City of Heroes, Nova!")]
     [InlineData("2026-09-01 12:00:00 Left the mission map.")] // shares a prefix start with "Left channel "
     [InlineData("2026-09-01 12:00:00 Joined a team.")]
     [InlineData("2026-09-01 12:00:00 Using Hasten now.")]
+    [InlineData("2026-09-01 12:00:00 Ñova HITS you! Health power was autohit.")] // non-ASCII name, still data
+    [InlineData("2026-09-01 12:00:00 42nd Street Thug has defeated Nova")]
     public void Data_lines_are_still_collected(string raw)
     {
         Assert.False(CollectionPolicy.Refuses(raw));
