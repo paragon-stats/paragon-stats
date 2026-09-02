@@ -15,7 +15,7 @@
     },
     {
       "name": "super-linter",
-      "group": "pre-commit",
+      "group": "pre-push",
       "command": "dotnet",
       "args": ["run", "scripts/dev/run-super-linter.cs"]
     }

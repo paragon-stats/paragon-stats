@@ -1,0 +1,10 @@
+#!/bin/sh
+# shellcheck source=/dev/null  # husky.sh is generated in .husky/_/ at install time
+. "$(dirname "$0")/_/husky.sh"
+
+# Super-Linter runs here rather than pre-commit so it lints the same thing CI
+# does. With RUN_LOCAL it diffs against origin/main using committed history, so
+# in pre-commit it never saw the staged files - it linted the previous commit
+# and reported a pass on code nobody had checked. At push time HEAD contains the
+# commits, and the range matches the CI workflow's exactly.
+dotnet husky run --group pre-push

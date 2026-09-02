@@ -153,10 +153,11 @@ public sealed class TuiFrameTests
     private static int Occurrences(string text, string needle)
     {
         int found = 0;
-        for (int index = text.IndexOf(needle, StringComparison.Ordinal); index >= 0;
-             index = text.IndexOf(needle, index + needle.Length, StringComparison.Ordinal))
+        int index = text.IndexOf(needle, StringComparison.Ordinal);
+        while (index >= 0)
         {
             found++;
+            index = text.IndexOf(needle, index + needle.Length, StringComparison.Ordinal);
         }
 
         return found;
