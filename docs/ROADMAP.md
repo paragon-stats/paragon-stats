@@ -20,14 +20,38 @@ checkpoint table below is the live view of where the work is.
 | CP | Milestone | Spine | Exit gate |
 | --- | --- | --- | --- |
 | **CP0 Groundwork** | [Release pipeline (v0.1.0)](https://github.com/paragon-stats/paragon-stats/milestone/16) | #211, #197, #73 | Signed win-x64 AOT binary on a real GitHub Release, MinVer-stamped, cut automatically |
-| **CP1 Parsing engine** | [Parsing engine](https://github.com/paragon-stats/paragon-stats/milestone/9) | #142 capture/watch/parse + #123–#131 mechanics | Live Homecoming chat logs parsed into the account → character → session model, and replaying those logs reproduces the same statistics exactly |
-| **CP2 MVP metrics** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #86 #87 #88 #90 #96 #99 #100 #127 | The ~7 metrics verified against a captured log corpus |
-| **CP3 TUI** | [TUI - MVP readout](https://github.com/paragon-stats/paragon-stats/milestone/10) | #213 | Live metric readout usable during play, multibox-aware |
-| **CP4 GUI** | [GUI - tabbed (Avalonia)](https://github.com/paragon-stats/paragon-stats/milestone/11) | #214 scaffold + #153 tabs | Tabbed Avalonia readout at parity with the TUI |
-| **CP5 v1 gates** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #11, #37, #168 | **v1.0.0**: frozen save format, signed binaries, analyzer + coverage gates re-armed |
+| **CP1 Parsing engine** | [Parsing engine](https://github.com/paragon-stats/paragon-stats/milestone/9) | #142 capture/watch/parse + #123–#131 mechanics | Live Homecoming chat logs parsed into the account → character → session model, replaying those logs reproduces the same statistics exactly, and the published binary demonstrates it with a usable CLI surface (#238, #236) |
+| **CP2 MVP metrics** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #86 #87 #88 #90 #96 #99 #100 #127 | The ~7 metrics verified against a captured log source, demonstrated by running the published binary, not only by tests (#240) |
+| **CP3 TUI** | [TUI - MVP readout](https://github.com/paragon-stats/paragon-stats/milestone/10) | #213 | Live metric readout usable during play, multibox-aware, demonstrated by running the published binary, not only by tests (#241) |
+| **CP4 GUI** | [GUI - tabbed (Avalonia)](https://github.com/paragon-stats/paragon-stats/milestone/11) | #214 scaffold + #153 tabs | Tabbed Avalonia readout at parity with the TUI, demonstrated by running the published binary, not only by tests (#242) |
+| **CP5 v1 gates** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #11, #37, #168 | **v1.0.0**: frozen save format, signed binaries, analyzer + coverage gates re-armed, all demonstrated by running the published binary, not only by tests (#243) |
 
 CP1 and CP2 overlap naturally (each metric lands as its own `feat:` minor on
 the engine). CP3 starts once the presentation model exists; CP4 shares it.
+
+### Closing a checkpoint
+
+CP1 was once declared closed on a green test suite and a locally built CLI.
+The published artifact had never been run; when it finally was, it had no
+`--help` and no `--version`, and the C# style guide was claiming a `linux-x64`
+build that has never existed. Nothing was wrong with the engine. What was
+wrong was accepting "the tests pass" as proof about a binary nobody had
+executed.
+
+So closing any checkpoint means recording, in the milestone's closing comment:
+
+1. The release asset downloaded and its **sha256 verified against the release
+   digest** - confirming the bits tested are the bits shipped.
+2. That binary run against the real source, read-only, with the headline
+   numbers recorded.
+3. Its output diffed against the previous release's, **every delta explained**.
+   An unexplained delta blocks the close.
+4. The CLI surface the checkpoint claims to deliver, exercised from the
+   artifact - including `--help`, `--version` and the start banner.
+
+Steps 2-4 also run on every pull request via the `binary` job in `build.yml`
+(#236), so the pass at milestone close confirms rather than being the only
+line of defence. Tracking: **#239**.
 
 ## After 1.0
 
