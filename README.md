@@ -29,6 +29,7 @@ requirements: [docs/PRD.md](docs/PRD.md).
 
 ```text
 paragon-stats [--watch] [chatlog-file-or-game-directory]
+paragon-stats --help | --version
 ```
 
 Point it at a chatlog file or your Homecoming install; it prints per-character
@@ -36,6 +37,12 @@ session summaries (damage, defeats, XP, influence, tickets, market, rates, line
 categories). `--watch` follows the live logs while you play and prints rolling
 per-session rates. With no path it uses the saved game location, prompting on
 first launch. Enable in-game logging first: Options > Windows > Chat > Log Chat.
+
+`--help` documents the full surface and `--version` prints the build; both
+answer without reading any logs or config. Every run opens with a banner naming
+the directory it is about to read and restating that it only ever reads. Exit
+codes: `0` success, `1` no chatlogs found or no game location given, `2` bad
+usage.
 
 Re-running recalculates from scratch over the logs on disk - no computed
 results are cached, so the same files always produce the same numbers.
