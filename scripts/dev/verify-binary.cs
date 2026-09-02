@@ -8,9 +8,20 @@
 // appear in the *published* artifact, so a fully green suite says nothing about
 // what users download. Four releases shipped with no --help before anyone noticed.
 //
-// Checks: the batch replay against tests/fixtures/game, --help, --version, and the
-// exit codes for an unknown option and a missing path. The version and the resolved
-// root are machine-specific, so those two banner lines are normalised before the diff.
+// Two tiers, and the first one is a hard gate:
+//
+//   SMOKE   - does the artifact function at all? Launches, exit codes, a version
+//             that looks like a version, help that is not empty.
+//   GOLDEN  - does its output still match the recorded proof of function?
+//
+// If SMOKE fails the run stops there and GOLDEN never executes. A golden diff
+// taken from a binary that does not launch correctly reports a downstream
+// symptom of the upstream break, and the fix goes in against an imagined
+// problem. Fix the tier that failed, then the next tier's result means
+// something.
+//
+// The version and the resolved root are machine-specific, so those two banner
+// lines are normalised before the diff.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -117,23 +128,45 @@ void Expect(string what, bool condition, string detail)
     }
 }
 
+// Ends a tier. Anything failed here means every later tier would be measuring
+// the consequences of this break, so stop rather than produce findings nobody
+// should act on.
+void EndTier(string tier)
+{
+    if (failures.Count == 0)
+    {
+        Console.WriteLine($"--- {tier} tier passed ---");
+        Console.WriteLine();
+        return;
+    }
+
+    Console.Error.WriteLine();
+    Console.Error.WriteLine($"{tier} tier FAILED ({failures.Count} problem(s)); later tiers not run:");
+    foreach (string failure in failures)
+    {
+        Console.Error.WriteLine($"  {failure}");
+    }
+
+    if (string.Equals(tier, "GOLDEN", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine();
+        Console.Error.WriteLine("If the change is intended, regenerate with:");
+        Console.Error.WriteLine("  dotnet run scripts/dev/verify-binary.cs -- <path-to-binary> --update");
+    }
+
+    Environment.Exit(1);
+}
+
+// ---------------------------------------------------------------- SMOKE tier
+Console.WriteLine("=== SMOKE ===");
+
 var replay = Run(fixtures);
 Expect("batch replay exits 0", replay.Code == 0, $"exit {replay.Code}, stderr: {replay.Err.Trim()}");
-Golden("replay.txt", Normalise(replay.Out));
-
-// The fixture carries two synthetic chat lines. They must not reach the output,
-// and the captured-line counts must not include them (zero collection).
-Expect(
-    "chat channels are not collected",
-    !replay.Out.Contains("must never be collected", StringComparison.Ordinal),
-    "fixture chat text appeared in the output");
+Expect("batch replay produces output", replay.Out.Trim().Length > 0, "no stdout");
 
 var help = Run("--help");
 Expect("--help exits 0", help.Code == 0, $"exit {help.Code}");
-Golden("help.txt", help.Out);
-
-var shortHelp = Run("-h");
-Expect("-h matches --help", shortHelp.Code == 0 && shortHelp.Out == help.Out, "-h and --help disagree");
+Expect("--help is not empty", help.Out.Trim().Length > 0, "no stdout");
 
 var version = Run("--version");
 Expect("--version exits 0", version.Code == 0, $"exit {version.Code}");
@@ -152,21 +185,25 @@ Expect(
 var missing = Run(Path.Combine("no", "such", "directory"));
 Expect("missing path exits 1", missing.Code == 1, $"exit {missing.Code}");
 
-if (failures.Count > 0)
-{
-    Console.Error.WriteLine();
-    Console.Error.WriteLine($"binary verification FAILED ({failures.Count} problem(s)):");
-    foreach (string failure in failures)
-    {
-        Console.Error.WriteLine($"  {failure}");
-    }
+EndTier("SMOKE");
 
-    Console.Error.WriteLine();
-    Console.Error.WriteLine("If the change is intended, regenerate with:");
-    Console.Error.WriteLine("  dotnet run scripts/dev/verify-binary.cs -- <path-to-binary> --update");
-    return 1;
-}
+// --------------------------------------------------------------- GOLDEN tier
+Console.WriteLine("=== GOLDEN ===");
 
-Console.WriteLine();
+Golden("replay.txt", Normalise(replay.Out));
+Golden("help.txt", help.Out);
+
+var shortHelp = Run("-h");
+Expect("-h matches --help", shortHelp.Out == help.Out, "-h and --help disagree");
+
+// The fixture carries two synthetic chat lines. They must not reach the output,
+// and the captured-line counts must not include them (zero collection).
+Expect(
+    "chat channels are not collected",
+    !replay.Out.Contains("must never be collected", StringComparison.Ordinal),
+    "fixture chat text appeared in the output");
+
+EndTier("GOLDEN");
+
 Console.WriteLine(update ? "goldens updated." : "binary verified against goldens.");
 return 0;

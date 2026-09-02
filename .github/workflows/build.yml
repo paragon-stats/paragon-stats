@@ -52,8 +52,10 @@ jobs:
           -reporttypes:"MarkdownSummaryGithub;JsonSummary"
           -assemblyfilters:"-*.Tests.dll"
           -classfilters:"-System.Text.RegularExpressions.Generated.*;-ParagonStats.Core.Config.AppConfigContext"
+      # No `if: always()`: coverage measured over a failed test run is partial,
+      # and publishing it invites chasing a number that reflects the failure
+      # rather than the code.
       - name: Publish coverage summary
-        if: always()
         run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }
       - name: Coverage gate
         env:
@@ -77,8 +79,17 @@ jobs:
   # trimming failures and CLI surface regressions are invisible to them - four
   # releases shipped with no --help before anyone ran the artifact. win-x64 only,
   # because that is the single RuntimeIdentifier the release publishes.
+  #
+  # Gated behind `build` on purpose. An artifact produced from a tree that does
+  # not build or whose unit tests fail cannot be reliably judged: a golden diff
+  # would report a downstream symptom of the upstream break, and the fix would
+  # go in against an imagined problem. Fail the upstream tier first, then test
+  # the next one. Peer legs (windows/ubuntu inside `build`) keep
+  # `fail-fast: false` - they are not upstream of each other, so cancelling one
+  # destroys real information instead of noise.
   binary:
     name: binary
+    needs: build
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
