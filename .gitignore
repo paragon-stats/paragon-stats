@@ -161,8 +161,11 @@ coverage*.json
 coverage*.xml
 coverage*.info
 
-# ReportGenerator output
+# ReportGenerator output. Glob rather than the one directory name the build
+# happens to use: an ad-hoc `-targetdir` while chasing an uncovered line is
+# exactly how 12k lines of generated XML nearly landed in a commit.
 coveragereport/
+coverage*/
 
 # Visual Studio code coverage results
 *.coverage

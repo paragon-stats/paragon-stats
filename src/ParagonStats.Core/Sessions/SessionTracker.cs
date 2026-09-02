@@ -137,8 +137,13 @@ public sealed class SessionTracker
         session.Messages.Add(line.Timestamp, logEvent.Category, line.Payload);
     }
 
-    /// <summary>Ordinal, never culture: culture-sensitive comparison would make the order machine-dependent.</summary>
-    private static int Compare(CharacterSession left, CharacterSession right)
+    /// <summary>
+    /// Ordinal, never culture: culture-sensitive comparison would make the
+    /// order machine-dependent. Internal rather than private so the text UI
+    /// orders its own copy the same way, instead of restating the total order
+    /// somewhere the two could drift apart.
+    /// </summary>
+    internal static int Compare(CharacterSession left, CharacterSession right)
     {
         int order = left.Start.CompareTo(right.Start);
         if (order != 0)
