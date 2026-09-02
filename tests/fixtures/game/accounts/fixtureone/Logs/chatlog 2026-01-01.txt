@@ -1,0 +1,14 @@
+2026-01-01 09:59:50 You gain 100 experience.
+2026-01-01 10:00:00 Welcome to City of Heroes, Fixture Blaster!
+2026-01-01 10:00:02 Entering Architect Entertainment.
+2026-01-01 10:00:10 You hit Gravedigger Slammer with your Blazing Aura for 16.98 points of Fire damage.
+2026-01-01 10:00:11 You hit Gravedigger Slammer with your Executioner's Shot for 1,135.23 points of Lethal damage.
+2026-01-01 10:00:12 You have defeated Gravedigger Slammer
+2026-01-01 10:00:13 You gain 832 experience and 388 influence.
+2026-01-01 10:00:20 You earned 12 architect tickets!
+2026-01-01 10:00:30 You got 4,500,000 influence from the Consignment House.
+2026-01-01 10:00:35 You paid 245,000 to the Consignment House.
+2026-01-01 10:01:00 [Tell] :Fixture Friend: this synthetic line must never be collected
+2026-01-01 10:01:05 [Looking For Group] Fixture Recruiter: this synthetic line must never be collected
+2026-01-01 10:01:10 HIT Fixture Blaster! Your Health power is autohit.
+2026-01-01 10:01:40 You gain 17,940 experience.

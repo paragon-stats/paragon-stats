@@ -71,3 +71,29 @@ jobs:
             Write-Error "Coverage $cov% is below the $min% gate."
             exit 1
           }
+
+  # The only check that exercises what users actually download (#236). Every
+  # other test in this repo runs in-process against CliRunner, so native AOT
+  # trimming failures and CLI surface regressions are invisible to them - four
+  # releases shipped with no --help before anyone ran the artifact. win-x64 only,
+  # because that is the single RuntimeIdentifier the release publishes.
+  binary:
+    name: binary
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # MinVer stamps the version the banner and --version print
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
+        with:
+          global-json-file: global.json
+      - run: dotnet publish src/ParagonStats.Cli -c Release -r win-x64
+      - name: Verify the published binary against the goldens
+        run: >
+          dotnet run scripts/dev/verify-binary.cs --
+          src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe

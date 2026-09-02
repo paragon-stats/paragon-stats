@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using ParagonStats.Core.Config;
 using ParagonStats.Core.Logging;
 using ParagonStats.Core.Sessions;
@@ -13,6 +15,58 @@ namespace ParagonStats.Core.Stats;
 /// </summary>
 public static class CliRunner
 {
+    private const string Usage = "usage: paragon-stats [--watch] [chatlog-file-or-game-directory]";
+
+    /// <summary>
+    /// Everything the parser accepts. Anything else opening with '-' is a
+    /// typo, not a path: treating "--wathc" as a directory reported "no
+    /// chatlog files found" and looked like a broken tool rather than a
+    /// misspelling (#238).
+    /// </summary>
+    private static readonly string[] KnownOptions = ["--watch", "--help", "-h", "--version"];
+
+    /// <summary>
+    /// The whole CLI surface, one array entry per output line so the console
+    /// never sees a stray line ending. The deliverable is a single portable
+    /// exe with no installer and no man page, so this is the only
+    /// documentation a user is guaranteed to have in front of them.
+    /// </summary>
+    private static readonly string[] HelpText =
+    [
+        "paragon-stats - Homecoming session statistics from your own chat logs",
+        string.Empty,
+        Usage,
+        "       paragon-stats --help | --version",
+        string.Empty,
+        "arguments:",
+        "  chatlog-file-or-game-directory",
+        "      A single chatlog file, or a Homecoming install or accounts directory.",
+        "      Omit it to use the saved location; you are prompted on first launch.",
+        string.Empty,
+        "options:",
+        "  --watch      Follow the logs live with a rolling readout. Ctrl+C once for",
+        "               the session summary, twice to quit.",
+        "  --help, -h   Show this help and exit.",
+        "  --version    Show the version and exit.",
+        string.Empty,
+        "exit codes:",
+        "  0  success",
+        "  1  no chatlogs found, or no game location provided",
+        "  2  bad usage",
+        string.Empty,
+        "This tool only ever reads. It never writes to the game directory, and chat",
+        "and other communication channels are never collected - they are recognised",
+        "and discarded, never stored.",
+    ];
+
+    /// <summary>
+    /// Gets the version MinVer stamped at build time. Everything after '+' is
+    /// the commit hash, which is noise at a prompt.
+    /// </summary>
+    private static string Version =>
+        typeof(CliRunner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion.Split('+')[0] ?? "0.0.0";
+
     public static int Run(IReadOnlyList<string> args, TextWriter output, TextWriter error) =>
         Run(args, output, error, new CliEnvironment());
 
@@ -23,11 +77,17 @@ public static class CliRunner
         ArgumentNullException.ThrowIfNull(error);
         ArgumentNullException.ThrowIfNull(env);
 
-        bool watch = args.Contains("--watch", StringComparer.Ordinal);
-        List<string> positional = [.. args.Where(argument => !string.Equals(argument, "--watch", StringComparison.Ordinal))];
+        int? answered = Preflight(args, output, error);
+        if (answered is not null)
+        {
+            return answered.Value;
+        }
+
+        bool watch = Given(args, "--watch");
+        List<string> positional = [.. args.Where(argument => !KnownOptions.Contains(argument, StringComparer.Ordinal))];
         if (positional.Count > 1)
         {
-            Fail(error, "usage: paragon-stats [--watch] [chatlog-file-or-game-directory]");
+            Fail(error, Usage);
             return 2;
         }
 
@@ -40,6 +100,7 @@ public static class CliRunner
                 return 1;
             }
 
+            Banner(output, target);
             return Replay([target], target, output, error);
         }
 
@@ -49,7 +110,43 @@ public static class CliRunner
             return 1;
         }
 
+        Banner(output, accounts);
         return watch ? Watch(accounts, output, env) : ReplayDirectory(accounts, output, error);
+    }
+
+    /// <summary>
+    /// The argument-only surface, answered before anything touches the disk so
+    /// it works on a machine with no logs and no saved configuration. Returns
+    /// the exit code when the run is already answered, null to carry on.
+    /// </summary>
+    private static int? Preflight(IReadOnlyList<string> args, TextWriter output, TextWriter error)
+    {
+        if (Given(args, "--help") || Given(args, "-h"))
+        {
+            foreach (string line in HelpText)
+            {
+                output.WriteLine(line);
+            }
+
+            return 0;
+        }
+
+        if (Given(args, "--version"))
+        {
+            output.WriteLine(Version);
+            return 0;
+        }
+
+        string? unknown = args.FirstOrDefault(argument =>
+            argument.StartsWith('-') && !KnownOptions.Contains(argument, StringComparer.Ordinal));
+        if (unknown is null)
+        {
+            return null;
+        }
+
+        Fail(error, $"unknown option: {unknown}");
+        Fail(error, Usage);
+        return 2;
     }
 
     /// <summary>
@@ -164,6 +261,23 @@ public static class CliRunner
             output.WriteLine("warning: could not save the game location; you will be prompted again next launch");
         }
     }
+
+    /// <summary>
+    /// Printed once the root is resolved, so it names the directory actually
+    /// about to be read rather than what was typed. States the read-only and
+    /// zero-collection contracts up front: the user is pointing a tool at
+    /// their own game install and deserves to know what it will do before it
+    /// does it.
+    /// </summary>
+    private static void Banner(TextWriter output, string root)
+    {
+        output.WriteLine($"paragon-stats {Version} - Homecoming session statistics");
+        output.WriteLine($"reading {root} (read-only; chat channels are never collected)");
+        output.WriteLine("quick start: --watch for a live readout, --help for all options");
+    }
+
+    private static bool Given(IReadOnlyList<string> args, string option) =>
+        args.Contains(option, StringComparer.Ordinal);
 
     private static void Fail(TextWriter error, string message) => error.WriteLine(message);
 }

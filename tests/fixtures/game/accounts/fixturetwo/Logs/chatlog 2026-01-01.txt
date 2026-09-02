@@ -1,0 +1,7 @@
+2026-01-01 11:00:00 Welcome to City of Heroes, Fixture Scrapper!
+2026-01-01 11:00:05 Entering Bronze Way.
+2026-01-01 11:00:15 You hit Blood Brother Slammer with your Atom Smasher for 42.5 points of Energy damage.
+2026-01-01 11:00:16 You have defeated Blood Brother Slammer
+2026-01-01 11:00:17 You gain 638 experience, work off 638 debt, and gain 1,786 influence.
+2026-01-01 11:00:40 You have received 250 bonus architect tickets for completing the mission!
+2026-01-01 11:01:00 HIT Fixture Scrapper! Your Stamina power is autohit.

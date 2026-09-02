@@ -1,0 +1,24 @@
+paragon-stats - Homecoming session statistics from your own chat logs
+
+usage: paragon-stats [--watch] [chatlog-file-or-game-directory]
+       paragon-stats --help | --version
+
+arguments:
+  chatlog-file-or-game-directory
+      A single chatlog file, or a Homecoming install or accounts directory.
+      Omit it to use the saved location; you are prompted on first launch.
+
+options:
+  --watch      Follow the logs live with a rolling readout. Ctrl+C once for
+               the session summary, twice to quit.
+  --help, -h   Show this help and exit.
+  --version    Show the version and exit.
+
+exit codes:
+  0  success
+  1  no chatlogs found, or no game location provided
+  2  bad usage
+
+This tool only ever reads. It never writes to the game directory, and chat
+and other communication channels are never collected - they are recognised
+and discarded, never stored.
