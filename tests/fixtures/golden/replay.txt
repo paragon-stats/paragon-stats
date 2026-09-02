@@ -1,0 +1,12 @@
+paragon-stats <version> - Homecoming session statistics
+reading <root> (read-only; chat channels are never collected)
+quick start: --watch for a live readout, --help for all options
+Fixture Blaster (fixtureone) 2026-01-01 10:00 +00:01:40
+  damage 1152.21 | defeats 1 | xp 18772 | inf 388 | activations 0 | tickets 12 | market +4500000/-245000
+  rates/hr: damage 41479.6 | defeats 36 | xp 675792 | inf 13968 | activations 0 | tickets 432
+  lines 11: Session 1 | Identity 1 | Damage 2 | Defeat 1 | Reward 3 | Market 2 | Zone 1
+Fixture Scrapper (fixturetwo) 2026-01-01 11:00 +00:01:00
+  damage 42.5 | defeats 1 | xp 638 | inf 1786 | activations 0 | tickets 250 | market +0/-0
+  rates/hr: damage 2550 | defeats 60 | xp 38280 | inf 107160 | activations 0 | tickets 15000
+  lines 7: Session 1 | Identity 1 | Damage 1 | Defeat 1 | Reward 2 | Zone 1
+sessions 2 | unattributed lines 1

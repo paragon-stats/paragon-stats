@@ -36,6 +36,11 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
+# The golden-output fixture (#236) has to mirror the game's on-disk shape, and
+# that shape requires a directory literally named "Logs" - which the rule above
+# would swallow. Synthetic lines authored for the fixture; never real chat logs.
+!tests/fixtures/game/accounts/*/Logs/
+
 # Visual Studio 2015/2017 cache/options directory
 .vs/
 # Uncomment if you have tasks that create the project's static files in wwwroot
