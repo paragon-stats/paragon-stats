@@ -7,10 +7,18 @@ namespace ParagonStats.Core.Stats;
 /// </summary>
 public sealed class CliEnvironment
 {
+    /// <summary>
+    /// Overrides where the saved game location lives. Without it the config
+    /// path is fixed to %APPDATA%, so exercising the no-argument and
+    /// first-launch flows means writing over a real user's config - which is
+    /// why those flows went untested and shipped a binary with no `--help`
+    /// (#245). Matches the existing PARAGON_CORPUS_DIR idiom.
+    /// </summary>
+    public const string ConfigPathVariable = "PARAGON_STATS_CONFIG";
+
     public TextReader? Input { get; init; }
 
-    public string ConfigPath { get; init; } =
-        Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "paragon-stats", "config.json");
+    public string ConfigPath { get; init; } = DefaultConfigPath(Environment.GetEnvironmentVariable);
 
     public Func<bool> ClientRunning { get; init; } = static () => true;
 
@@ -32,6 +40,20 @@ public sealed class CliEnvironment
         ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
         Token = token,
     };
+
+    /// <summary>
+    /// Takes the reader rather than calling <see cref="Environment"/> directly, so
+    /// both branches are testable without mutating process state that other
+    /// tests share.
+    /// </summary>
+    internal static string DefaultConfigPath(Func<string, string?> readVariable)
+    {
+        ArgumentNullException.ThrowIfNull(readVariable);
+        string? configured = readVariable(ConfigPathVariable);
+        return string.IsNullOrWhiteSpace(configured)
+            ? Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "paragon-stats", "config.json")
+            : configured;
+    }
 
     /// <summary>Disposes the handles it was given; testable with any real process list.</summary>
     internal static bool ClientProcessRunning(Func<System.Diagnostics.Process[]> query)
