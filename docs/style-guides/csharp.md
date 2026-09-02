@@ -24,17 +24,22 @@ Allowed short names, and only these: `_`, `xp`, `inf`, `i`, `j`, `k`. `xp` and
 `ex` is deliberately **not** on the list, so a caught exception is named
 `exception`. Type and member names are out of scope.
 
-Two enforcement points, which must be kept in step:
+Enforcement is **`PS0001`**, the analyzer in `src/ParagonStats.Analyzers`. It
+fails `dotnet build` like every other rule here, so it bites locally and in CI
+rather than after a push.
 
-- **`PS0001`**, the analyzer in `src/ParagonStats.Analyzers` — fails
-  `dotnet build` like every other rule here. Nothing off the shelf can do this:
-  StyleCop's SA13xx family, Meziantou's rules and `dotnet_naming_style` are all
-  casing and affixes, with no length or regex capability at any severity.
-- **Sonar `S117`** with its `format` parameter set to
-  `^(_|xp|inf|[ijk]|[a-z][a-zA-Z0-9]{2,})$` in the project's custom quality
-  profile. Rule *parameters* cannot be set from `.editorconfig` or scanner
-  properties, so the profile is the only channel — change it there, and update
-  this page in the same breath.
+Nothing off the shelf can do this, which is why the rule is written rather than
+configured. StyleCop's SA13xx family, Meziantou's rules and
+`dotnet_naming_style` are all casing and affixes, with no length or regex
+capability at any severity. **SonarCloud has no C# rule for it either**: the
+naming rule with a configurable `format` (`S117`) exists for other languages but
+not for C#, whose only parameterised naming rules are `S2342` (enums) and
+`S6669` (logger fields) — verified against the rules API, not assumed. Do not go
+looking for a quality-profile setting; there isn't one.
+
+Sonar still sees violations without any profile work: the scanner imports
+third-party Roslyn diagnostics as `external_roslyn:*` issues. In practice the
+build fails first, because warnings are errors here.
 
 The rule mirrors the Python one the homelab repos already enforce
 (`scripts/linting/check_short_identifier_names.py`), so the convention reads the
