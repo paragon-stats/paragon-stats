@@ -221,6 +221,18 @@ File.WriteAllText(tuiConfig, "{\"GameRoot\":\"" + fixtures.Replace("\\", "/") + 
     ("PARAGON_STATS_CONFIG", tuiConfig),
 ];
 
+// The watcher is a LIVE monitor: LogWatcher.Discover only attaches to files
+// written within the attach window, so the fixture must look freshly written
+// or no tailer attaches and every frame renders an empty readout. That is not
+// a hypothetical - it is why these goldens passed on a developer machine and
+// failed in CI, where checkout had just stamped the files. Touch them here so
+// both environments read the same thing, and so the frames prove ingestion
+// rather than proving the fixture was too old to open.
+foreach (string log in Directory.EnumerateFiles(fixtures, "*.txt", SearchOption.AllDirectories))
+{
+    File.SetLastWriteTimeUtc(log, DateTime.UtcNow);
+}
+
 var menu = RunPiped(string.Empty, tuiEnvironment);
 Expect("the text UI launches and exits", menu.Code == 0, $"exit {menu.Code}, stderr: {menu.Err.Trim()}");
 Expect(

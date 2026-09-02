@@ -1,5 +1,5 @@
  paragon-stats <version>   menu   <read-only>
- <root>   no live sessions   unattributed 0
+ <root>   no live sessions   unattributed 1
 ------------------------------------------------------------------------------------------------------------------------
   [1]  Live stats     per-character readout, updating while you play
   [2]  Help           what every option does, and the exit codes
@@ -11,7 +11,7 @@
 ------------------------------------------------------------------------------------------------------------------------
  [1] live   [2] help   [q] quit
  paragon-stats <version>   live   <read-only>
- <root>   no live sessions   unattributed 0
+ <root>   no live sessions   unattributed 1
 ------------------------------------------------------------------------------------------------------------------------
  CHARACTER          ACCOUNT       CLOCK          XP         INF TICKETS      XP/hr     INF/hr
  Waiting for a character to log in. Chat logging must be on:
