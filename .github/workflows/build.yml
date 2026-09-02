@@ -114,7 +114,7 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet publish src/ParagonStats.Cli -c Release -r win-x64
-      - name: Verify the published binary against the goldens
+      - name: Verify the published binary (smoke, goldens, live)
         run: >
           dotnet run scripts/dev/verify-binary.cs --
           src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe

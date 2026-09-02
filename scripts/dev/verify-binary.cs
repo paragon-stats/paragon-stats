@@ -28,6 +28,7 @@
 #:property RunAnalyzers=false
 
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 
 if (args.Length < 1)
@@ -278,5 +279,177 @@ Expect(
 
 EndTier("GOLDEN");
 
-Console.WriteLine(update ? "goldens updated." : "binary verified against goldens.");
+// ----------------------------------------------------------------- LIVE tier
+// The tiers above read a file that never changes. That cannot exercise the
+// live path at all: LogWatcher only attaches to files written inside the
+// attach window, and a file that never grows never proves incremental
+// tailing. Worse, the fixtures are LF because .gitattributes normalises them,
+// while the game writes CRLF - so the one line ending real players produce was
+// the one nothing here had ever run against.
+//
+// So a generator writes real-shaped, anonymised events - stamped now, in
+// waves, CRLF - while the binary watches. The generator states the totals it
+// wrote; the binary has to agree with them.
+Console.WriteLine("=== LIVE ===");
+
+string liveRoot = Path.Combine(Path.GetTempPath(), "paragon-stats-verify-live");
+if (Directory.Exists(liveRoot))
+{
+    Directory.Delete(liveRoot, recursive: true);
+}
+
+string liveLogs = Path.Combine(liveRoot, "accounts", "livebox", "Logs");
+Directory.CreateDirectory(liveLogs);
+string liveLog = Path.Combine(liveLogs, "chatlog live.txt");
+
+ProcessStartInfo watchInfo = new()
+{
+    FileName = binary,
+    RedirectStandardOutput = true,
+    RedirectStandardError = true,
+};
+watchInfo.ArgumentList.Add("--watch");
+watchInfo.ArgumentList.Add(liveRoot);
+
+StringBuilder watched = new();
+using Process watcher = Process.Start(watchInfo)!;
+watcher.OutputDataReceived += (_, line) =>
+{
+    if (line.Data is not null)
+    {
+        lock (watched)
+        {
+            watched.AppendLine(line.Data);
+        }
+    }
+};
+watcher.BeginOutputReadLine();
+
+// The generator is deliberately started AFTER the watcher, so the log does not
+// exist when watching begins - the slow-client case, where the game takes
+// longer to reach its first written line than this tool takes to launch.
+ProcessStartInfo writeInfo = new()
+{
+    FileName = "pwsh",
+    RedirectStandardOutput = true,
+    RedirectStandardError = true,
+};
+foreach (string argument in new[]
+    {
+        "-NoProfile",
+        "-File",
+        Path.Combine("scripts", "dev", "write-log-events.ps1"),
+        "-Path",
+        liveLog,
+        "-DelaySeconds",
+        "6",
+    })
+{
+    writeInfo.ArgumentList.Add(argument);
+}
+
+using Process writing = Process.Start(writeInfo)!;
+string wrote = writing.StandardOutput.ReadToEnd();
+string wroteError = writing.StandardError.ReadToEnd();
+writing.WaitForExit();
+
+Dictionary<string, string> expected = new(StringComparer.Ordinal);
+foreach (string line in wrote.ReplaceLineEndings("\n").Split('\n'))
+{
+    if (!line.StartsWith("EXPECT ", StringComparison.Ordinal))
+    {
+        continue;
+    }
+
+    string[] pair = line["EXPECT ".Length..].Split('=', 2);
+    if (pair.Length == 2)
+    {
+        expected[pair[0]] = pair[1].Trim();
+    }
+}
+
+Expect(
+    "the event generator ran",
+    writing.ExitCode == 0 && expected.Count > 0,
+    $"exit {writing.ExitCode}, stderr: {wroteError.Trim()}");
+
+// Wait for the readout rather than sleeping a guessed interval: discovery runs
+// every 20 polls at 500ms, so the deadline covers a full rediscovery plus the
+// ticks needed to drain the final wave.
+string character = expected.GetValueOrDefault("character", "Fixture Brute");
+DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+string seen = string.Empty;
+while (DateTime.UtcNow < deadline)
+{
+    lock (watched)
+    {
+        seen = watched.ToString();
+    }
+
+    if (seen.Contains(expected.GetValueOrDefault("xp", "0"), StringComparison.Ordinal)
+        && seen.Contains(character, StringComparison.Ordinal))
+    {
+        break;
+    }
+
+    Thread.Sleep(500);
+}
+
+try
+{
+    watcher.Kill(entireProcessTree: true);
+    watcher.WaitForExit(5000);
+}
+catch (InvalidOperationException)
+{
+    // Already gone; the captured output is what matters.
+}
+
+Expect(
+    "a log created after launch is discovered and followed",
+    seen.Contains(character, StringComparison.Ordinal),
+    "the live readout never named the character");
+
+Expect(
+    "the live readout reports what the generator wrote",
+    seen.Contains(expected.GetValueOrDefault("xp", "?"), StringComparison.Ordinal),
+    "the live readout never reached the written experience total");
+
+Expect(
+    "communication lines are refused on the live path",
+    !seen.Contains("dropme", StringComparison.Ordinal),
+    "refused content reached the live output");
+
+// Replay the very same generated file. The live readout carries xp, influence
+// and tickets; the batch summary carries the whole fold, so the remaining
+// counters are checked there rather than left unasserted.
+var replayed = Run(liveRoot);
+string fold = $"damage {expected.GetValueOrDefault("damage", "?")}"
+    + $" | defeats {expected.GetValueOrDefault("defeats", "?")}"
+    + $" | xp {expected.GetValueOrDefault("xp", "?")}"
+    + $" | inf {expected.GetValueOrDefault("inf", "?")}"
+    + $" | activations {expected.GetValueOrDefault("activations", "?")}"
+    + $" | tickets {expected.GetValueOrDefault("tickets", "?")}"
+    + $" | market {expected.GetValueOrDefault("market", "?")}";
+
+Expect(
+    "every counter the generator wrote is folded",
+    replayed.Out.Contains(fold, StringComparison.Ordinal),
+    $"wanted: {fold}");
+
+Expect(
+    "the line before the banner is unattributed, not counted",
+    replayed.Out.Contains(
+        $"unattributed lines {expected.GetValueOrDefault("unattributed", "?")}",
+        StringComparison.Ordinal),
+    "unattributed count disagrees with the generator");
+
+Expect(
+    "communication lines are refused on the batch path",
+    !replayed.Out.Contains("dropme", StringComparison.Ordinal),
+    "refused content reached the batch output");
+
+EndTier("LIVE");
+
+Console.WriteLine(update ? "goldens updated." : "binary verified: smoke, goldens, live.");
 return 0;
