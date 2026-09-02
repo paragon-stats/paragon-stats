@@ -12,7 +12,7 @@ public sealed class CliEnvironment
     /// path is fixed to %APPDATA%, so exercising the no-argument and
     /// first-launch flows means writing over a real user's config - which is
     /// why those flows went untested and shipped a binary with no `--help`
-    /// (#245). Matches the existing PARAGON_CORPUS_DIR idiom.
+    /// (#245). Matches the existing PARAGON_SOURCE_DIR idiom.
     /// </summary>
     public const string ConfigPathVariable = "PARAGON_STATS_CONFIG";
 

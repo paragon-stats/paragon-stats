@@ -124,12 +124,12 @@ public sealed class ReplayTests : IDisposable
     }
 
     [Fact]
-    public void Corpus_smoke_reports_uncategorized_ratio_when_configured()
+    public void Source_smoke_reports_uncategorized_ratio_when_configured()
     {
-        string? corpus = Environment.GetEnvironmentVariable("PARAGON_CORPUS_DIR");
-        Assert.SkipWhen(string.IsNullOrEmpty(corpus), "PARAGON_CORPUS_DIR not set");
+        string? source = Environment.GetEnvironmentVariable("PARAGON_SOURCE_DIR");
+        Assert.SkipWhen(string.IsNullOrEmpty(source), "PARAGON_SOURCE_DIR not set");
 
-        string[] files = Directory.GetFiles(corpus!, "chatlog*.txt", SearchOption.AllDirectories);
+        string[] files = Directory.GetFiles(source!, "chatlog*.txt", SearchOption.AllDirectories);
         Array.Sort(files, StringComparer.Ordinal);
         ReplayResult result = LogReplayer.Replay(files);
         long total = result.Sessions.Sum(session => session.Messages.TotalCaptured);
