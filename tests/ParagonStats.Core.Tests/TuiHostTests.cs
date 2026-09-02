@@ -82,16 +82,20 @@ public sealed class TuiHostTests
     }
 
     [Fact]
-    public void An_interactive_run_paints_ansi_and_a_redirected_one_paints_plain()
+    public void A_terminal_run_paints_ansi_and_a_piped_one_paints_plain()
     {
+        // Showing the readout and emitting escapes are separate questions: a
+        // piped run wants the first without the second, which is how CI proves
+        // the screens through the published binary.
         Readout readout = new("0.5.0", "root", Snapshot.Capture([], 0));
         string escape = ((char)27).ToString();
 
-        string ansi = TuiHost.Paint(new MenuScreen(), readout, Env(new Queue<char>(), 1, interactive: true));
-        string plain = TuiHost.Paint(new MenuScreen(), readout, Env(new Queue<char>(), 1, interactive: false));
+        string ansi = TuiHost.Paint(new MenuScreen(), readout, new CliEnvironment { Ansi = true });
+        string plain = TuiHost.Paint(new MenuScreen(), readout, new CliEnvironment { Ansi = false });
 
         Assert.StartsWith(escape + "[H", ansi, StringComparison.Ordinal);
         Assert.DoesNotContain(escape, plain, StringComparison.Ordinal);
+        Assert.Contains("[1]  Live stats", plain, StringComparison.Ordinal);
     }
 
     [Fact]

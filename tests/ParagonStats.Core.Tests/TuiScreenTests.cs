@@ -17,7 +17,7 @@ public sealed class TuiScreenTests
         // ALL BOXES spans 02:00:00 - the window from the earliest start to the
         // latest activity - not the 03:20:00 the two rows sum to.
         const string Expected = """
-             paragon-stats 0.5.0    live                                                                                read-only *
+             paragon-stats 0.5.0   live                                                                                 read-only *
              C:\Games\Homecoming\accounts   2 live   unattributed 0
             ------------------------------------------------------------------------------------------------------------------------
              CHARACTER          ACCOUNT       CLOCK          XP         INF TICKETS      XP/hr     INF/hr
@@ -38,7 +38,7 @@ public sealed class TuiScreenTests
     public void The_menu_renders_every_destination()
     {
         const string Expected = """
-             paragon-stats 0.5.0    menu                                                                                read-only *
+             paragon-stats 0.5.0   menu                                                                                 read-only *
              C:\Games\Homecoming\accounts   2 live   unattributed 0
             ------------------------------------------------------------------------------------------------------------------------
               [1]  Live stats     per-character readout, updating while you play

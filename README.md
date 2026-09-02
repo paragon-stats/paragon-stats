@@ -39,10 +39,17 @@ per-session rates. With no path it uses the saved game location, prompting on
 first launch. Enable in-game logging first: Options > Windows > Chat > Log Chat.
 
 `--help` documents the full surface and `--version` prints the build; both
-answer without reading any logs or config. Every run opens with a banner naming
-the directory it is about to read and restating that it only ever reads. Exit
-codes: `0` success, `1` no chatlogs found or no game location given, `2` bad
-usage.
+answer without reading any logs or config. Exit codes: `0` success, `1` no
+chatlogs found or no game location given, `2` bad usage.
+
+**Double-clicking it opens a text UI** — a menu, then a live per-character
+readout with an all-boxes total, sized to your terminal window. It attaches to
+what you are playing right now rather than replaying your whole log history at
+launch, so it is ready immediately. Press `q` to quit, `h` for help.
+
+Running it with a path, with `--watch`, or with output redirected keeps the
+plain text summary exactly as before, so piping it into a file or a script is
+unchanged.
 
 Re-running recalculates from scratch over the logs on disk - no computed
 results are cached, so the same files always produce the same numbers.

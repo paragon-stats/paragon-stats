@@ -16,6 +16,16 @@ public sealed class CliEnvironment
     /// </summary>
     public const string ConfigPathVariable = "PARAGON_STATS_CONFIG";
 
+    /// <summary>
+    /// Forces the text UI on with plain rendering, so it can be driven through
+    /// a pipe. Without it the readout is unprovable in CI: redirected output
+    /// falls back to the batch summary, which is exactly the path that was
+    /// already covered while the interactive one shipped broken. Keys are then
+    /// read from stdin, and end-of-input quits - so piping nothing renders one
+    /// frame and exits.
+    /// </summary>
+    public const string ForceTuiVariable = "PARAGON_STATS_TUI";
+
     public TextReader? Input { get; init; }
 
     public string ConfigPath { get; init; } = DefaultConfigPath(Environment.GetEnvironmentVariable);
@@ -50,31 +60,49 @@ public sealed class CliEnvironment
     public Func<(int Width, int Height)> WindowSize { get; init; } = static () => (120, 12);
 
     /// <summary>
+    /// Whether frames are painted as ANSI. Separate from <see cref="Interactive"/>
+    /// because "show the readout" and "emit escape sequences" are different
+    /// questions: a piped run wants the first without the second.
+    /// </summary>
+    public bool Ansi { get; init; }
+
+    /// <summary>
     /// The production wiring, in Core so the coverage gate sees it. The
     /// game-client check is name-only and deliberately conservative: a
     /// collision keeps sessions open (idle timeout and in-log triggers still
     /// close them); a miss is edge-guarded in LiveMonitor.
     /// </summary>
-    public static CliEnvironment Production(CancellationToken token) => new()
-    {
-        Input = Console.In,
-        ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
-        Token = token,
+    public static CliEnvironment Production(CancellationToken token) =>
+        Production(Environment.GetEnvironmentVariable(ForceTuiVariable), token);
 
-        // Both must hold: a real console to paint into, and a terminal that
-        // interprets the escapes. Under legacy conhost virtual-terminal
+    /// <summary>Takes the override so both wirings are testable without touching process state.</summary>
+    internal static CliEnvironment Production(string? forceTui, CancellationToken token)
+    {
+        // Both must hold for a painted readout: a real console, and a terminal
+        // that interprets the escapes. Under legacy conhost virtual-terminal
         // processing is off by default, and painting ANSI into it would print
         // literal garbage - worse than the plain output it replaced.
-        Interactive = !Console.IsOutputRedirected && !Console.IsInputRedirected && Tui.VirtualTerminal.TryEnable(),
+        bool terminal = !Console.IsOutputRedirected && !Console.IsInputRedirected && Tui.VirtualTerminal.TryEnable();
+        bool forced = !string.IsNullOrWhiteSpace(forceTui);
 
-        // Guarded: Console.KeyAvailable throws outright when stdin is
-        // redirected, and this property is constructed even on runs that never
-        // enter the text UI.
-        ReadKey = static () => !Console.IsInputRedirected && Console.KeyAvailable
-            ? Console.ReadKey(intercept: true).KeyChar
-            : null,
-        WindowSize = static () => ConsoleSize(),
-    };
+        return new CliEnvironment
+        {
+            Input = Console.In,
+            ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
+            Token = token,
+            Interactive = terminal || forced,
+            Ansi = terminal,
+
+            // Forced runs pin the strip. "Window size" is meaningless down a
+            // pipe, and asking the console anyway would make golden frames
+            // depend on whatever width the machine running CI happens to have.
+            WindowSize = forced ? static () => (120, 13) : static () => ConsoleSize(),
+
+            // Forced runs read keys from the pipe, and treat end-of-input as a
+            // quit so a run with nothing piped renders one frame and exits.
+            ReadKey = forced ? ReadPiped : ReadConsole,
+        };
+    }
 
     /// <summary>
     /// Asking the console its size throws when there is no console attached, and
@@ -137,4 +165,17 @@ public sealed class CliEnvironment
 
         return processes.Length > 0;
     }
+
+    private static char? ReadPiped()
+    {
+        int next = Console.In.Read();
+        return next < 0 ? 'q' : (char)next;
+    }
+
+    /// <summary>
+    /// Guarded: Console.KeyAvailable throws outright when stdin is redirected,
+    /// and this is wired on every run, including ones that never paint.
+    /// </summary>
+    private static char? ReadConsole() =>
+        !Console.IsInputRedirected && Console.KeyAvailable ? Console.ReadKey(intercept: true).KeyChar : null;
 }

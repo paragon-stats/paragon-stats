@@ -21,13 +21,20 @@ checkpoint table below is the live view of where the work is.
 | --- | --- | --- | --- |
 | **CP0 Groundwork** | [Release pipeline (v0.1.0)](https://github.com/paragon-stats/paragon-stats/milestone/16) | #211, #197, #73 | Signed win-x64 AOT binary on a real GitHub Release, MinVer-stamped, cut automatically |
 | **CP1 Parsing engine** | [Parsing engine](https://github.com/paragon-stats/paragon-stats/milestone/9) | #142 capture/watch/parse + #123–#131 mechanics | Live Homecoming chat logs parsed into the account → character → session model, replaying those logs reproduces the same statistics exactly, and the published binary demonstrates it with a usable CLI surface (#238, #236) |
+| **CP1.5 Text UI** | [CP1.5 - Text UI straw man](https://github.com/paragon-stats/paragon-stats/milestone/17) | #245 | Double-clicking the published binary opens a usable readout that reaches live stats, sized to the window, demonstrated by running it and not only by tests |
 | **CP2 MVP metrics** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #86 #87 #88 #90 #96 #99 #100 #127 | The ~7 metrics verified against a captured log source, demonstrated by running the published binary, not only by tests (#240) |
 | **CP3 TUI** | [TUI - MVP readout](https://github.com/paragon-stats/paragon-stats/milestone/10) | #213 | Live metric readout usable during play, multibox-aware, demonstrated by running the published binary, not only by tests (#241) |
 | **CP4 GUI** | [GUI - tabbed (Avalonia)](https://github.com/paragon-stats/paragon-stats/milestone/11) | #214 scaffold + #153 tabs | Tabbed Avalonia readout at parity with the TUI, demonstrated by running the published binary, not only by tests (#242) |
 | **CP5 v1 gates** | [MVP](https://github.com/paragon-stats/paragon-stats/milestone/12) | #11, #37, #168 | **v1.0.0**: frozen save format, signed binaries, analyzer + coverage gates re-armed, all demonstrated by running the published binary, not only by tests (#243) |
 
 CP1 and CP2 overlap naturally (each metric lands as its own `feat:` minor on
-the engine). CP3 starts once the presentation model exists; CP4 shares it.
+the engine). CP1.5 sits between them because the engine was correct while the
+deliverable was unusable: the shipped binary opened a window with nothing to
+type into. It is deliberately short - a straw man whose value is the modular
+skeleton CP2's metrics, CP3's TUI and CP4's GUI plug into, so those checkpoints
+extend a system rather than rewrite one. CP1.6 carries what needs a raw input
+layer with guaranteed terminal-state cleanup (mouse, #247). CP3 starts once the
+presentation model exists; CP4 shares it.
 
 ### Closing a checkpoint
 

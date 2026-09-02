@@ -16,8 +16,14 @@ internal static class Chrome
 
     public static void Header(Frame frame, Readout readout, string title)
     {
-        frame.Write(0, 1, $"paragon-stats {readout.Version}");
-        frame.Write(0, 24, title);
+        // Positioned after the version rather than at a fixed column: between
+        // tags MinVer stamps a pre-release like 0.6.0-alpha.10, which is long
+        // enough that a fixed title column printed straight through it
+        // ("paragon-stats 0.6.0-alpmenu.10"). Only a real build showed it - the
+        // tests all used a tidy "0.5.0".
+        string build = $"paragon-stats {readout.Version}";
+        frame.Write(0, 1, build);
+        frame.Write(0, build.Length + 4, title);
 
         // Right-aligned so the read-only promise sits in the same place on
         // every screen; the root gives way first when the frame is narrow.

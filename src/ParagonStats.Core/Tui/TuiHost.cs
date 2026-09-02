@@ -61,7 +61,7 @@ public static class TuiHost
         // the frame up by one and every repaint walks down the screen.
         Frame frame = new(Math.Max(width, 20), Math.Max(height - 1, 6));
         screen.Render(frame, readout);
-        return env.Interactive ? frame.ToAnsi() : frame.ToPlainText() + Environment.NewLine;
+        return env.Ansi ? frame.ToAnsi() : frame.ToPlainText() + Environment.NewLine;
     }
 
     private static IScreen Switch(IScreen current, ScreenResult result) => result switch
