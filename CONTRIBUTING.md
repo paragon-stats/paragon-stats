@@ -2,7 +2,9 @@
 
 ## Setup
 
-Requires the .NET 10 SDK (Windows or Linux x64). After cloning, run the bootstrap script — it
+Requires the .NET 10 SDK on **Windows x64** — the only platform CI verifies and the only RID
+the product ships. The code is portable enough to build elsewhere, but nothing checks that any
+more, so treat another dev host as unsupported. After cloning, run the bootstrap script — it
 restores the .NET local tools, installs the Husky.Net hooks, and verifies the toolchain (signed
 commits are required):
 

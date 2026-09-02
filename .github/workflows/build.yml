@@ -16,10 +16,15 @@ concurrency:
 
 jobs:
   build:
+    # Windows only: Homecoming does not run natively on Linux, so a Linux leg
+    # verified a platform no player uses. The matrix shape is kept for the one
+    # entry on purpose - collapsing it would rename the required check from
+    # "build (windows-latest)" to "build", and a required context that never
+    # reports under its old name freezes every PR (#14).
     strategy:
-      fail-fast: false  # let both OS legs report even if one fails (#22)
+      fail-fast: false  # kept: a second target RID would be a peer, not a downstream
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -35,8 +40,9 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore
       - run: dotnet tool restore
+      # Was gated to the Linux leg to run once; that leg is gone, so the gate
+      # would have silently disabled the check entirely.
       - name: Check console output encoding
-        if: matrix.os == 'ubuntu-latest'  # OS-invariant scan - run once, after restore
         run: dotnet run scripts/dev/check-encoding.cs
       - run: dotnet format --verify-no-changes --severity error --no-restore
       - run: dotnet build --no-restore
@@ -84,9 +90,9 @@ jobs:
   # not build or whose unit tests fail cannot be reliably judged: a golden diff
   # would report a downstream symptom of the upstream break, and the fix would
   # go in against an imagined problem. Fail the upstream tier first, then test
-  # the next one. Peer legs (windows/ubuntu inside `build`) keep
-  # `fail-fast: false` - they are not upstream of each other, so cancelling one
-  # destroys real information instead of noise.
+  # the next one. `build` keeps `fail-fast: false` because matrix legs are peers
+  # of each other, not upstream and downstream - cancelling one would destroy
+  # real information instead of noise.
   binary:
     name: binary
     needs: build
