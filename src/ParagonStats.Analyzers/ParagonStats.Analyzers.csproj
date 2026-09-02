@@ -4,7 +4,6 @@
     <!-- Analyzers load into the compiler, which is netstandard2.0 ground. -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

@@ -9,13 +9,11 @@ namespace ParagonStats.Analyzers;
 
 /// <summary>
 /// PS0001 - an identifier shorter than three characters says nothing about
-/// what it holds. The homelab repos enforce the same rule for Python
-/// (scripts/linting/check_short_identifier_names.py); nothing in the C#
-/// analyzer stack can express a minimum length - StyleCop's SA13xx family,
-/// Meziantou's rules and dotnet_naming_style are all casing, prefix and
-/// suffix only - so this analyzer is the C# half of that convention.
-/// Scope matches the Python checker's: things a reader meets inside a method
-/// body or signature. Type and member names are out of scope.
+/// what it holds. The rule, the allowlist and why nothing off the shelf can
+/// express it are documented once in docs/style-guides/csharp.md (#234).
+/// Scope: locals, parameters, foreach/for variables, catch declarations,
+/// pattern designations, and fields (a variable declarator covers fields,
+/// consts and event fields). Types, methods and properties are not.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ShortIdentifierAnalyzer : DiagnosticAnalyzer
@@ -47,9 +45,11 @@ public sealed class ShortIdentifierAnalyzer : DiagnosticAnalyzer
 
     public override void Initialize(AnalysisContext context)
     {
+        // The house guard is throw-on-null (ArgumentNullException.ThrowIfNull
+        // everywhere in Core); netstandard2.0 lacks the helper, not the rule.
         if (context is null)
         {
-            return;
+            throw new ArgumentNullException(nameof(context));
         }
 
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
@@ -78,20 +78,16 @@ public sealed class ShortIdentifierAnalyzer : DiagnosticAnalyzer
 
     private static void Check(SyntaxNodeAnalysisContext context, SyntaxToken identifier)
     {
-        string name = identifier.ValueText;
-        if (name.Length == 0 || Allowed.Contains(name))
-        {
-            return;
-        }
-
         // Leading underscores are decoration, not meaning: a private field
-        // named _id is as opaque as one named id.
-        string bare = name.TrimStart('_');
-        if (bare.Length == 0 || bare.Length >= MinimumLength)
+        // named _id is as opaque as one named id. Strip them before both the
+        // length test and the allowlist, or `_xp` would fail a rule that
+        // clears `xp` - and `_camelCase` is this repo's field convention.
+        string bare = identifier.ValueText.TrimStart('_');
+        if (bare.Length == 0 || bare.Length >= MinimumLength || Allowed.Contains(bare))
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), name, MinimumLength));
+        context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), identifier.ValueText, MinimumLength));
     }
 }

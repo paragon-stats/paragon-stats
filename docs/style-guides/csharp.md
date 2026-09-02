@@ -16,38 +16,35 @@ the config.
 ## Naming: identifiers are at least three characters
 
 Locals, parameters (lambdas included), `foreach`/`for` variables, `catch`
-declarations, `out var` and pattern designations must be at least three
-characters, measured after leading underscores (`_id` violates, `_` does not).
+declarations, `out var`, pattern designations **and fields** (including consts
+and event fields) must be at least three characters, measured after leading
+underscores: `_id` violates, `_` does not. Types, methods and properties are out
+of scope.
 
-Allowed short names, and only these: `_`, `xp`, `inf`, `i`, `j`, `k`. `xp` and
-`inf` are the game's own vocabulary and already appear as `xpRate`/`infRate`;
-`ex` is deliberately **not** on the list, so a caught exception is named
-`exception`. Type and member names are out of scope.
+Allowed short names, and only these: `_`, `xp`, `inf`, `i`, `j`, `k` — with or
+without a leading underscore, so `_xp` is fine. `xp` and `inf` are the game's own
+vocabulary and already appear as `xpRate`/`infRate`; `ex` is deliberately **not**
+on the list, so a caught exception is named `exception`. The list is code, not
+config: extending it means a PR against `ShortIdentifierAnalyzer` and its
+`AnalyzerReleases` files.
 
 Enforcement is **`PS0001`**, the analyzer in `src/ParagonStats.Analyzers`. It
-fails `dotnet build` like every other rule here, so it bites locally and in CI
-rather than after a push.
+fails `dotnet build` like every other rule here, so it bites locally rather than
+after a push, and Sonar sees the same violations via `external_roslyn:*` import.
 
-Nothing off the shelf can do this, which is why the rule is written rather than
-configured. StyleCop's SA13xx family, Meziantou's rules and
-`dotnet_naming_style` are all casing and affixes, with no length or regex
-capability at any severity. **SonarCloud has no C# rule for it either**: the
-naming rule with a configurable `format` (`S117`) exists for other languages but
-not for C#, whose only parameterised naming rules are `S2342` (enums) and
-`S6669` (logger fields) — verified against the rules API, not assumed. Do not go
-looking for a quality-profile setting; there isn't one.
-
-Sonar still sees violations without any profile work: the scanner imports
-third-party Roslyn diagnostics as `external_roslyn:*` issues. In practice the
-build fails first, because warnings are errors here.
-
-The rule mirrors the Python one the homelab repos already enforce
-(`scripts/linting/check_short_identifier_names.py`), so the convention reads the
-same across languages. Tracking: **#234**.
+The rule is written rather than configured because nothing off the shelf can
+express a name length: StyleCop's SA13xx family, Meziantou's rules and
+`dotnet_naming_style` are casing and affixes only, and **SonarCloud has no C#
+rule for it either** — `S117` takes a `format` parameter in other languages but
+does not exist for C#. Don't go looking for a quality-profile setting. It mirrors
+the Python checker the homelab repos enforce
+(`scripts/linting/check_short_identifier_names.py`). Tracking: **#234**.
 
 ## AOT safety (Core + Cli)
 
-`ParagonStats.Cli` publishes with **native AOT** (`win-x64` and `linux-x64`). Keep
+`ParagonStats.Cli` publishes with **native AOT**. The only runtime built and
+released today is `win-x64` (`RuntimeIdentifiers` in the csproj, and the single
+publish step in `release.yml`). Keep
 `ParagonStats.Core` AOT-compatible:
 
 - No unbounded reflection, `dynamic`, or runtime code generation.

@@ -120,7 +120,7 @@ public sealed class ReplayTests : IDisposable
         Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
         Assert.Contains("rates/hr:", text, StringComparison.Ordinal); // uniform rate model surfaces (#123/#124)
         Assert.Contains("tickets", text, StringComparison.Ordinal); // farm economy is first-class
-        Assert.All(text, letter => Assert.True(letter is '\r' or '\n' || (letter >= ' ' && letter <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)letter}")));
+        Assert.All(text, symbol => Assert.True(symbol is '\r' or '\n' || (symbol >= ' ' && symbol <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)symbol}")));
     }
 
     [Fact]

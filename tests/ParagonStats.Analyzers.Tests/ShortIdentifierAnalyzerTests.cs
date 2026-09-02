@@ -28,9 +28,10 @@ public sealed class ShortIdentifierAnalyzerTests
 
     // Leading underscores are decoration, not meaning.
     [InlineData("class C { private int _id; }", "_id")]
-    public void Short_identifiers_are_reported(string source, string expected)
+    [InlineData("class C { private int __ab; }", "__ab")]
+    public async Task Short_identifiers_are_reported(string source, string expected)
     {
-        Diagnostic diagnostic = Assert.Single(Analyze(source));
+        Diagnostic diagnostic = Assert.Single(await AnalyzeAsync(source).ConfigureAwait(true));
         Assert.Equal(ShortIdentifierAnalyzer.DiagnosticId, diagnostic.Id);
         Assert.Contains(expected, diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
     }
@@ -45,6 +46,12 @@ public sealed class ShortIdentifierAnalyzerTests
     [InlineData("class C { void M() { var (_, second) = (1, 2); } }")]
     [InlineData("class C { private int _; }")]
 
+    // The allowlist is matched after underscores are stripped, so the repo's
+    // own _camelCase field convention can carry the game's abbreviations.
+    [InlineData("class C { private long _xp; }")]
+    [InlineData("class C { private long _inf; }")]
+    [InlineData("class C { private int _i; }")]
+
     // Names long enough to say something.
     [InlineData("class C { void M(int count) { } }")]
     [InlineData("class C { void M() { try { } catch (System.Exception exception) { } } }")]
@@ -53,30 +60,31 @@ public sealed class ShortIdentifierAnalyzerTests
     [InlineData("class Ab { }")]
     [InlineData("class C { int Ab => 1; }")]
     [InlineData("class C<T> { }")]
-    public void Acceptable_identifiers_are_left_alone(string source) => Assert.Empty(Analyze(source));
+    public async Task Acceptable_identifiers_are_left_alone(string source) => Assert.Empty(await AnalyzeAsync(source).ConfigureAwait(true));
 
     [Fact]
-    public void Every_short_identifier_in_a_file_is_reported()
+    public async Task Every_short_identifier_in_a_file_is_reported()
     {
         const string source = "class C { void M(int ab) { int cd = ab; System.Func<int, int> mapper = e => e; } }";
 
-        ImmutableArray<Diagnostic> diagnostics = Analyze(source);
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzeAsync(source).ConfigureAwait(true);
 
         Assert.Equal(3, diagnostics.Length);
         Assert.All(diagnostics, diagnostic => Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity));
     }
 
     [Fact]
-    public void Initialize_tolerates_a_null_context()
+    public void Initialize_rejects_a_null_context()
     {
-        // CA1062 wants the guard; Roslyn never exercises it, so this does.
+        // The house guard is throw-on-null; Roslyn never passes null, so this does.
         ShortIdentifierAnalyzer analyzer = new();
 
-        Assert.Null(Record.Exception(() => analyzer.Initialize(null!)));
+        ArgumentNullException thrown = Assert.Throws<ArgumentNullException>(() => analyzer.Initialize(null!));
+        Assert.Equal("context", thrown.ParamName);
         Assert.Equal(ShortIdentifierAnalyzer.DiagnosticId, Assert.Single(analyzer.SupportedDiagnostics).Id);
     }
 
-    private static ImmutableArray<Diagnostic> Analyze(string source)
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source)
     {
         string platform = (string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!;
         IEnumerable<MetadataReference> references = platform
@@ -90,10 +98,9 @@ public sealed class ShortIdentifierAnalyzerTests
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        return compilation
+        return await compilation
             .WithAnalyzers([new ShortIdentifierAnalyzer()])
             .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)
-            .GetAwaiter()
-            .GetResult();
+            .ConfigureAwait(false);
     }
 }

@@ -37,11 +37,9 @@
   </ItemGroup>
 
   <!--
-    PS0001, the in-repo minimum-identifier-length rule (#234). No off-the-shelf
-    C# analyzer can express a name length - StyleCop, Meziantou and
-    dotnet_naming_style are casing and affixes only - so the rule lives here and
-    loads into every other project's compile. It excludes itself, which would be
-    circular.
+    PS0001, the in-repo minimum-identifier-length rule, loads into every other
+    project's compile (see docs/style-guides/csharp.md, #234). It excludes
+    itself, which would be circular.
   -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'ParagonStats.Analyzers'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)src\ParagonStats.Analyzers\ParagonStats.Analyzers.csproj"

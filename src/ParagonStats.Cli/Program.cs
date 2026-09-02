@@ -1,10 +1,10 @@
 using ParagonStats.Core.Stats;
 
 using CancellationTokenSource cancellation = new();
-Console.CancelKeyPress += (_, args) =>
+Console.CancelKeyPress += (_, eventArgs) =>
 {
     // First Ctrl+C: graceful (watch prints its final summary). Second: kill.
-    args.Cancel = !cancellation.IsCancellationRequested;
+    eventArgs.Cancel = !cancellation.IsCancellationRequested;
     cancellation.Cancel();
 };
 

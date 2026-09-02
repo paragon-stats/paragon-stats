@@ -245,7 +245,7 @@ public sealed class RobustnessTests : IDisposable
 
         string text = SummaryFormatter.Format(LogReplayer.Replay([log]));
         Assert.Contains("?ova", text, StringComparison.Ordinal);
-        Assert.All(text, letter => Assert.True(letter is '\r' or '\n' || (letter >= ' ' && letter <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)letter}")));
+        Assert.All(text, symbol => Assert.True(symbol is '\r' or '\n' || (symbol >= ' ' && symbol <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)symbol}")));
     }
 
     [Fact]
