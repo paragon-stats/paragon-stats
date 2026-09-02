@@ -49,7 +49,7 @@ public sealed class AppConfigStore
         {
             return JsonSerializer.Deserialize(File.ReadAllText(_path), AppConfigContext.Default.AppConfig)?.GameRoot;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
         {
             return null;
         }
@@ -64,7 +64,7 @@ public sealed class AppConfigStore
             File.WriteAllText(_path, JsonSerializer.Serialize(new AppConfig { GameRoot = gameRoot }, AppConfigContext.Default.AppConfig));
             return true;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return false;
         }

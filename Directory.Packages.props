@@ -7,5 +7,7 @@
     <PackageVersion Include="Meziantou.Analyzer" Version="3.0.177" />
     <PackageVersion Include="xunit.v3.mtp-v2" Version="4.0.0" />
     <PackageVersion Include="MinVer" Version="7.0.0" />
+    <!-- Compiler API, for the in-repo PS0001 analyzer and its tests (#234). -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
   </ItemGroup>
 </Project>

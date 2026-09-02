@@ -13,6 +13,33 @@ the config.
 - File-scoped namespaces; `using` directives outside the namespace.
 - Private fields `_camelCase`; everything public PascalCase (see `.editorconfig`).
 
+## Naming: identifiers are at least three characters
+
+Locals, parameters (lambdas included), `foreach`/`for` variables, `catch`
+declarations, `out var` and pattern designations must be at least three
+characters, measured after leading underscores (`_id` violates, `_` does not).
+
+Allowed short names, and only these: `_`, `xp`, `inf`, `i`, `j`, `k`. `xp` and
+`inf` are the game's own vocabulary and already appear as `xpRate`/`infRate`;
+`ex` is deliberately **not** on the list, so a caught exception is named
+`exception`. Type and member names are out of scope.
+
+Two enforcement points, which must be kept in step:
+
+- **`PS0001`**, the analyzer in `src/ParagonStats.Analyzers` — fails
+  `dotnet build` like every other rule here. Nothing off the shelf can do this:
+  StyleCop's SA13xx family, Meziantou's rules and `dotnet_naming_style` are all
+  casing and affixes, with no length or regex capability at any severity.
+- **Sonar `S117`** with its `format` parameter set to
+  `^(_|xp|inf|[ijk]|[a-z][a-zA-Z0-9]{2,})$` in the project's custom quality
+  profile. Rule *parameters* cannot be set from `.editorconfig` or scanner
+  properties, so the profile is the only channel — change it there, and update
+  this page in the same breath.
+
+The rule mirrors the Python one the homelab repos already enforce
+(`scripts/linting/check_short_identifier_names.py`), so the convention reads the
+same across languages. Tracking: **#234**.
+
 ## AOT safety (Core + Cli)
 
 `ParagonStats.Cli` publishes with **native AOT** (`win-x64` and `linux-x64`). Keep

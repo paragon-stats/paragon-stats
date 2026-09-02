@@ -13,7 +13,7 @@ public sealed class MetricSet
     {
         ArgumentNullException.ThrowIfNull(timer);
         Timer = timer;
-        _counters = Enum.GetValues<StatId>().ToDictionary(id => id, _ => new Counter());
+        _counters = Enum.GetValues<StatId>().ToDictionary(stat => stat, _ => new Counter());
     }
 
     public StatsTimer Timer { get; }

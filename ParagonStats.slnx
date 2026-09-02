@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/ParagonStats.Analyzers/ParagonStats.Analyzers.csproj" />
     <Project Path="src/ParagonStats.Cli/ParagonStats.Cli.csproj" />
     <Project Path="src/ParagonStats.Core/ParagonStats.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/ParagonStats.Analyzers.Tests/ParagonStats.Analyzers.Tests.csproj" />
     <Project Path="tests/ParagonStats.Core.Tests/ParagonStats.Core.Tests.csproj" />
   </Folder>
 </Solution>

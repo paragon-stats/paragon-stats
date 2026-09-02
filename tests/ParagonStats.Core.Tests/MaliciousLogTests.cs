@@ -110,7 +110,7 @@ public sealed class MaliciousLogTests : IDisposable
 
         Assert.DoesNotContain('\u001B', text); // ESC
         Assert.DoesNotContain('\u0000', text);
-        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), "non-printable in output"));
+        Assert.All(text, letter => Assert.True(letter is '\r' or '\n' || (letter >= ' ' && letter <= '~'), "non-printable in output"));
     }
 
     /// <summary>CWE-20 improper input validation (ASVS V5.1): shapes that look like data but are not.</summary>
@@ -183,7 +183,7 @@ public sealed class MaliciousLogTests : IDisposable
         CharacterSession session = Assert.Single(result.Sessions);
 
         Assert.Equal(2, session.Messages.TotalCaptured); // banner + reward, nothing else
-        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("SECRET", StringComparison.Ordinal));
+        Assert.DoesNotContain(session.Messages.Messages, message => message.Payload.Contains("SECRET", StringComparison.Ordinal));
         Assert.DoesNotContain("SECRET", SummaryFormatter.Format(result), StringComparison.Ordinal);
         Assert.Equal(0, result.UnattributedCount); // refused lines are not even counted
     }

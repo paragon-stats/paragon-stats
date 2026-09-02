@@ -12,7 +12,7 @@ public static class SummaryFormatter
     public static string Format(ReplayResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
-        StringBuilder sb = new();
+        StringBuilder text = new();
         foreach (CharacterSession session in result.Sessions)
         {
             TimeSpan span = session.LastSeen - session.Start;
@@ -21,24 +21,24 @@ public static class SummaryFormatter
                 span = TimeSpan.Zero; // naive local timestamps can run backwards (DST)
             }
 
-            sb.AppendLine(CultureInfo.InvariantCulture, $"{Ascii(session.Character)} ({Ascii(session.Account)}) {session.Start:yyyy-MM-dd HH:mm} +{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  damage {session.Stats.TotalDamage:0.##} | defeats {session.Stats.Defeats} | xp {session.Stats.Experience} | inf {session.Stats.Influence} | activations {session.Stats.Activations} | tickets {session.Stats.Tickets} | market +{session.Stats.MarketIncome}/-{session.Stats.MarketSpent}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  rates/hr: damage {Rate(session.Stats.TotalDamage, span)} | defeats {Rate(session.Stats.Defeats, span)} | xp {Rate(session.Stats.Experience, span)} | inf {Rate(session.Stats.Influence, span)} | activations {Rate(session.Stats.Activations, span)} | tickets {Rate(session.Stats.Tickets, span)}");
+            text.AppendLine(CultureInfo.InvariantCulture, $"{Ascii(session.Character)} ({Ascii(session.Account)}) {session.Start:yyyy-MM-dd HH:mm} +{(int)span.TotalHours:00}:{span.Minutes:00}:{span.Seconds:00}");
+            text.AppendLine(CultureInfo.InvariantCulture, $"  damage {session.Stats.TotalDamage:0.##} | defeats {session.Stats.Defeats} | xp {session.Stats.Experience} | inf {session.Stats.Influence} | activations {session.Stats.Activations} | tickets {session.Stats.Tickets} | market +{session.Stats.MarketIncome}/-{session.Stats.MarketSpent}");
+            text.AppendLine(CultureInfo.InvariantCulture, $"  rates/hr: damage {Rate(session.Stats.TotalDamage, span)} | defeats {Rate(session.Stats.Defeats, span)} | xp {Rate(session.Stats.Experience, span)} | inf {Rate(session.Stats.Influence, span)} | activations {Rate(session.Stats.Activations, span)} | tickets {Rate(session.Stats.Tickets, span)}");
             string categories = string.Join(
                 " | ",
                 session.Stats.CategoryCounts
-                    .OrderBy(c => c.Key)
-                    .Select(c => string.Create(CultureInfo.InvariantCulture, $"{c.Key} {c.Value}")));
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  lines {session.Messages.TotalCaptured}: {categories}");
+                    .OrderBy(entry => entry.Key)
+                    .Select(entry => string.Create(CultureInfo.InvariantCulture, $"{entry.Key} {entry.Value}")));
+            text.AppendLine(CultureInfo.InvariantCulture, $"  lines {session.Messages.TotalCaptured}: {categories}");
         }
 
-        sb.AppendLine(CultureInfo.InvariantCulture, $"sessions {result.Sessions.Count} | unattributed lines {result.UnattributedCount}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"sessions {result.Sessions.Count} | unattributed lines {result.UnattributedCount}");
         foreach (string skipped in result.SkippedFiles)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"skipped (unreadable): {Ascii(skipped)}");
+            text.AppendLine(CultureInfo.InvariantCulture, $"skipped (unreadable): {Ascii(skipped)}");
         }
 
-        return sb.ToString();
+        return text.ToString();
     }
 
     /// <summary>One rolling live-watch line for an open session - rates from the same computation the batch summary uses.</summary>
@@ -66,15 +66,15 @@ public static class SummaryFormatter
         foreach (CharacterSession session in sessions)
         {
             TimeSpan span = session.LastSeen - session.Start;
-            MetricSnapshot x = MetricSnapshot.Compute(session.Stats.Experience, span);
-            MetricSnapshot i = MetricSnapshot.Compute(session.Stats.Influence, span);
-            MetricSnapshot t = MetricSnapshot.Compute(session.Stats.Tickets, span);
-            xp += x.Value;
-            xpRate += x.PerHour;
-            inf += i.Value;
-            infRate += i.PerHour;
-            tickets += t.Value;
-            ticketRate += t.PerHour;
+            MetricSnapshot experience = MetricSnapshot.Compute(session.Stats.Experience, span);
+            MetricSnapshot influence = MetricSnapshot.Compute(session.Stats.Influence, span);
+            MetricSnapshot earned = MetricSnapshot.Compute(session.Stats.Tickets, span);
+            xp += experience.Value;
+            xpRate += experience.PerHour;
+            inf += influence.Value;
+            infRate += influence.PerHour;
+            tickets += earned.Value;
+            ticketRate += earned.PerHour;
         }
 
         return string.Create(
@@ -85,9 +85,9 @@ public static class SummaryFormatter
     /// <summary>Console output stays printable ASCII (docs/style-guides/encoding.md); names may not be.</summary>
     private static string Ascii(string text)
     {
-        return text.All(static c => c >= ' ' && c <= '~')
+        return text.All(static letter => letter >= ' ' && letter <= '~')
             ? text
-            : string.Concat(text.Select(static c => c >= ' ' && c <= '~' ? c : '?'));
+            : string.Concat(text.Select(static letter => letter >= ' ' && letter <= '~' ? letter : '?'));
     }
 
     private static string Rate(decimal value, TimeSpan window) =>

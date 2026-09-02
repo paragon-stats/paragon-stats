@@ -39,7 +39,7 @@ public static class ChatLogTree
         {
             return [.. Directory.EnumerateFiles(root, FilePattern, SafeRecurse).Where(IsUnderLogs)];
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return [];
         }

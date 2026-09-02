@@ -125,8 +125,8 @@ public sealed class LiveWatchTests : IDisposable
         IReadOnlyList<string> lines = tailer.Poll();
 
         Assert.Equal(2, lines.Count);
-        Assert.DoesNotContain(lines, static l => l.Contains("private", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(lines, static l => l.Contains("continuation", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(lines, static line => line.Contains("private", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(lines, static line => line.Contains("continuation", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

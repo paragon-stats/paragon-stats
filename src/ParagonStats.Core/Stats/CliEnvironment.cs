@@ -40,7 +40,7 @@ public sealed class CliEnvironment
         {
             return AnyRunning(query());
         }
-        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             return true; // cannot tell: never force-close a live session over it
         }

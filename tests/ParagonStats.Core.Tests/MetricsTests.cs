@@ -9,10 +9,10 @@ public sealed class MetricsTests
     [Fact]
     public void Snapshot_rates_derive_from_value_over_window()
     {
-        MetricSnapshot s = MetricSnapshot.Compute(100m, TimeSpan.FromMinutes(2));
-        Assert.Equal(100m, s.Value);
-        Assert.Equal(50m, s.PerMinute);
-        Assert.Equal(3000m, s.PerHour);
+        MetricSnapshot snapshot = MetricSnapshot.Compute(100m, TimeSpan.FromMinutes(2));
+        Assert.Equal(100m, snapshot.Value);
+        Assert.Equal(50m, snapshot.PerMinute);
+        Assert.Equal(3000m, snapshot.PerHour);
     }
 
     [Fact]

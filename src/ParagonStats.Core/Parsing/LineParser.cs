@@ -83,48 +83,48 @@ public static partial class LineParser
     {
         string? sourcePrefix = StripPseudopetDamagePrefix(ref payload);
 
-        Match m = Banner.Match(payload);
-        if (m.Success)
+        Match match = Banner.Match(payload);
+        if (match.Success)
         {
-            return new SessionStart(m.Groups["name"].Value);
+            return new SessionStart(match.Groups["name"].Value);
         }
 
-        m = Pulse.Match(payload);
-        if (m.Success)
+        match = Pulse.Match(payload);
+        if (match.Success)
         {
-            return new IdentityPulse(m.Groups["name"].Value);
+            return new IdentityPulse(match.Groups["name"].Value);
         }
 
-        m = Zone.Match(payload);
-        if (m.Success)
+        match = Zone.Match(payload);
+        if (match.Success)
         {
-            return new ZoneEntered(m.Groups["zone"].Value);
+            return new ZoneEntered(match.Groups["zone"].Value);
         }
 
-        m = Activation.Match(payload);
-        if (m.Success)
+        match = Activation.Match(payload);
+        if (match.Success)
         {
-            return new PowerActivated(m.Groups["power"].Value);
+            return new PowerActivated(match.Groups["power"].Value);
         }
 
-        m = Damage.Match(payload);
-        if (m.Success
-            && decimal.TryParse(m.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal amount))
+        match = Damage.Match(payload);
+        if (match.Success
+            && decimal.TryParse(match.Groups["amount"].Value, NumberStyles.AllowThousands | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out decimal amount))
         {
             return new DamageDealt(
-                m.Groups["target"].Value,
-                m.Groups["power"].Value,
+                match.Groups["target"].Value,
+                match.Groups["power"].Value,
                 amount,
-                m.Groups["type"].Value,
-                m.Groups["overtime"].Success,
+                match.Groups["type"].Value,
+                match.Groups["overtime"].Success,
                 sourcePrefix);
         }
 
-        m = DefeatLine.Match(payload);
-        if (m.Success)
+        match = DefeatLine.Match(payload);
+        if (match.Success)
         {
-            string? attacker = m.Groups["attacker"].Success ? m.Groups["attacker"].Value : null;
-            return new Defeat(attacker, m.Groups["foe"].Value);
+            string? attacker = match.Groups["attacker"].Success ? match.Groups["attacker"].Value : null;
+            return new Defeat(attacker, match.Groups["foe"].Value);
         }
 
         return ParseEconomy(payload) ?? new UncategorizedLine(raw);
@@ -133,26 +133,26 @@ public static partial class LineParser
     /// <summary>The reward grammars: combat gains, architect tickets, market money.</summary>
     private static LogEvent? ParseEconomy(string payload)
     {
-        Match m = Tickets.Match(payload);
-        if (m.Success && TryCount(m.Groups["count"].Value, out long tickets))
+        Match match = Tickets.Match(payload);
+        if (match.Success && TryCount(match.Groups["count"].Value, out long tickets))
         {
             return new TicketsEarned(tickets);
         }
 
-        m = Market.Match(payload);
-        if (m.Success && TryCount(m.Groups["amount"].Value, out long money))
+        match = Market.Match(payload);
+        if (match.Success && TryCount(match.Groups["amount"].Value, out long money))
         {
-            return new MarketTransaction(money, m.Groups["got"].Success);
+            return new MarketTransaction(money, match.Groups["got"].Success);
         }
 
-        m = Reward.Match(payload);
-        if (m.Success)
+        match = Reward.Match(payload);
+        if (match.Success)
         {
-            long? xp = TryCount(m.Groups["xp"], out long x) ? x : null;
-            long? inf = TryCount(m.Groups["inf"], out long i) ? i : null;
-            if (xp is not null || inf is not null)
+            long? experience = TryCount(match.Groups["xp"], out long xp) ? xp : null;
+            long? influence = TryCount(match.Groups["inf"], out long inf) ? inf : null;
+            if (experience is not null || influence is not null)
             {
-                return new RewardGained(xp, inf);
+                return new RewardGained(experience, influence);
             }
         }
 
