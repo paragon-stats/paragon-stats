@@ -9,7 +9,7 @@ namespace ParagonStats.Core.Tests;
 /// what happens when they mistype an option. Four releases shipped without
 /// any of it because nothing exercised the binary (#238).
 /// </summary>
-public sealed class CliSurfaceTests : IDisposable
+public sealed partial class CliSurfaceTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("ps-surface-").FullName;
 
@@ -75,7 +75,7 @@ public sealed class CliSurfaceTests : IDisposable
         int exit = CliRunner.Run(["--version"], output, error, Environment());
 
         Assert.Equal(0, exit);
-        Assert.Matches(new Regex(@"^\d+\.\d+\.\d+", RegexOptions.None, TimeSpan.FromSeconds(1)), output.ToString().Trim());
+        Assert.Matches(SemanticVersion(), output.ToString().Trim());
 
         // MinVer's build metadata is the commit hash - noise at a prompt.
         Assert.DoesNotContain("+", output.ToString(), StringComparison.Ordinal);
@@ -151,6 +151,10 @@ public sealed class CliSurfaceTests : IDisposable
         Assert.Contains(file, output.ToString(), StringComparison.Ordinal);
         Assert.Contains("sessions 1", output.ToString(), StringComparison.Ordinal);
     }
+
+    /// <summary>Only the major.minor.patch head is pinned; MinVer appends pre-release parts between tags.</summary>
+    [GeneratedRegex(@"^\d+\.\d+\.\d+", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex SemanticVersion();
 
     private CliEnvironment Environment() => new() { ConfigPath = ConfigPath };
 
