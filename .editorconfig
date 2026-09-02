@@ -435,3 +435,12 @@ dotnet_diagnostic.SA1101.severity = none
 end_of_line = unset
 insert_final_newline = unset
 trim_trailing_whitespace = unset
+
+# Windows script hosts want CRLF, and .gitattributes already checks these out
+# that way. Without this section the [*] lf rule contradicts it: the file is
+# CRLF on a fresh clone and editorconfig-checker fails it in CI while passing
+# on a working copy git has not rewritten yet. bat and cmd are listed with ps1
+# because .gitattributes pins all three - covering only the extension in use
+# today leaves the same trap for the next one added.
+[*.{ps1,bat,cmd}]
+end_of_line = crlf

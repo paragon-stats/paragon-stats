@@ -18,9 +18,12 @@
     synthetic and all carry the token "dropme" so a test can assert in one
     grep that none of them survived.
 
-    Line endings default to CRLF because that is what the game writes. The
-    fixtures in this repository are normalised to LF by .gitattributes, so LF
-    is the only ending the live path had ever been run against.
+    Line endings default to CRLF because that is what the game writes. Nothing
+    this script produces is ever committed - it writes into a temp directory at
+    test time - so the ending is set here explicitly rather than inherited from
+    .gitattributes. The point is to test like for like against the real client.
+    The committed fixtures are LF, which is why LF was the only ending the live
+    path had ever run against.
 
 .PARAMETER Path
     Chatlog file to create and append to. Parent directories are created.

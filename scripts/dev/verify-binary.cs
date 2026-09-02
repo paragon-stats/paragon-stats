@@ -283,9 +283,11 @@ EndTier("GOLDEN");
 // The tiers above read a file that never changes. That cannot exercise the
 // live path at all: LogWatcher only attaches to files written inside the
 // attach window, and a file that never grows never proves incremental
-// tailing. Worse, the fixtures are LF because .gitattributes normalises them,
-// while the game writes CRLF - so the one line ending real players produce was
-// the one nothing here had ever run against.
+// tailing. Worse, the committed fixtures are LF because .gitattributes
+// normalises them, while the game writes CRLF - so the one line ending real
+// players produce was the one nothing here had ever run against. The generated
+// log is never committed, so it writes CRLF at test time and the live path is
+// finally exercised like for like.
 //
 // So a generator writes real-shaped, anonymised events - stamped now, in
 // waves, CRLF - while the binary watches. The generator states the totals it
