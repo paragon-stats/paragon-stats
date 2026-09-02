@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ParagonStats.Core.Tui;
 
 /// <summary>
@@ -65,7 +67,12 @@ public sealed class LiveScreen : IScreen
 
         if (overflow)
         {
-            frame.Write(row, 1, $"... {readout.Snapshot.Rows.Count - shown} more (widen or lengthen the window)");
+            frame.Write(
+                row,
+                1,
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"... {readout.Snapshot.Rows.Count - shown} more (widen or lengthen the window)"));
             row++;
         }
 

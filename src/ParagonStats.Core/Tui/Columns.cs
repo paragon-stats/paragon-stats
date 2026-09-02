@@ -61,12 +61,7 @@ public static class Columns
     public static int TotalWidth(IReadOnlyList<Column> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
-        int total = 0;
-        foreach (Column column in columns)
-        {
-            total += column.Width + 1;
-        }
-
+        int total = columns.Sum(column => column.Width + 1);
         return total == 0 ? 0 : total - 1;
     }
 

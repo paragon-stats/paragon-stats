@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using ParagonStats.Core.Sessions;
 using ParagonStats.Core.Tui;
 
@@ -114,8 +116,10 @@ public sealed class TuiScreenTests
         SessionTracker tracker = new();
         for (int box = 1; box <= 9; box++)
         {
-            string account = $"acct{box}";
-            tracker.Accept(account, $"2026-01-01 12:00:00 Welcome to City of Heroes, Box {box}!");
+            string account = string.Create(CultureInfo.InvariantCulture, $"acct{box}");
+            tracker.Accept(
+                account,
+                string.Create(CultureInfo.InvariantCulture, $"2026-01-01 12:00:00 Welcome to City of Heroes, Box {box}!"));
             tracker.Accept(account, "2026-01-01 12:05:00 You gain 10 experience.");
         }
 

@@ -84,6 +84,26 @@ public sealed class ConfigPathTests
     }
 
     [Fact]
+    public void A_piped_run_reads_keys_from_the_stream()
+    {
+        using StringReader piped = new("1q");
+
+        Assert.Equal('1', CliEnvironment.ReadPiped(piped));
+        Assert.Equal('q', CliEnvironment.ReadPiped(piped));
+    }
+
+    [Fact]
+    public void End_of_input_quits_rather_than_spinning()
+    {
+        // A forced run with nothing piped must render one frame and exit, not
+        // loop forever against a dead stream.
+        using StringReader empty = new(string.Empty);
+
+        Assert.Equal('q', CliEnvironment.ReadPiped(empty));
+        Assert.Throws<ArgumentNullException>(() => CliEnvironment.ReadPiped(null!));
+    }
+
+    [Fact]
     public void A_real_console_size_is_used_as_given()
     {
         Assert.Equal((80, 25), CliEnvironment.ConsoleSize(static () => (80, 25)));

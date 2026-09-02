@@ -32,9 +32,9 @@ public sealed class TuiSnapshotTests
         CharacterSession session = Session("acct", "Nova", Noon, TimeSpan.FromMinutes(30));
         session.Stats.Apply(new RewardGained(1200, 3400));
         session.Stats.Apply(new TicketsEarned(12));
-        session.Stats.Apply(new Defeat(null, "Gravedigger"));
+        session.Stats.Apply(new Defeat(Attacker: null, "Gravedigger"));
         session.Stats.Apply(new PowerActivated("Blazing Aura"));
-        session.Stats.Apply(new DamageDealt("Foe", "Blazing Aura", 16.98m, "Fire", false, null));
+        session.Stats.Apply(new DamageDealt("Foe", "Blazing Aura", 16.98m, "Fire", OverTime: false, SourcePrefix: null));
         session.Stats.Apply(new MarketTransaction(500, Income: true));
         session.Stats.Apply(new MarketTransaction(200, Income: false));
 
@@ -129,8 +129,11 @@ public sealed class TuiSnapshotTests
     [Fact]
     public void Null_arguments_are_rejected()
     {
-        Assert.Throws<ArgumentNullException>(() => Snapshot.Capture((SessionTracker)null!));
-        Assert.Throws<ArgumentNullException>(() => Snapshot.Capture(null!, 0));
+        SessionTracker? tracker = null;
+        IReadOnlyCollection<CharacterSession>? sessions = null;
+
+        Assert.Throws<ArgumentNullException>(() => Snapshot.Capture(tracker!));
+        Assert.Throws<ArgumentNullException>(() => Snapshot.Capture(sessions!, 0));
     }
 
     private static CharacterSession Session(string account, string character, DateTime start, TimeSpan ran)

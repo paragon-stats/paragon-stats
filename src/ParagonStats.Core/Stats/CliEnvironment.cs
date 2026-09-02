@@ -100,7 +100,7 @@ public sealed class CliEnvironment
 
             // Forced runs read keys from the pipe, and treat end-of-input as a
             // quit so a run with nothing piped renders one frame and exits.
-            ReadKey = forced ? ReadPiped : ReadConsole,
+            ReadKey = forced ? () => ReadPiped(Console.In) : ReadConsole,
         };
     }
 
@@ -166,9 +166,18 @@ public sealed class CliEnvironment
         return processes.Length > 0;
     }
 
-    private static char? ReadPiped()
+    /// <summary>
+    /// Takes the reader rather than reaching for <see cref="Console"/>, so the
+    /// end-of-input rule is testable without mutating process-wide state that
+    /// parallel tests share.
+    /// </summary>
+    internal static char? ReadPiped(TextReader input)
     {
-        int next = Console.In.Read();
+        ArgumentNullException.ThrowIfNull(input);
+        int next = input.Read();
+
+        // End of input quits, so a forced run with nothing piped renders one
+        // frame and exits rather than spinning forever against a dead stream.
         return next < 0 ? 'q' : (char)next;
     }
 

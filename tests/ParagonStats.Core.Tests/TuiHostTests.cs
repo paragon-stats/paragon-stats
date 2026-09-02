@@ -9,8 +9,23 @@ namespace ParagonStats.Core.Tests;
 /// scripted key source and a Sleep that counts ticks and cancels. No threads,
 /// no timing assumptions.
 /// </summary>
-public sealed class TuiHostTests
+public sealed class TuiHostTests : IDisposable
 {
+    /// <summary>
+    /// The scripted environments hand their token to a closure, so the source
+    /// cannot be scoped to a `using` inside the helper. Held and disposed with
+    /// the fixture instead.
+    /// </summary>
+    private readonly List<CancellationTokenSource> _cancellations = [];
+
+    public void Dispose()
+    {
+        foreach (CancellationTokenSource cancellation in _cancellations)
+        {
+            cancellation.Dispose();
+        }
+    }
+
     [Fact]
     public void The_menu_paints_first_and_q_quits()
     {
@@ -142,9 +157,10 @@ public sealed class TuiHostTests
         WindowSize = () => (width, height),
     };
 
-    private static CliEnvironment Env(Queue<char> keys, int ticks, bool interactive = false)
+    private CliEnvironment Env(Queue<char> keys, int ticks, bool interactive = false)
     {
         CancellationTokenSource cancellation = new();
+        _cancellations.Add(cancellation);
         int elapsed = 0;
         return new CliEnvironment
         {

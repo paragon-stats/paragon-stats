@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ParagonStats.Core.Tui;
 
 /// <summary>
@@ -32,8 +34,13 @@ internal static class Chrome
 
         string count = readout.Snapshot.IsEmpty
             ? "no live sessions"
-            : $"{readout.Snapshot.Rows.Count} live";
-        frame.Write(1, 1, $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}");
+            : string.Create(CultureInfo.InvariantCulture, $"{readout.Snapshot.Rows.Count} live");
+        frame.Write(
+            1,
+            1,
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}"));
         frame.Rule(2);
     }
 

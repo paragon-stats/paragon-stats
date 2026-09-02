@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using ParagonStats.Core.Tui;
 
 namespace ParagonStats.Core.Tests;
@@ -16,7 +18,9 @@ public sealed class TuiColumnTests
         // silently clipped, losing the right-hand metrics without saying so.
         Assert.True(
             Columns.TotalWidth(Columns.Default) <= 120,
-            $"default columns need {Columns.TotalWidth(Columns.Default)} of 120 columns");
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"default columns need {Columns.TotalWidth(Columns.Default)} of 120 columns"));
     }
 
     [Fact]
@@ -54,8 +58,8 @@ public sealed class TuiColumnTests
         // A readout with no columns is not a narrower readout, it is a blank screen.
         IReadOnlyList<Column> fitted = Columns.Fit(Columns.Default, 1);
 
-        Assert.Single(fitted);
-        Assert.Equal("CHARACTER", fitted[0].Header, StringComparer.Ordinal);
+        Column only = Assert.Single(fitted);
+        Assert.Equal("CHARACTER", only.Header, StringComparer.Ordinal);
     }
 
     [Fact]

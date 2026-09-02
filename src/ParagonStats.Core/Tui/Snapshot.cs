@@ -87,14 +87,7 @@ public sealed class Snapshot
         // start is already at the head - scanning for a minimum would be dead
         // code. LastSeen is not a sort key, so the latest still has to be found.
         DateTime first = sessions[0].Start;
-        DateTime last = sessions[0].LastSeen;
-        foreach (CharacterSession session in sessions)
-        {
-            if (session.LastSeen > last)
-            {
-                last = session.LastSeen;
-            }
-        }
+        DateTime last = sessions.Max(session => session.LastSeen);
 
         return new SessionRow(
             "ALL BOXES",
