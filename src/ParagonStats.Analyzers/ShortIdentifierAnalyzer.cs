@@ -43,7 +43,7 @@ public sealed class ShortIdentifierAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Short identifiers force the reader to reconstruct meaning from context. Allowed: _, xp, inf, i, j, k.");
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = [Rule];
 
     public override void Initialize(AnalysisContext context)
     {

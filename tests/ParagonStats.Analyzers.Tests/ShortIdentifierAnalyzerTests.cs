@@ -70,7 +70,10 @@ public sealed class ShortIdentifierAnalyzerTests
     public void Initialize_tolerates_a_null_context()
     {
         // CA1062 wants the guard; Roslyn never exercises it, so this does.
-        new ShortIdentifierAnalyzer().Initialize(null!);
+        ShortIdentifierAnalyzer analyzer = new();
+
+        Assert.Null(Record.Exception(() => analyzer.Initialize(null!)));
+        Assert.Equal(ShortIdentifierAnalyzer.DiagnosticId, Assert.Single(analyzer.SupportedDiagnostics).Id);
     }
 
     private static ImmutableArray<Diagnostic> Analyze(string source)
@@ -88,8 +91,8 @@ public sealed class ShortIdentifierAnalyzerTests
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         return compilation
-            .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new ShortIdentifierAnalyzer()))
-            .GetAnalyzerDiagnosticsAsync()
+            .WithAnalyzers([new ShortIdentifierAnalyzer()])
+            .GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken)
             .GetAwaiter()
             .GetResult();
     }
