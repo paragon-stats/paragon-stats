@@ -48,9 +48,9 @@ public sealed class CollectionPolicyTests : IDisposable
 
         CharacterSession session = Assert.Single(tracker.Sessions);
         Assert.Equal(1, session.Messages.TotalCaptured); // the banner alone: no capture, no count
-        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("Someone", StringComparison.Ordinal));
-        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("@Handle", StringComparison.Ordinal));
-        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("Channel", StringComparison.Ordinal));
+        Assert.DoesNotContain(session.Messages.Messages, message => message.Payload.Contains("Someone", StringComparison.Ordinal));
+        Assert.DoesNotContain(session.Messages.Messages, message => message.Payload.Contains("@Handle", StringComparison.Ordinal));
+        Assert.DoesNotContain(session.Messages.Messages, message => message.Payload.Contains("Channel", StringComparison.Ordinal));
     }
 
     [Theory]

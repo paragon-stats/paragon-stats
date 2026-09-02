@@ -126,7 +126,7 @@ public sealed class LogWatcher : IDisposable
             lines = tailer.Poll();
             return true;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ObjectDisposedException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ObjectDisposedException)
         {
             lines = [];
             return false;
@@ -167,7 +167,7 @@ public sealed class LogWatcher : IDisposable
                 _tailers.Add(file, new ChatLogTailer(file));
                 _unreadable.Remove(file);
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 _unreadable.Add(file); // locked or denied: reported, retried next discovery
             }

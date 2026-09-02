@@ -188,9 +188,9 @@ public sealed class ChatLogTailer : IDisposable
         Restart();
     }
 
-    private void Accept(char c, List<string> lines)
+    private void Accept(char next, List<string> lines)
     {
-        if (c == '\n')
+        if (next == '\n')
         {
             if (_partial.Length > 0 && Classify(complete: true) == CollectionVerdict.Collect)
             {
@@ -213,12 +213,12 @@ public sealed class ChatLogTailer : IDisposable
 
         // A byte-order mark leads the file, not a line: drop it so it cannot
         // shift the timestamp offsets and refuse an entire real line.
-        if (_partial.Length == 0 && c == '\uFEFF')
+        if (_partial.Length == 0 && next == '\uFEFF')
         {
             return;
         }
 
-        _partial.Append(c);
+        _partial.Append(next);
         if (_partial.Length > MaxLineLength)
         {
             Erase();

@@ -36,4 +36,15 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
   </ItemGroup>
 
+  <!--
+    PS0001, the in-repo minimum-identifier-length rule, loads into every other
+    project's compile (see docs/style-guides/csharp.md, #234). It excludes
+    itself, which would be circular.
+  -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'ParagonStats.Analyzers'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)src\ParagonStats.Analyzers\ParagonStats.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
 </Project>

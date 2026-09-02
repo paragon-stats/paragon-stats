@@ -46,14 +46,14 @@ public sealed class ReplayTests : IDisposable
 
         // The banner itself is counted and captured in the session it opens.
         Assert.Equal(1, session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Session));
-        Assert.Contains(session.Messages.Messages, m => m.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
+        Assert.Contains(session.Messages.Messages, message => message.Payload.StartsWith("Welcome to City of Heroes", StringComparison.Ordinal));
 
         // Zero collection: the continuation line, the bracketed lines, the
         // markup-opening gmotd line, the global-handle line, and the three
         // channel-membership lines are all refused before materialization -
         // 12 fixture lines, 4 captured.
         Assert.Equal(4, session.Messages.TotalCaptured);
-        Assert.DoesNotContain(session.Messages.Messages, m => m.Payload.Contains("continuation", StringComparison.Ordinal));
+        Assert.DoesNotContain(session.Messages.Messages, message => message.Payload.Contains("continuation", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class ReplayTests : IDisposable
     {
         ReplayResult result = LogReplayer.Replay([WithBanner("real-crlf-storm.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
-        Assert.All(session.Messages.Messages, m => Assert.False(m.Payload.EndsWith('\r')));
+        Assert.All(session.Messages.Messages, message => Assert.False(message.Payload.EndsWith('\r')));
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public sealed class ReplayTests : IDisposable
         ReplayResult result = LogReplayer.Replay([WithBanner("real-chat-channels.txt")]);
         CharacterSession session = Assert.Single(result.Sessions);
         Assert.Equal(1, session.Messages.TotalCaptured);
-        Assert.DoesNotContain(session.Messages.Messages, static m => m.Payload.StartsWith('['));
-        Assert.DoesNotContain(session.Messages.Messages, static m => m.Payload.Contains("redacted", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(session.Messages.Messages, static message => message.Payload.StartsWith('['));
+        Assert.DoesNotContain(session.Messages.Messages, static message => message.Payload.Contains("redacted", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(0, result.UnattributedCount);
     }
 
@@ -120,7 +120,7 @@ public sealed class ReplayTests : IDisposable
         Assert.Contains("Damage", text, StringComparison.Ordinal); // per-category counts surface (#128 AC)
         Assert.Contains("rates/hr:", text, StringComparison.Ordinal); // uniform rate model surfaces (#123/#124)
         Assert.Contains("tickets", text, StringComparison.Ordinal); // farm economy is first-class
-        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
+        Assert.All(text, symbol => Assert.True(symbol is '\r' or '\n' || (symbol >= ' ' && symbol <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)symbol}")));
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public sealed class ReplayTests : IDisposable
         string[] files = Directory.GetFiles(corpus!, "chatlog*.txt", SearchOption.AllDirectories);
         Array.Sort(files, StringComparer.Ordinal);
         ReplayResult result = LogReplayer.Replay(files);
-        long total = result.Sessions.Sum(s => s.Messages.TotalCaptured);
-        long uncategorized = result.Sessions.Sum(s => s.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Uncategorized));
+        long total = result.Sessions.Sum(session => session.Messages.TotalCaptured);
+        long uncategorized = result.Sessions.Sum(session => session.Stats.CategoryCounts.GetValueOrDefault(EventCategory.Uncategorized));
         Assert.True(total > 0);
 
         // The drift canary: if the grammar rots, everything degrades into

@@ -11,9 +11,9 @@ public sealed class LineParserTests
     [Fact]
     public void Banner_yields_session_start_with_punctuated_name()
     {
-        LogEvent? e = Parse("Welcome to City of Heroes, Nova - PRIME!");
-        SessionStart s = Assert.IsType<SessionStart>(e);
-        Assert.Equal("Nova - PRIME", s.CharacterName);
+        LogEvent? parsed = Parse("Welcome to City of Heroes, Nova - PRIME!");
+        SessionStart banner = Assert.IsType<SessionStart>(parsed);
+        Assert.Equal("Nova - PRIME", banner.CharacterName);
     }
 
     [Theory]
@@ -40,8 +40,8 @@ public sealed class LineParserTests
     [InlineData("You have received 250 bonus architect tickets for completing the mission!", 250)]
     public void Architect_tickets_yield_reward(string payload, long count)
     {
-        TicketsEarned t = Assert.IsType<TicketsEarned>(Parse(payload));
-        Assert.Equal(count, t.Count);
+        TicketsEarned earned = Assert.IsType<TicketsEarned>(Parse(payload));
+        Assert.Equal(count, earned.Count);
     }
 
     [Theory]
@@ -50,9 +50,9 @@ public sealed class LineParserTests
     [InlineData("You paid 245,000 to the Consignment House.", 245000, false)]
     public void Market_transactions_track_direction(string payload, long amount, bool income)
     {
-        MarketTransaction m = Assert.IsType<MarketTransaction>(Parse(payload));
-        Assert.Equal(amount, m.Amount);
-        Assert.Equal(income, m.Income);
+        MarketTransaction market = Assert.IsType<MarketTransaction>(Parse(payload));
+        Assert.Equal(amount, market.Amount);
+        Assert.Equal(income, market.Income);
     }
 
     [Theory]
@@ -68,8 +68,8 @@ public sealed class LineParserTests
     [InlineData("Entering Architect Entertainment.", "Architect Entertainment")]
     public void Zone_entry_yields_the_map_name(string payload, string zone)
     {
-        ZoneEntered z = Assert.IsType<ZoneEntered>(Parse(payload));
-        Assert.Equal(zone, z.Zone);
+        ZoneEntered entered = Assert.IsType<ZoneEntered>(Parse(payload));
+        Assert.Equal(zone, entered.Zone);
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public sealed class LineParserTests
     [Fact]
     public void Activation_yields_power()
     {
-        PowerActivated p = Assert.IsType<PowerActivated>(Parse("You activated the Atom Smasher power."));
-        Assert.Equal("Atom Smasher", p.Power);
+        PowerActivated activation = Assert.IsType<PowerActivated>(Parse("You activated the Atom Smasher power."));
+        Assert.Equal("Atom Smasher", activation.Power);
     }
 
     [Theory]
@@ -91,22 +91,22 @@ public sealed class LineParserTests
     [InlineData("You hit Vigilant with your Executioner's Shot for 1,135.23 points of Lethal damage.", "Vigilant", "Executioner's Shot", "1135.23", "Lethal", false)]
     public void Damage_dealt_parses_amount_type_and_overtime(string payload, string target, string power, string amount, string type, bool overTime)
     {
-        DamageDealt d = Assert.IsType<DamageDealt>(Parse(payload));
-        Assert.Equal(target, d.Target);
-        Assert.Equal(power, d.Power);
-        Assert.Equal(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), d.Amount);
-        Assert.Equal(type, d.DamageType);
-        Assert.Equal(overTime, d.OverTime);
-        Assert.Null(d.SourcePrefix);
+        DamageDealt damage = Assert.IsType<DamageDealt>(Parse(payload));
+        Assert.Equal(target, damage.Target);
+        Assert.Equal(power, damage.Power);
+        Assert.Equal(decimal.Parse(amount, System.Globalization.CultureInfo.InvariantCulture), damage.Amount);
+        Assert.Equal(type, damage.DamageType);
+        Assert.Equal(overTime, damage.OverTime);
+        Assert.Null(damage.SourcePrefix);
     }
 
     [Fact]
     public void Pseudopet_prefix_is_captured_with_two_space_marker()
     {
-        DamageDealt d = Assert.IsType<DamageDealt>(
+        DamageDealt damage = Assert.IsType<DamageDealt>(
             Parse("Irradiated Ground:  You hit Gravedigger Slammer with your Irradiated Ground for 4.67 points of Fire damage."));
-        Assert.Equal("Irradiated Ground", d.SourcePrefix);
-        Assert.Equal(4.67m, d.Amount);
+        Assert.Equal("Irradiated Ground", damage.SourcePrefix);
+        Assert.Equal(4.67m, damage.Amount);
     }
 
     [Theory]
@@ -114,9 +114,9 @@ public sealed class LineParserTests
     [InlineData("Pat1 has defeated Fallen Buckshot", "Pat1", "Fallen Buckshot")]
     public void Defeats_distinguish_own_and_teammate(string payload, string? attacker, string foe)
     {
-        Defeat d = Assert.IsType<Defeat>(Parse(payload));
-        Assert.Equal(attacker, d.Attacker);
-        Assert.Equal(foe, d.Foe);
+        Defeat defeat = Assert.IsType<Defeat>(Parse(payload));
+        Assert.Equal(attacker, defeat.Attacker);
+        Assert.Equal(foe, defeat.Foe);
     }
 
     [Theory]
@@ -128,9 +128,9 @@ public sealed class LineParserTests
     [InlineData("You gain 638 experience, work off 638 debt, and gain 1,786 infamy.", 638L, 1786L)]
     public void Rewards_parse_experience_influence_and_infamy(string payload, long? xp, long? inf)
     {
-        RewardGained r = Assert.IsType<RewardGained>(Parse(payload));
-        Assert.Equal(xp, r.Experience);
-        Assert.Equal(inf, r.Influence);
+        RewardGained reward = Assert.IsType<RewardGained>(Parse(payload));
+        Assert.Equal(xp, reward.Experience);
+        Assert.Equal(inf, reward.Influence);
     }
 
     [Theory]
@@ -160,7 +160,7 @@ public sealed class LineParserTests
     [InlineData("You received Nanotech Growth Medium.")]
     public void Non_mvp_lines_pass_through_uncategorized(string payload)
     {
-        UncategorizedLine u = Assert.IsType<UncategorizedLine>(Parse(payload));
-        Assert.Equal(payload, u.Payload);
+        UncategorizedLine uncategorized = Assert.IsType<UncategorizedLine>(Parse(payload));
+        Assert.Equal(payload, uncategorized.Payload);
     }
 }

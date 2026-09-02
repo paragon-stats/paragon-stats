@@ -24,7 +24,7 @@ public static class CliRunner
         ArgumentNullException.ThrowIfNull(env);
 
         bool watch = args.Contains("--watch", StringComparer.Ordinal);
-        List<string> positional = [.. args.Where(a => !string.Equals(a, "--watch", StringComparison.Ordinal))];
+        List<string> positional = [.. args.Where(argument => !string.Equals(argument, "--watch", StringComparison.Ordinal))];
         if (positional.Count > 1)
         {
             Fail(error, "usage: paragon-stats [--watch] [chatlog-file-or-game-directory]");

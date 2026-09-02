@@ -83,10 +83,10 @@ public sealed class RobustnessTests : IDisposable
     [Fact]
     public void Files_outside_the_logs_shape_key_on_their_own_directory()
     {
-        string a = WriteLog(Path.Join("flatA", "chatlog 2024-05-12.txt"), "2024-05-12 08:00:00 Welcome to City of Heroes, Alpha!");
-        string b = WriteLog(Path.Join("flatB", "chatlog 2024-05-12.txt"), "2024-05-12 09:00:00 Welcome to City of Heroes, Beta!");
+        string first = WriteLog(Path.Join("flatA", "chatlog 2024-05-12.txt"), "2024-05-12 08:00:00 Welcome to City of Heroes, Alpha!");
+        string second = WriteLog(Path.Join("flatB", "chatlog 2024-05-12.txt"), "2024-05-12 09:00:00 Welcome to City of Heroes, Beta!");
 
-        ReplayResult result = LogReplayer.Replay([a, b]);
+        ReplayResult result = LogReplayer.Replay([first, second]);
 
         Assert.Equal(2, result.Sessions.Count);
         Assert.NotEqual(result.Sessions[0].Account, result.Sessions[1].Account, StringComparer.Ordinal);
@@ -245,14 +245,14 @@ public sealed class RobustnessTests : IDisposable
 
         string text = SummaryFormatter.Format(LogReplayer.Replay([log]));
         Assert.Contains("?ova", text, StringComparison.Ordinal);
-        Assert.All(text, c => Assert.True(c is '\r' or '\n' || (c >= ' ' && c <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)c}")));
+        Assert.All(text, symbol => Assert.True(symbol is '\r' or '\n' || (symbol >= ' ' && symbol <= '~'), string.Create(CultureInfo.InvariantCulture, $"non-ASCII char: {(int)symbol}")));
     }
 
     [Fact]
     public void Pseudopet_prefix_applies_to_damage_only()
     {
-        Assert.True(LineParser.TryParse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"), out LogEvent e));
-        Assert.IsType<UncategorizedLine>(e); // never credited to the player
+        Assert.True(LineParser.TryParse(new LogLine(new DateTime(2024, 5, 12, 8, 0, 0), "Fire Imp:  You have defeated Council Blaster"), out LogEvent parsed));
+        Assert.IsType<UncategorizedLine>(parsed); // never credited to the player
     }
 
     [Fact]

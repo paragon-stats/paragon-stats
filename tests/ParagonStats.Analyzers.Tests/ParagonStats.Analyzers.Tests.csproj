@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ParagonStats.Analyzers.Tests</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <!-- The tests drive a real compilation, so they need the compiler at runtime. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <!--
+    Directory.Build.props already references the analyzer into this project as
+    an analyzer. These tests also need it as an ordinary assembly, so update
+    that item rather than adding a second reference to the same project.
+  -->
+  <ItemGroup>
+    <ProjectReference Update="..\..\src\ParagonStats.Analyzers\ParagonStats.Analyzers.csproj" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+</Project>

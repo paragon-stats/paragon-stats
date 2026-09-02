@@ -13,9 +13,38 @@ the config.
 - File-scoped namespaces; `using` directives outside the namespace.
 - Private fields `_camelCase`; everything public PascalCase (see `.editorconfig`).
 
+## Naming: identifiers are at least three characters
+
+Locals, parameters (lambdas included), `foreach`/`for` variables, `catch`
+declarations, `out var`, pattern designations **and fields** (including consts
+and event fields) must be at least three characters, measured after leading
+underscores: `_id` violates, `_` does not. Types, methods and properties are out
+of scope.
+
+Allowed short names, and only these: `_`, `xp`, `inf`, `i`, `j`, `k` — with or
+without a leading underscore, so `_xp` is fine. `xp` and `inf` are the game's own
+vocabulary and already appear as `xpRate`/`infRate`; `ex` is deliberately **not**
+on the list, so a caught exception is named `exception`. The list is code, not
+config: extending it means a PR against `ShortIdentifierAnalyzer` and its
+`AnalyzerReleases` files.
+
+Enforcement is **`PS0001`**, the analyzer in `src/ParagonStats.Analyzers`. It
+fails `dotnet build` like every other rule here, so it bites locally rather than
+after a push, and Sonar sees the same violations via `external_roslyn:*` import.
+
+The rule is written rather than configured because nothing off the shelf can
+express a name length: StyleCop's SA13xx family, Meziantou's rules and
+`dotnet_naming_style` are casing and affixes only, and **SonarCloud has no C#
+rule for it either** — `S117` takes a `format` parameter in other languages but
+does not exist for C#. Don't go looking for a quality-profile setting. It mirrors
+the Python checker the homelab repos enforce
+(`scripts/linting/check_short_identifier_names.py`). Tracking: **#234**.
+
 ## AOT safety (Core + Cli)
 
-`ParagonStats.Cli` publishes with **native AOT** (`win-x64` and `linux-x64`). Keep
+`ParagonStats.Cli` publishes with **native AOT**. The only runtime built and
+released today is `win-x64` (`RuntimeIdentifiers` in the csproj, and the single
+publish step in `release.yml`). Keep
 `ParagonStats.Core` AOT-compatible:
 
 - No unbounded reflection, `dynamic`, or runtime code generation.

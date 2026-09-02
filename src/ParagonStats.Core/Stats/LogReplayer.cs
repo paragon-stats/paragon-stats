@@ -28,7 +28,7 @@ public static class LogReplayer
             {
                 ReplayFile(tracker, file);
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 skipped.Add(file);
             }
