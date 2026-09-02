@@ -29,6 +29,27 @@ public sealed class CliEnvironment
     public CancellationToken Token { get; init; }
 
     /// <summary>
+    /// Whether the text UI may paint. Default false, so every existing test and
+    /// every redirected run keeps today's plain output byte for byte; only the
+    /// production wiring turns it on, and only when it has a real terminal.
+    /// </summary>
+    public bool Interactive { get; init; }
+
+    /// <summary>
+    /// A keypress if one is waiting, otherwise null. Non-blocking by contract:
+    /// the readout has to keep repainting while nobody is typing, or the clock
+    /// stops advancing on screen.
+    /// </summary>
+    public Func<char?> ReadKey { get; init; } = static () => null;
+
+    /// <summary>
+    /// The terminal's character grid, read every frame so the readout follows a
+    /// resized window instead of being hand-tuned to one size. Falls back to the
+    /// 120x12 strip when there is no console to ask.
+    /// </summary>
+    public Func<(int Width, int Height)> WindowSize { get; init; } = static () => (120, 12);
+
+    /// <summary>
     /// The production wiring, in Core so the coverage gate sees it. The
     /// game-client check is name-only and deliberately conservative: a
     /// collision keeps sessions open (idle timeout and in-log triggers still
@@ -39,7 +60,46 @@ public sealed class CliEnvironment
         Input = Console.In,
         ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
         Token = token,
+
+        // Both must hold: a real console to paint into, and a terminal that
+        // interprets the escapes. Under legacy conhost virtual-terminal
+        // processing is off by default, and painting ANSI into it would print
+        // literal garbage - worse than the plain output it replaced.
+        Interactive = !Console.IsOutputRedirected && !Console.IsInputRedirected && Tui.VirtualTerminal.TryEnable(),
+
+        // Guarded: Console.KeyAvailable throws outright when stdin is
+        // redirected, and this property is constructed even on runs that never
+        // enter the text UI.
+        ReadKey = static () => !Console.IsInputRedirected && Console.KeyAvailable
+            ? Console.ReadKey(intercept: true).KeyChar
+            : null,
+        WindowSize = static () => ConsoleSize(),
     };
+
+    /// <summary>
+    /// Asking the console its size throws when there is no console attached, and
+    /// a zero would render a frame with no cells. Both fall back to the strip.
+    /// </summary>
+    internal static (int Width, int Height) ConsoleSize() =>
+        ConsoleSize(static () => (Console.WindowWidth, Console.WindowHeight));
+
+    /// <summary>
+    /// Takes the reader so both failure modes are testable on a host that has a
+    /// perfectly good console, the same way the config path does.
+    /// </summary>
+    internal static (int Width, int Height) ConsoleSize(Func<(int Width, int Height)> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        try
+        {
+            (int width, int height) = read();
+            return width > 0 && height > 0 ? (width, height) : (120, 12);
+        }
+        catch (IOException)
+        {
+            return (120, 12);
+        }
+    }
 
     /// <summary>
     /// Takes the reader rather than calling <see cref="Environment"/> directly, so

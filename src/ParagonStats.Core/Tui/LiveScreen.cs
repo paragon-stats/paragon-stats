@@ -30,7 +30,11 @@ public sealed class LiveScreen : IScreen
         ArgumentNullException.ThrowIfNull(readout);
 
         Chrome.Header(frame, readout, Title);
-        frame.Write(Chrome.BodyTop, 1, Chrome.Line(_columns, static column => column.Header));
+
+        // Fitted every frame rather than assumed: a narrow window sheds the
+        // per-hour rates instead of silently clipping them off the right edge.
+        IReadOnlyList<Column> columns = Columns.Fit(_columns, frame.Width - 2);
+        frame.Write(Chrome.BodyTop, 1, Chrome.Line(columns, static column => column.Header));
 
         int firstRow = Chrome.BodyTop + 1;
         int lastRow = frame.Height - Chrome.FooterRows - 1;
@@ -55,7 +59,7 @@ public sealed class LiveScreen : IScreen
         int row = firstRow;
         foreach (SessionRow session in readout.Snapshot.Rows.Take(shown))
         {
-            frame.Write(row, 1, Chrome.Line(_columns, column => column.Value(session)));
+            frame.Write(row, 1, Chrome.Line(columns, column => column.Value(session)));
             row++;
         }
 
@@ -68,7 +72,7 @@ public sealed class LiveScreen : IScreen
         if (showCombined)
         {
             frame.Rule(row);
-            frame.Write(row + 1, 1, Chrome.Line(_columns, column => column.Value(readout.Snapshot.Combined)));
+            frame.Write(row + 1, 1, Chrome.Line(columns, column => column.Value(readout.Snapshot.Combined)));
         }
 
         Chrome.Footer(frame, Hints);

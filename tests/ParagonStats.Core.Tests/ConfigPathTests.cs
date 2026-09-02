@@ -57,6 +57,57 @@ public sealed class ConfigPathTests
         Assert.Throws<ArgumentNullException>(() => CliEnvironment.DefaultConfigPath(null!));
 
     [Fact]
+    public void The_production_environment_is_safe_to_construct_and_poll()
+    {
+        // Constructed on every run, including ones that never enter the text
+        // UI and ones with redirected streams, so none of its wiring may throw
+        // just by being built or asked.
+        using CancellationTokenSource cancellation = new();
+        CliEnvironment env = CliEnvironment.Production(cancellation.Token);
+
+        Assert.Null(env.ReadKey()); // stdin is redirected under the test host
+        (int width, int height) = env.WindowSize();
+        Assert.True(width > 0 && height > 0);
+        Assert.NotNull(env.Input);
+        Assert.False(env.Interactive); // redirected output is never interactive
+    }
+
+    [Fact]
+    public void The_console_size_falls_back_rather_than_throwing()
+    {
+        (int width, int height) = CliEnvironment.ConsoleSize();
+
+        // Either a real console or the 120x12 strip, never zero - a frame with
+        // no cells would throw on construction.
+        Assert.True(width > 0);
+        Assert.True(height > 0);
+    }
+
+    [Fact]
+    public void A_real_console_size_is_used_as_given()
+    {
+        Assert.Equal((80, 25), CliEnvironment.ConsoleSize(static () => (80, 25)));
+    }
+
+    [Theory]
+    [InlineData(0, 25)]
+    [InlineData(80, 0)]
+    [InlineData(-1, -1)]
+    public void A_nonsense_console_size_falls_back_to_the_strip(int width, int height)
+    {
+        // A zero would build a frame with no cells and throw on construction.
+        Assert.Equal((120, 12), CliEnvironment.ConsoleSize(() => (width, height)));
+    }
+
+    [Fact]
+    public void A_console_that_refuses_to_answer_falls_back_to_the_strip()
+    {
+        // No console attached: asking throws rather than returning anything.
+        Assert.Equal((120, 12), CliEnvironment.ConsoleSize(static () => throw new IOException("no console")));
+        Assert.Throws<ArgumentNullException>(() => CliEnvironment.ConsoleSize(null!));
+    }
+
+    [Fact]
     public void The_default_environment_resolves_a_usable_path()
     {
         // The property default runs the real reader; prove it produces

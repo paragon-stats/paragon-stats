@@ -30,6 +30,42 @@ public sealed class TuiColumnTests
     }
 
     [Fact]
+    public void A_narrow_window_sheds_the_least_important_columns_first()
+    {
+        // Default is ordered by how much a farmer needs it, so the per-hour
+        // rates go before the character name ever does.
+        IReadOnlyList<Column> narrow = Columns.Fit(Columns.Default, 60);
+
+        Assert.True(Columns.TotalWidth(narrow) <= 60);
+        Assert.Equal("CHARACTER", narrow[0].Header, StringComparer.Ordinal);
+        Assert.DoesNotContain(narrow, column => string.Equals(column.Header, "INF/hr", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Fitting_a_wide_window_keeps_everything()
+    {
+        Assert.Same(Columns.Default, Columns.Fit(Columns.Default, 500));
+        Assert.Equal(Columns.Default.Count, Columns.Fit(Columns.Default, Columns.TotalWidth(Columns.Default)).Count);
+    }
+
+    [Fact]
+    public void An_impossibly_narrow_window_still_keeps_one_column()
+    {
+        // A readout with no columns is not a narrower readout, it is a blank screen.
+        IReadOnlyList<Column> fitted = Columns.Fit(Columns.Default, 1);
+
+        Assert.Single(fitted);
+        Assert.Equal("CHARACTER", fitted[0].Header, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void Fitting_handles_the_empty_and_null_cases()
+    {
+        Assert.Empty(Columns.Fit([], 80));
+        Assert.Throws<ArgumentNullException>(() => Columns.Fit(null!, 80));
+    }
+
+    [Fact]
     public void Every_default_column_renders_a_cell()
     {
         // Deliberately round: over exactly two hours, 1,200,000 xp is 600,000

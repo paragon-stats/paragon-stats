@@ -23,6 +23,40 @@ public static class Columns
         new("INF/hr", 10, static row => Rate(row.Influence, row.Clock), RightAligned: true),
     ];
 
+    /// <summary>
+    /// The longest run of columns that fits the given width. `Default` is
+    /// ordered by how much a farmer needs it, so a narrow window sheds the
+    /// per-hour rates first and never the character name. Fitting beats
+    /// hand-tuning a layout for one terminal size and then discovering the
+    /// right-hand columns are invisible on someone else's font.
+    /// </summary>
+    public static IReadOnlyList<Column> Fit(IReadOnlyList<Column> columns, int width)
+    {
+        ArgumentNullException.ThrowIfNull(columns);
+        if (columns.Count == 0)
+        {
+            return columns;
+        }
+
+        int taken = 0;
+        int used = 0;
+        foreach (Column column in columns)
+        {
+            int next = used == 0 ? column.Width : used + 1 + column.Width;
+            if (taken > 0 && next > width)
+            {
+                break;
+            }
+
+            used = next;
+            taken++;
+        }
+
+        // Always at least one column: a readout with no columns is not a
+        // narrower readout, it is a blank screen.
+        return taken == columns.Count ? columns : [.. columns.Take(Math.Max(1, taken))];
+    }
+
     /// <summary>Width of the whole readout, counting the single space between columns.</summary>
     public static int TotalWidth(IReadOnlyList<Column> columns)
     {
