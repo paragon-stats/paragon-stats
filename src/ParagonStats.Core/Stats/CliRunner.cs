@@ -60,8 +60,8 @@ public static class CliRunner
     ];
 
     /// <summary>
-    /// MinVer stamps this at build time. Everything after '+' is the commit
-    /// hash, which is noise at a prompt.
+    /// Gets the version MinVer stamped at build time. Everything after '+' is
+    /// the commit hash, which is noise at a prompt.
     /// </summary>
     private static string Version =>
         typeof(CliRunner).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()

@@ -13,6 +13,10 @@ public sealed partial class CliSurfaceTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("ps-surface-").FullName;
 
+    /// <summary>Only the major.minor.patch head is pinned; MinVer appends pre-release parts between tags.</summary>
+    [GeneratedRegex(@"^\d+\.\d+\.\d+", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex SemanticVersion { get; }
+
     private string ConfigPath => Path.Join(_root, "config", "config.json");
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
@@ -75,7 +79,7 @@ public sealed partial class CliSurfaceTests : IDisposable
         int exit = CliRunner.Run(["--version"], output, error, Environment());
 
         Assert.Equal(0, exit);
-        Assert.Matches(SemanticVersion(), output.ToString().Trim());
+        Assert.Matches(SemanticVersion, output.ToString().Trim());
 
         // MinVer's build metadata is the commit hash - noise at a prompt.
         Assert.DoesNotContain("+", output.ToString(), StringComparison.Ordinal);
@@ -151,10 +155,6 @@ public sealed partial class CliSurfaceTests : IDisposable
         Assert.Contains(file, output.ToString(), StringComparison.Ordinal);
         Assert.Contains("sessions 1", output.ToString(), StringComparison.Ordinal);
     }
-
-    /// <summary>Only the major.minor.patch head is pinned; MinVer appends pre-release parts between tags.</summary>
-    [GeneratedRegex(@"^\d+\.\d+\.\d+", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex SemanticVersion();
 
     private CliEnvironment Environment() => new() { ConfigPath = ConfigPath };
 
