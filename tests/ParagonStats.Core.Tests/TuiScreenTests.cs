@@ -11,48 +11,55 @@ namespace ParagonStats.Core.Tests;
 /// </summary>
 public sealed class TuiScreenTests
 {
+    /// <summary>A full-width rule, spelled once rather than 120 transcribed dashes.</summary>
+    private static readonly string Rule = new('-', 120);
+
+    private static string Frame(params string[] rows) => string.Join('\n', rows);
+
     [Fact]
     public void The_live_screen_renders_the_shipped_strip()
     {
         // ALL BOXES spans 02:00:00 - the window from the earliest start to the
         // latest activity - not the 03:20:00 the two rows sum to.
-        const string Expected = """
-             paragon-stats 0.5.0   live                                                                                 read-only *
-             C:\Games\Homecoming\accounts   2 live   unattributed 0
-            ------------------------------------------------------------------------------------------------------------------------
-             CHARACTER          ACCOUNT       CLOCK          XP         INF TICKETS      XP/hr     INF/hr
-             Laser - ALT F4     mrlaser    02:00:00   1,200,000   4,000,000     312    600,000  2,000,000
-             Fixture Scrapper   mrlaser2   01:20:00     118,004     386,120      50     88,503    289,590
-            ------------------------------------------------------------------------------------------------------------------------
-             ALL BOXES                     02:00:00   1,318,004   4,386,120     362    659,002  2,193,060
+        //
+        // Line-per-entry rather than a raw string literal: the frame's own
+        // leading space makes a raw literal's lines indent by a non-multiple of
+        // four, which editorconfig rejects.
+        string expected = Frame(
+            " paragon-stats 0.5.0   live                                                                                 read-only *",
+            @" C:\Games\Homecoming\accounts   2 live   unattributed 0",
+            Rule,
+            " CHARACTER          ACCOUNT       CLOCK          XP         INF TICKETS      XP/hr     INF/hr",
+            " Laser - ALT F4     mrlaser    02:00:00   1,200,000   4,000,000     312    600,000  2,000,000",
+            " Fixture Scrapper   mrlaser2   01:20:00     118,004     386,120      50     88,503    289,590",
+            Rule,
+            " ALL BOXES                     02:00:00   1,318,004   4,386,120     362    659,002  2,193,060",
+            string.Empty,
+            string.Empty,
+            Rule,
+            " [m] menu   [h] help   [q] quit");
 
-
-            ------------------------------------------------------------------------------------------------------------------------
-             [m] menu   [h] help   [q] quit
-            """;
-
-        Assert.Equal(Expected, Render(new LiveScreen()), ignoreLineEndingDifferences: true);
+        Assert.Equal(expected, Render(new LiveScreen()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
     public void The_menu_renders_every_destination()
     {
-        const string Expected = """
-             paragon-stats 0.5.0   menu                                                                                 read-only *
-             C:\Games\Homecoming\accounts   2 live   unattributed 0
-            ------------------------------------------------------------------------------------------------------------------------
-              [1]  Live stats     per-character readout, updating while you play
-              [2]  Help           what every option does, and the exit codes
-              [q]  Quit
+        string expected = Frame(
+            " paragon-stats 0.5.0   menu                                                                                 read-only *",
+            @" C:\Games\Homecoming\accounts   2 live   unattributed 0",
+            Rule,
+            "  [1]  Live stats     per-character readout, updating while you play",
+            "  [2]  Help           what every option does, and the exit codes",
+            "  [q]  Quit",
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            Rule,
+            " [1] live   [2] help   [q] quit");
 
-
-
-
-            ------------------------------------------------------------------------------------------------------------------------
-             [1] live   [2] help   [q] quit
-            """;
-
-        Assert.Equal(Expected, Render(new MenuScreen()), ignoreLineEndingDifferences: true);
+        Assert.Equal(expected, Render(new MenuScreen()), ignoreLineEndingDifferences: true);
     }
 
     [Fact]
