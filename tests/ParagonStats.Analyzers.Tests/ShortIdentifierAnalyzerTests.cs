@@ -86,7 +86,7 @@ public sealed class ShortIdentifierAnalyzerTests
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             "PS0001Tests",
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, cancellationToken: TestContext.Current.CancellationToken)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
