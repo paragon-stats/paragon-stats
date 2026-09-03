@@ -38,31 +38,26 @@ public static class Columns
             return columns;
         }
 
-        int taken = 0;
-        int used = 0;
-
-        // Widths, not columns: fitting reads nothing else off a Column, and Select
-        // stays lazy, so the break still stops enumeration at the column that did
-        // not fit rather than walking the rest.
-        foreach (int columnWidth in columns.Select(column => column.Width))
-        {
-            // `taken == 0`, not `used == 0`: the question is whether anything has
-            // been taken yet, and a zero-width column leaves `used` at 0 having
-            // been taken. Keyed on `used`, the separator went uncharged for
-            // whatever followed such a column and the readout overran its frame.
-            int next = taken == 0 ? columnWidth : used + 1 + columnWidth;
-            if (taken > 0 && next > width)
+        // Rendered width after each column: its own width, plus one space for the
+        // gap back to the previous one. A scan rather than a projection - each
+        // entry depends on the one before it - so it is an Aggregate, and the
+        // "is this the first column" test is positional. Keying that test on the
+        // running total instead let a zero-width column pose as the first one,
+        // so the separator after it went uncharged and the readout overran its
+        // frame. Eight columns twice a second: the list costs nothing.
+        List<int> rendered = columns.Aggregate(
+            new List<int>(columns.Count),
+            (running, column) =>
             {
-                break;
-            }
+                running.Add(running.Count == 0 ? column.Width : running[^1] + 1 + column.Width);
+                return running;
+            });
 
-            used = next;
-            taken++;
-        }
+        // The first column is taken unconditionally: a readout with no columns is
+        // not a narrower readout, it is a blank screen.
+        int taken = rendered.TakeWhile((total, index) => index == 0 || total <= width).Count();
 
-        // Always at least one column: a readout with no columns is not a
-        // narrower readout, it is a blank screen.
-        return taken == columns.Count ? columns : [.. columns.Take(Math.Max(1, taken))];
+        return taken == columns.Count ? columns : [.. columns.Take(taken)];
     }
 
     /// <summary>Width of the whole readout, counting the single space between columns.</summary>
