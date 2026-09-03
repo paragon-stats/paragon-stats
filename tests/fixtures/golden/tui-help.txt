@@ -1,0 +1,24 @@
+ paragon-stats <version>   menu   <read-only>
+ <root>   no live sessions   unattributed 1
+------------------------------------------------------------------------------------------------------------------------
+  [1]  Live stats     per-character readout, updating while you play
+  [2]  Help           what every option does, and the exit codes
+  [q]  Quit
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+ [1] live   [2] help   [q] quit
+ paragon-stats <version>   help   <read-only>
+ <root>   no live sessions   unattributed 1
+------------------------------------------------------------------------------------------------------------------------
+ Reads your Homecoming chat logs and reports what you earned.
+
+   paragon-stats        menu, then live stats       --watch     straight to live
+   paragon-stats [path] a chatlog file or game dir  --version   print and exit
+
+ exit codes:  0 success    1 no chatlogs or no game location    2 bad usage
+ read-only: never writes to the game directory; chat channels are never collected
+------------------------------------------------------------------------------------------------------------------------
+ [m] menu   [1] live   [q] quit

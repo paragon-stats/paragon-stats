@@ -31,7 +31,7 @@
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "build (windows-latest)", "integration_id": 15368 },
-          { "context": "build (ubuntu-latest)", "integration_id": 15368 },
+          { "context": "binary", "integration_id": 15368 },
           { "context": "analyze (csharp)", "integration_id": 15368 },
           { "context": "lint", "integration_id": 15368 },
           { "context": "commitlint", "integration_id": 15368 },

@@ -18,6 +18,6 @@ Naming: `real-<topic>.txt` = cut from real logs. Any future `synthetic-<topic>.t
 constructed line for a grammar not yet captured in real play, and must be replaced with a
 real excerpt when one is captured.
 
-The full raw corpus lives outside the repo (the game install is read-only reference).
-The corpus smoke test (`ReplayTests.Corpus_smoke_reports_uncategorized_ratio_when_configured`) reads `PARAGON_CORPUS_DIR` when set and reports the uncategorized ratio
+The full raw log data lives outside the repo (the game install is read-only reference).
+The source-data smoke test (`ReplayTests.Source_smoke_reports_uncategorized_ratio_when_configured`) reads `PARAGON_SOURCE_DIR` when set and reports the uncategorized ratio
 as the grammar-drift canary.

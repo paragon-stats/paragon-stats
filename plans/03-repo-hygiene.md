@@ -43,6 +43,11 @@ Standard files every public .NET repo needs. Keep them lean — Sonarr-style.
    > merge. Mentioned up front so you can make an informed decision about using
    > or contributing to it.
 
+   > **Superseded (#245):** the Linux x64 references below are historical. CI
+   > builds and tests on Windows only — Homecoming does not run natively on
+   > Linux, so the Linux leg verified a platform no player uses. See
+   > `CONTRIBUTING.md` and `docs/PRD.md` for the live statement.
+
    ## Getting started
 
    - **Requirements**: .NET 10 SDK (Windows or Linux x64)

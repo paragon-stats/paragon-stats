@@ -28,12 +28,12 @@ public sealed class RecalculationTests : IDisposable
     [Fact]
     public void Two_replays_of_the_same_files_are_identical_field_by_field()
     {
-        string[] files = WriteCorpus();
+        string[] files = WriteSource();
 
         ReplayResult first = LogReplayer.Replay(files);
         ReplayResult second = LogReplayer.Replay(files);
 
-        // Non-vacuity: the corpus must actually exercise sessions and the
+        // Non-vacuity: the source must actually exercise sessions and the
         // unattributed path, or "identical" would be trivially true.
         Assert.Equal(Accounts.Length * Days.Length * SessionsPerDay, first.Sessions.Count);
         Assert.True(first.UnattributedCount > 0);
@@ -43,7 +43,7 @@ public sealed class RecalculationTests : IDisposable
     [Fact]
     public void Unrelated_accounts_interleaving_does_not_change_the_result()
     {
-        string[] grouped = WriteCorpus();
+        string[] grouped = WriteSource();
 
         // Same files, interleaved by day instead of grouped by account. Each
         // account's own chronology is preserved, which is all LogReplayer
@@ -106,7 +106,7 @@ public sealed class RecalculationTests : IDisposable
         // One documented exception to "reproduces exactly" is out of scope
         // here: batch drains a final line with no trailing newline, live does
         // not, because live a newline-less tail is an in-progress write.
-        string[] files = WriteCorpus();
+        string[] files = WriteSource();
         ReplayResult batch = LogReplayer.Replay(files);
 
         SessionTracker tracker = new();
@@ -200,7 +200,7 @@ public sealed class RecalculationTests : IDisposable
     [Fact]
     public void Cli_rerun_recomputes_from_disk_with_no_cached_state()
     {
-        string[] files = WriteCorpus();
+        string[] files = WriteSource();
         CliEnvironment environment = new() { ConfigPath = Path.Join(_root, "config", "config.json") };
         using StringWriter error = new();
         using StringWriter first = new();
@@ -224,12 +224,12 @@ public sealed class RecalculationTests : IDisposable
     }
 
     [Fact]
-    public void Corpus_replay_is_deterministic_when_configured()
+    public void Source_replay_is_deterministic_when_configured()
     {
-        string? corpus = Environment.GetEnvironmentVariable("PARAGON_CORPUS_DIR");
-        Assert.SkipWhen(string.IsNullOrEmpty(corpus), "PARAGON_CORPUS_DIR not set");
+        string? source = Environment.GetEnvironmentVariable("PARAGON_SOURCE_DIR");
+        Assert.SkipWhen(string.IsNullOrEmpty(source), "PARAGON_SOURCE_DIR not set");
 
-        string[] files = Directory.GetFiles(corpus!, "chatlog*.txt", SearchOption.AllDirectories);
+        string[] files = Directory.GetFiles(source!, "chatlog*.txt", SearchOption.AllDirectories);
         Array.Sort(files, StringComparer.Ordinal);
 
         ReplayResult first = LogReplayer.Replay(files);
@@ -334,7 +334,7 @@ public sealed class RecalculationTests : IDisposable
         return path;
     }
 
-    private string[] WriteCorpus()
+    private string[] WriteSource()
     {
         List<string> files = [];
         foreach (string account in Accounts)

@@ -3,6 +3,7 @@ using System.Reflection;
 using ParagonStats.Core.Config;
 using ParagonStats.Core.Logging;
 using ParagonStats.Core.Sessions;
+using ParagonStats.Core.Tui;
 
 namespace ParagonStats.Core.Stats;
 
@@ -110,8 +111,41 @@ public static class CliRunner
             return 1;
         }
 
+        // A no-argument launch on a real terminal is the double-click case, and
+        // it gets the text UI. Everything else - an explicit path, --watch, or
+        // any redirected run - keeps today's output byte for byte, which is
+        // what the golden flows check.
+        if (target is null && !watch && env.Interactive)
+        {
+            return Interactive(accounts, output, env);
+        }
+
         Banner(output, accounts);
         return watch ? Watch(accounts, output, env) : ReplayDirectory(accounts, output, error);
+    }
+
+    /// <summary>
+    /// The text UI over the live engine. Session-level by ruling: it attaches to
+    /// what is happening now rather than replaying history at launch, which is
+    /// what made the old no-argument path sit silent for a minute before
+    /// printing anything.
+    /// </summary>
+    private static int Interactive(string accountsDir, TextWriter output, CliEnvironment env)
+    {
+        SessionTracker tracker = new();
+        using LogWatcher watcher = new(accountsDir, SessionTracker.IdleTimeout);
+        LiveMonitor monitor = new(watcher, tracker, env.ClientRunning);
+
+        return TuiHost.Run(
+            output,
+            () =>
+            {
+                monitor.Tick();
+                return Snapshot.Capture(tracker);
+            },
+            Version,
+            accountsDir,
+            env);
     }
 
     /// <summary>

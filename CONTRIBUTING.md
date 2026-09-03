@@ -2,7 +2,9 @@
 
 ## Setup
 
-Requires the .NET 10 SDK (Windows or Linux x64). After cloning, run the bootstrap script — it
+Requires the .NET 10 SDK on **Windows x64** — the only platform CI verifies and the only RID
+the product ships. The code is portable enough to build elsewhere, but nothing checks that any
+more, so treat another dev host as unsupported. After cloning, run the bootstrap script — it
 restores the .NET local tools, installs the Husky.Net hooks, and verifies the toolchain (signed
 commits are required):
 
@@ -17,8 +19,15 @@ dotnet build
 dotnet test
 ```
 
-Husky.Net hooks run `dotnet format`, the commit-message + encoding checks, and the full
-Super-Linter image on commit (needs Docker; skipped without it). CI runs the same linters.
+Husky.Net hooks run `dotnet format` and the commit-message + encoding checks **on commit**,
+and the full Super-Linter image **on push** (needs Docker; skipped without it).
+
+Super-Linter runs at push rather than at commit for a reason worth knowing: with `RUN_LOCAL`
+it diffs against `origin/main` using *committed* history, so in a pre-commit hook it never
+saw the staged files — it linted the previous commit and reported a pass on code nobody had
+checked. At push time `HEAD` contains the commits and the range matches the CI workflow's
+exactly. Both read the same [`.github/super-linter.env`](.github/super-linter.env), so the
+linter set and the config cannot drift either.
 
 ## Code style
 

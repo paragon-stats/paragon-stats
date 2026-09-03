@@ -14,8 +14,14 @@
       "args": ["run", "scripts/dev/check-encoding.cs"]
     },
     {
-      "name": "super-linter",
+      "name": "check-coverage-exclusions",
       "group": "pre-commit",
+      "command": "dotnet",
+      "args": ["run", "scripts/dev/check-coverage-exclusions.cs"]
+    },
+    {
+      "name": "super-linter",
+      "group": "pre-push",
       "command": "dotnet",
       "args": ["run", "scripts/dev/run-super-linter.cs"]
     }

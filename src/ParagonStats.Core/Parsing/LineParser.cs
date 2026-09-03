@@ -161,8 +161,8 @@ public static partial class LineParser
 
     /// <summary>
     /// A pseudopet source prefixes damage grammar with "Name:  " (two spaces).
-    /// Only damage lines carry attribution this way in real logs (1.5M corpus
-    /// lines; zero prefixed defeats/activations/rewards), so the prefix
+    /// Only damage lines carry attribution this way in real logs (1.5M lines
+    /// of them; zero prefixed defeats/activations/rewards), so the prefix
     /// applies to the damage grammar alone - anything else a prefixed line
     /// says falls through as its unprefixed self.
     /// </summary>

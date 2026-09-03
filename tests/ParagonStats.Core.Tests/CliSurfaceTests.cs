@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 
+using ParagonStats.Core.Config;
 using ParagonStats.Core.Stats;
 
 namespace ParagonStats.Core.Tests;
@@ -154,6 +155,51 @@ public sealed partial class CliSurfaceTests : IDisposable
         Assert.Equal(0, exit);
         Assert.Contains(file, output.ToString(), StringComparison.Ordinal);
         Assert.Contains("sessions 1", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_no_argument_interactive_launch_opens_the_text_ui()
+    {
+        // The double-click case. It must not replay history at startup - that
+        // silent minute is what made the shipped binary look broken.
+        string game = GameRoot();
+        Assert.True(new AppConfigStore(ConfigPath).TrySaveGameRoot(game));
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        Queue<char> keys = new(['q']);
+
+        int exit = CliRunner.Run([], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Interactive = true,
+            ReadKey = () => keys.Count > 0 ? keys.Dequeue() : null,
+            Token = cancellation.Token,
+            Sleep = _ => cancellation.Cancel(),
+        });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("unattributed lines", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_redirected_no_argument_launch_still_prints_the_batch_summary()
+    {
+        // Interactive defaults false, so pipes and CI keep byte-identical
+        // output and every golden flow still holds.
+        string game = GameRoot();
+        Assert.True(new AppConfigStore(ConfigPath).TrySaveGameRoot(game));
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+
+        int exit = CliRunner.Run([], output, error, Environment());
+
+        Assert.Equal(0, exit);
+        Assert.Contains("unattributed lines", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
     }
 
     private CliEnvironment Environment() => new() { ConfigPath = ConfigPath };

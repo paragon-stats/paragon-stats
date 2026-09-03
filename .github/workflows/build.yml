@@ -16,10 +16,15 @@ concurrency:
 
 jobs:
   build:
+    # Windows only: Homecoming does not run natively on Linux, so a Linux leg
+    # verified a platform no player uses. The matrix shape is kept for the one
+    # entry on purpose - collapsing it would rename the required check from
+    # "build (windows-latest)" to "build", and a required context that never
+    # reports under its old name freezes every PR (#14).
     strategy:
-      fail-fast: false  # let both OS legs report even if one fails (#22)
+      fail-fast: false  # kept: a second target RID would be a peer, not a downstream
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -35,8 +40,9 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore
       - run: dotnet tool restore
+      # Was gated to the Linux leg to run once; that leg is gone, so the gate
+      # would have silently disabled the check entirely.
       - name: Check console output encoding
-        if: matrix.os == 'ubuntu-latest'  # OS-invariant scan - run once, after restore
         run: dotnet run scripts/dev/check-encoding.cs
       - run: dotnet format --verify-no-changes --severity error --no-restore
       - run: dotnet build --no-restore
@@ -51,13 +57,19 @@ jobs:
           -targetdir:coveragereport
           -reporttypes:"MarkdownSummaryGithub;JsonSummary"
           -assemblyfilters:"-*.Tests.dll"
-          -classfilters:"-System.Text.RegularExpressions.Generated.*;-ParagonStats.Core.Config.AppConfigContext"
+          -classfilters:"-System.Text.RegularExpressions.Generated.*;-ParagonStats.Core.Config.AppConfigContext;-ParagonStats.Core.Tui.VirtualTerminal"
+      # No `if: always()`: coverage measured over a failed test run is partial,
+      # and publishing it invites chasing a number that reflects the failure
+      # rather than the code.
       - name: Publish coverage summary
-        if: always()
         run: if (Test-Path coveragereport/SummaryGithub.md) { Get-Content coveragereport/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY }
       - name: Coverage gate
         env:
-          MIN_COVERAGE: '100'  # every human-written line; generated regex internals are class-filtered (#37)
+          # Every human-written line. Three class filters, each for code whose
+          # branches cannot be reached from a test host: generated regex
+          # internals, the AOT JSON context, and the kernel32 console shim whose
+          # failure paths need a host that refuses the call (#37, #245).
+          MIN_COVERAGE: '100'
         run: |
           $s = (Get-Content coveragereport/Summary.json -Raw | ConvertFrom-Json).summary
           if ($null -eq $s.linecoverage -or $s.coverablelines -eq 0) {
@@ -77,8 +89,17 @@ jobs:
   # trimming failures and CLI surface regressions are invisible to them - four
   # releases shipped with no --help before anyone ran the artifact. win-x64 only,
   # because that is the single RuntimeIdentifier the release publishes.
+  #
+  # Gated behind `build` on purpose. An artifact produced from a tree that does
+  # not build or whose unit tests fail cannot be reliably judged: a golden diff
+  # would report a downstream symptom of the upstream break, and the fix would
+  # go in against an imagined problem. Fail the upstream tier first, then test
+  # the next one. `build` keeps `fail-fast: false` because matrix legs are peers
+  # of each other, not upstream and downstream - cancelling one would destroy
+  # real information instead of noise.
   binary:
     name: binary
+    needs: build
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
@@ -93,7 +114,7 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet publish src/ParagonStats.Cli -c Release -r win-x64
-      - name: Verify the published binary against the goldens
+      - name: Verify the published binary (smoke, goldens, live)
         run: >
           dotnet run scripts/dev/verify-binary.cs --
           src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe
