@@ -1,5 +1,5 @@
  paragon-stats <version>   menu   <read-only>
- <root>   no live sessions   unattributed 1
+ <root>   2 live   unattributed 1
 ------------------------------------------------------------------------------------------------------------------------
   [1]  Live stats     per-character readout, updating while you play
   [2]  Help           what every option does, and the exit codes
@@ -11,13 +11,13 @@
 ------------------------------------------------------------------------------------------------------------------------
  [1] live   [2] help   [q] quit
  paragon-stats <version>   live   <read-only>
- <root>   no live sessions   unattributed 1
+ <root>   2 live   unattributed 1
 ------------------------------------------------------------------------------------------------------------------------
  CHARACTER          ACCOUNT       CLOCK          XP         INF TICKETS      XP/hr     INF/hr
- Waiting for a character to log in. Chat logging must be on:
- Options > Windows > Chat > Log Chat.
-
-
+ Fixture Blaster    fixtureone 00:01:40      18,772         388      12    675,792     13,968
+ Fixture Scrapper   fixturetwo 00:01:00         638       1,786     250     38,280    107,160
+------------------------------------------------------------------------------------------------------------------------
+ ALL BOXES                     01:01:00      19,410       2,174     262     19,092      2,138
 
 
 ------------------------------------------------------------------------------------------------------------------------

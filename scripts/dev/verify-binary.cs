@@ -42,6 +42,14 @@ bool update = args.Contains("--update");
 string fixtures = Path.Combine("tests", "fixtures", "game");
 string goldenDir = Path.Combine("tests", "fixtures", "golden");
 
+// Every invocation is pointed here, so no case can reach the real profile.
+// CliRunner persists an explicit path argument as the new saved default, so an
+// un-isolated run silently redefines where the developer's own copy looks - and
+// it did: a local run left a deleted temp directory as the saved game location,
+// and the shipped binary then reported no live sessions on a machine that was
+// mid-session (#248). CI never noticed because a runner has no profile to harm.
+string harnessConfig = Path.Combine(Path.GetTempPath(), "paragon-stats-verify-config.json");
+
 if (!File.Exists(binary))
 {
     Console.Error.WriteLine($"binary not found: {binary}");
@@ -82,6 +90,12 @@ string Normalise(string text)
     {
         info.ArgumentList.Add(argument);
     }
+
+    // Set before the per-case environment, so a case may still override it but
+    // none has to remember to. Isolation belongs at the one place every call
+    // passes through, not repeated at each call site where the next case added
+    // will forget it.
+    info.Environment["PARAGON_STATS_CONFIG"] = harnessConfig;
 
     foreach ((string name, string value) in environment ?? [])
     {
@@ -214,13 +228,10 @@ Expect("missing path exits 1", missing.Code == 1, $"exit {missing.Code}");
 // broken. End-of-input quits, so piping nothing renders one frame and exits.
 // Written to temp, never into the repo: a generated file under tests/fixtures
 // is one `git add -A` away from being committed.
-string tuiConfig = Path.Combine(Path.GetTempPath(), "paragon-stats-verify-config.json");
-File.WriteAllText(tuiConfig, "{\"GameRoot\":\"" + fixtures.Replace("\\", "/") + "\"}");
-(string, string)[] tuiEnvironment =
-[
-    ("PARAGON_STATS_TUI", "1"),
-    ("PARAGON_STATS_CONFIG", tuiConfig),
-];
+// Seeds the harness config the runner already points every invocation at, so
+// the no-argument launch resolves the fixtures rather than prompting.
+File.WriteAllText(harnessConfig, "{\"GameRoot\":\"" + fixtures.Replace("\\", "/") + "\"}");
+(string, string)[] tuiEnvironment = [("PARAGON_STATS_TUI", "1")];
 
 // The watcher is a LIVE monitor: LogWatcher.Discover only attaches to files
 // written within the attach window, so the fixture must look freshly written
