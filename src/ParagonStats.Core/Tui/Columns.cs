@@ -42,7 +42,11 @@ public static class Columns
         int used = 0;
         foreach (Column column in columns)
         {
-            int next = used == 0 ? column.Width : used + 1 + column.Width;
+            // `taken == 0`, not `used == 0`: the question is whether anything has
+            // been taken yet, and a zero-width column leaves `used` at 0 having
+            // been taken. Keyed on `used`, the separator went uncharged for
+            // whatever followed such a column and the readout overran its frame.
+            int next = taken == 0 ? column.Width : used + 1 + column.Width;
             if (taken > 0 && next > width)
             {
                 break;

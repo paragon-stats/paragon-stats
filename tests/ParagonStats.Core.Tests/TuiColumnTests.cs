@@ -126,6 +126,44 @@ public sealed class TuiColumnTests
         }
     }
 
+    [Fact]
+    public void A_narrow_window_keeps_every_column_that_fits()
+    {
+        // Shedding too many columns is as wrong as shedding too few, and only
+        // the second half was pinned: a mutant collapsing Fit to a single column
+        // passed all 304 tests, because the narrow-window test above asserts
+        // only that the result is not too WIDE. A farmer would silently lose
+        // their XP/hr with nothing failing anywhere.
+        IReadOnlyList<Column> fitted = Columns.Fit(Columns.Default, 60);
+
+        Assert.Equal(4, fitted.Count);
+        Assert.True(Columns.TotalWidth(fitted) <= 60);
+
+        // Maximal, not merely small enough: one more column must not have fit.
+        List<Column> oneMore = [.. fitted, Columns.Default[fitted.Count]];
+        Assert.True(
+            Columns.TotalWidth(oneMore) > 60,
+            $"{oneMore.Count} columns fit in {Columns.TotalWidth(oneMore)}, but Fit stopped at {fitted.Count}");
+    }
+
+    [Fact]
+    public void A_zero_width_column_still_costs_its_separator()
+    {
+        // The loop used `used == 0` as a stand-in for "nothing taken yet". A
+        // zero-width column leaves `used` at 0, so the separator after it went
+        // uncharged: [0, 0, 5] in a width of 5 returned all three, rendering 7
+        // wide, which Frame.Write would then have clipped in silence.
+        List<Column> columns = [Sized(0), Sized(0), Sized(5)];
+
+        IReadOnlyList<Column> fitted = Columns.Fit(columns, 5);
+
+        Assert.True(
+            Columns.TotalWidth(fitted) <= 5,
+            $"{fitted.Count} columns rendering {Columns.TotalWidth(fitted)} wide in a frame of 5");
+    }
+
+    private static Column Sized(int width) => new($"C{width}", width, static row => row.Character);
+
     private static SessionRow Row(TimeSpan clock) =>
         new("Nova", "acct", clock, 1_200_000, 4_000_000, 300, 7, 940, 12_345.6m, 500, 200);
 }
