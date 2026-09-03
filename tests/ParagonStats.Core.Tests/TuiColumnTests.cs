@@ -143,7 +143,9 @@ public sealed class TuiColumnTests
         List<Column> oneMore = [.. fitted, Columns.Default[fitted.Count]];
         Assert.True(
             Columns.TotalWidth(oneMore) > 60,
-            $"{oneMore.Count} columns fit in {Columns.TotalWidth(oneMore)}, but Fit stopped at {fitted.Count}");
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"{oneMore.Count} columns fit in {Columns.TotalWidth(oneMore)}, but Fit stopped at {fitted.Count}"));
     }
 
     [Fact]
@@ -159,10 +161,13 @@ public sealed class TuiColumnTests
 
         Assert.True(
             Columns.TotalWidth(fitted) <= 5,
-            $"{fitted.Count} columns rendering {Columns.TotalWidth(fitted)} wide in a frame of 5");
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"{fitted.Count} columns rendering {Columns.TotalWidth(fitted)} wide in a frame of 5"));
     }
 
-    private static Column Sized(int width) => new($"C{width}", width, static row => row.Character);
+    private static Column Sized(int width) =>
+        new(string.Create(CultureInfo.InvariantCulture, $"C{width}"), width, static row => row.Character);
 
     private static SessionRow Row(TimeSpan clock) =>
         new("Nova", "acct", clock, 1_200_000, 4_000_000, 300, 7, 940, 12_345.6m, 500, 200);

@@ -40,13 +40,17 @@ public static class Columns
 
         int taken = 0;
         int used = 0;
-        foreach (Column column in columns)
+
+        // Widths, not columns: fitting reads nothing else off a Column, and Select
+        // stays lazy, so the break still stops enumeration at the column that did
+        // not fit rather than walking the rest.
+        foreach (int columnWidth in columns.Select(column => column.Width))
         {
             // `taken == 0`, not `used == 0`: the question is whether anything has
             // been taken yet, and a zero-width column leaves `used` at 0 having
             // been taken. Keyed on `used`, the separator went uncharged for
             // whatever followed such a column and the readout overran its frame.
-            int next = taken == 0 ? column.Width : used + 1 + column.Width;
+            int next = taken == 0 ? columnWidth : used + 1 + columnWidth;
             if (taken > 0 && next > width)
             {
                 break;
