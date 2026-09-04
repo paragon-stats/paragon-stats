@@ -76,7 +76,8 @@ jobs:
       - name: publish win-x64 AOT
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          trap 'failed=$?; printf "::error::the AOT publish failed at line %s (exit %s) running: %s\n" "$LINENO" "$failed" "$BASH_COMMAND" >&2' ERR
           dotnet publish src/ParagonStats.Cli -c Release -r win-x64
           cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
       # Releases here are immutable: born complete or not at all. A draft
@@ -86,7 +87,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          # A step that dies without saying why costs more than the bug that
+          # killed it. This one exited 1 in five seconds with no output at all:
+          # the failing command was a silent grep, and anything printed inside
+          # the notes block below lands in the notes file rather than the log.
+          # stderr escapes that redirect, so the trap reports there - naming the
+          # line, the exit status and the command that produced it. -E carries
+          # the trap into command substitutions, which is where most of the work
+          # in this step happens (#257).
+          trap 'failed=$?; printf "::error::creating the release failed at line %s (exit %s) running: %s\n" "$LINENO" "$failed" "$BASH_COMMAND" >&2' ERR
           # One probe answers both questions (published? with which assets?).
           # Only a real 404 means no published release; any other failure
           # must not fall through to the guards below.
