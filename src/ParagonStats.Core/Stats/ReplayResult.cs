@@ -11,5 +11,4 @@ public sealed record ReplayResult(
     IReadOnlyList<CharacterSession> Sessions,
     long UnattributedCount,
     IReadOnlyList<string> SkippedFiles,
-    long UnattributedExperience = 0,
-    long UnattributedInfluence = 0);
+    UnattributedValue UnattributedValue = default);

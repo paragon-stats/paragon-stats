@@ -37,11 +37,11 @@ public static class SummaryFormatter
         // Say what those lines were WORTH, but only when they were worth
         // something. A bare count cannot tell login chatter from a fifth of a
         // farm; both read as "unattributed", and 1,864,215 XP once hid there.
-        if (result.UnattributedExperience > 0 || result.UnattributedInfluence > 0)
+        if (result.UnattributedValue.Any)
         {
             builder.AppendLine(
                 CultureInfo.InvariantCulture,
-                $"  unattributed value: xp {result.UnattributedExperience} | inf {result.UnattributedInfluence} (no character was identified when these arrived)");
+                $"  unattributed value: {result.UnattributedValue} (no character was identified when these arrived)");
         }
 
         foreach (string skipped in result.SkippedFiles)

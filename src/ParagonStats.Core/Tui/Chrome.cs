@@ -35,9 +35,17 @@ internal static class Chrome
         string count = readout.Snapshot.IsEmpty
             ? "no live sessions"
             : string.Create(CultureInfo.InvariantCulture, $"{readout.Snapshot.Rows.Count} live");
+
+        // The value rides with the count it qualifies, not somewhere else on
+        // the line: "unattributed 586" reads as housekeeping, and the whole
+        // point of #251 is that it was a fifth of a farm.
         string status = string.Create(
             CultureInfo.InvariantCulture,
             $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}");
+        if (readout.Snapshot.Value.Any)
+        {
+            status += string.Create(CultureInfo.InvariantCulture, $" ({readout.Snapshot.Value})");
+        }
 
         // The notice sits on the status line rather than taking a row of its
         // own: a box missing from the totals is not a footnote, and the body

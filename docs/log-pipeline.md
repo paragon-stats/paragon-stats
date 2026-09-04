@@ -114,9 +114,13 @@ discarded:
   identification.
 - A **login banner does not adopt** them. A banner announces an arrival, so
   whatever preceded it belongs to whoever was playing before.
-- Holding is bounded two ways: an idle gap (30 minutes, the same window that
-  closes a session) discards what precedes it, and a hard cap discards
-  oldest-first.
+- Holding is bounded four ways: an idle gap (30 minutes, the same window that
+  closes a session) discards what precedes it, whether the gap falls between
+  two held lines or between the last held line and the one that finally names
+  somebody; a proven client exit discards them outright, being stronger
+  evidence than silence; a login banner discards them, as above; and a hard cap
+  discards oldest-first so a log that never identifies anyone cannot grow
+  without limit.
 
 Whatever is never claimed is reported as **unattributed**, with its value:
 
@@ -146,8 +150,22 @@ against **accounts being read**, and says so when clients outnumber logs:
 
 It leads the status line, so a long accounts path clips before the advice does.
 It is silent when the counts agree, and silent when the client count cannot be
-determined — an unsure probe must not accuse a loading screen of being
-misconfigured.
+determined.
+
+"Accounts being read" means accounts *currently writing lines* — judged by the
+same 30-minute window that decides which files to pick up. Counting attached
+files instead made this useless for the case it exists for: nothing detaches a
+file for going quiet, so the count never fell and a live character switch went
+unremarked.
+
+Two consequences worth knowing:
+
+- A mismatch has to hold for about a minute before it is shown. A client at the
+  login or character-select screen genuinely has no log yet, and a warning that
+  fires on every launch is a warning you learn to ignore.
+- A box that goes quiet is noticed once the window elapses, not instantly.
+  Silence is the only evidence available — the game never announces that
+  logging was turned off.
 
 ## Getting the most out of the logs
 

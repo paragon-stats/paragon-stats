@@ -38,8 +38,10 @@ public static class LogReplayer
             tracker.Sessions,
             tracker.UnattributedCount,
             skipped,
-            tracker.UnattributedExperience,
-            tracker.UnattributedInfluence);
+            new UnattributedValue(
+                tracker.UnattributedExperience,
+                tracker.UnattributedInfluence,
+                tracker.UnattributedTickets));
     }
 
     private static void ReplayFile(SessionTracker tracker, string file)

@@ -243,6 +243,38 @@ public sealed class TuiScreenTests
         Assert.DoesNotContain("clients,", frame.ToPlainText(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void The_readout_says_what_the_unattributed_lines_were_worth()
+    {
+        // The count reached the readout while the value reached only the batch
+        // summary and --watch - so the double-click flow, which is the default
+        // and the one this checkpoint exists for, showed "unattributed 586" and
+        // never the 1,864,215 XP behind it. A count cannot tell login chatter
+        // from a fifth of a farm (#251).
+        Frame frame = new(120, 12);
+        Snapshot snapshot = Snapshot.Capture([], 586, new UnattributedValue(1864215, 3424108, 0));
+
+        new LiveScreen().Render(frame, new Readout("0.5.0", "root", snapshot));
+        string status = frame.ToPlainText().Split('\n')[1];
+
+        Assert.Contains("unattributed 586", status, StringComparison.Ordinal);
+        Assert.Contains("xp 1864215", status, StringComparison.Ordinal);
+        Assert.Contains("inf 3424108", status, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nothing_worth_saying_is_left_unsaid_and_nothing_else_is_added()
+    {
+        // Zero value prints no parenthetical at all: "unattributed 0 (xp 0 |
+        // inf 0 | tickets 0)" is noise on every quiet frame, and the goldens
+        // pin the quiet frame.
+        Frame frame = new(120, 12);
+
+        new LiveScreen().Render(frame, new Readout("0.5.0", "root", Snapshot.Capture([], 0)));
+
+        Assert.DoesNotContain("xp 0", frame.ToPlainText(), StringComparison.Ordinal);
+    }
+
     private static string Render(IScreen screen)
     {
         Frame frame = new(120, 12);

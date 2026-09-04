@@ -1,5 +1,5 @@
  paragon-stats <version>   menu   <read-only>
- <root>   2 live   unattributed 1
+ <root>   2 live   unattributed 1 (xp 100 | inf 0 | tickets 0)
 ------------------------------------------------------------------------------------------------------------------------
   [1]  Live stats     per-character readout, updating while you play
   [2]  Help           what every option does, and the exit codes
@@ -11,7 +11,7 @@
 ------------------------------------------------------------------------------------------------------------------------
  [1] live   [2] help   [q] quit
  paragon-stats <version>   help   <read-only>
- <root>   2 live   unattributed 1
+ <root>   2 live   unattributed 1 (xp 100 | inf 0 | tickets 0)
 ------------------------------------------------------------------------------------------------------------------------
  Reads your Homecoming chat logs and reports what you earned.
 
