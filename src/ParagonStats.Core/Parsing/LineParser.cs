@@ -29,7 +29,13 @@ public static partial class LineParser
     // names the enemies it lands on, and a vicinity buff named 778 distinct
     // people across one account's history. Those become AutohitCandidate and
     // are only believed if the tracker has seen the name in a banner (#250).
-    [GeneratedRegex(@"^(?:HIT (?<name>.+)! Your (?<power>.+) power is autohit|(?<name>.+) HITS you! (?<power>.+) power was autohit)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    // The empty (?<inbound>) marks the second branch so the caller can tell the
+    // directions apart without matching twice, because they are not
+    // equivalent: "HIT X! Your P power is autohit." is YOUR power reaching X,
+    // and a vicinity power reaches you too, so X can be you. "X HITS you! P
+    // power was autohit." names the CASTER, and for a power that is not
+    // self-only the caster is by definition somebody else.
+    [GeneratedRegex(@"^(?:HIT (?<name>.+)! Your (?<power>.+) power is autohit|(?<inbound>)(?<name>.+) HITS you! (?<power>.+) power was autohit)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Pulse { get; }
 
     [GeneratedRegex(@"^You activated the (?<power>.+) power\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
@@ -103,7 +109,7 @@ public static partial class LineParser
             string named = match.Groups["name"].Value;
             return Array.Exists(SelfOnlyPowers, power => string.Equals(power, match.Groups["power"].Value, StringComparison.Ordinal))
                 ? new IdentityPulse(named)
-                : new AutohitCandidate(named);
+                : new AutohitCandidate(named, SelfDirected: !match.Groups["inbound"].Success);
         }
 
         match = Zone.Match(payload);

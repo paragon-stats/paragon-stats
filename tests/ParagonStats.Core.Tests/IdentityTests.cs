@@ -139,6 +139,72 @@ public sealed class IdentityTests
     }
 
     [Fact]
+    public void An_inbound_autohit_never_identifies_because_it_names_the_caster()
+    {
+        // Direction is not decoration. "X HITS you!" names whoever CAST the
+        // power, and for a power that is not self-only the caster is by
+        // definition somebody else - your own casts are logged the other way
+        // round. Even a name on this account's own roster cannot be believed
+        // here, so the roster is not what has to catch it.
+        SessionTracker tracker = new();
+        tracker.Accept("acct", "2026-01-01 09:00:00 Welcome to City of Heroes, Nova!");
+        tracker.Accept("acct", "2026-01-01 10:00:00 Welcome to City of Heroes, Vega!");
+
+        // Nova is genuinely on the roster, and is genuinely not who is seated.
+        tracker.Accept("acct", "2026-01-01 10:05:00 Nova HITS you! Ageless Core Epiphany power was autohit.");
+
+        Assert.Equal("Vega", Assert.Single(tracker.Open).Character);
+    }
+
+    [Fact]
+    public void An_outbound_autohit_can_still_identify_because_a_vicinity_power_reaches_you_too()
+    {
+        SessionTracker tracker = new();
+        tracker.Accept("acct", "2026-01-01 09:00:00 Welcome to City of Heroes, Nova!");
+        tracker.Accept("acct", "2026-01-01 12:00:00 You gain 5 experience.");
+
+        tracker.Accept("acct", "2026-01-01 12:00:01 HIT Nova! Your Maneuvers power is autohit.");
+
+        Assert.Equal("Nova", Assert.Single(tracker.Open).Character);
+    }
+
+    [Fact]
+    public void A_proven_client_exit_discards_what_was_being_held()
+    {
+        // Adoption already refuses to reach across a silence of IdleTimeout. A
+        // client that has actually gone is stronger evidence than silence, and
+        // the relaunch can be well inside the window: without this fence
+        // whoever is seated next inherits the previous character's earnings in
+        // a session backdated into a window when the client was not running.
+        SessionTracker tracker = new();
+        tracker.Accept("acct", "2026-01-01 10:05:00 You gain 5000 experience.");
+
+        tracker.CloseAll(); // LiveMonitor saw the client exit
+
+        tracker.Accept("acct", "2026-01-01 10:25:00 HIT Vega! Your Health power is autohit.");
+
+        CharacterSession session = Assert.Single(tracker.Open);
+        Assert.Equal(0, session.Stats.Experience);
+        Assert.Equal(new DateTime(2026, 1, 1, 10, 25, 0, DateTimeKind.Unspecified), session.Start);
+        Assert.Equal(5000, tracker.UnattributedExperience);
+    }
+
+    [Fact]
+    public void Unattributed_tickets_are_valued_like_experience_and_influence()
+    {
+        // An AE farm pays tickets INSTEAD of influence, so valuing only xp and
+        // inf repeats #251 verbatim for the farm economy's own currency: the
+        // whole session would report "xp 0 | inf 0" and print nothing at all.
+        SessionTracker tracker = new();
+        tracker.Accept("acct", "2026-01-01 10:00:00 You earned 12 architect tickets!");
+
+        tracker.Accept("acct", "2026-01-01 10:00:10 Welcome to City of Heroes, Nova!");
+
+        Assert.Equal(12, tracker.UnattributedTickets);
+        Assert.Equal(0, tracker.UnattributedExperience);
+    }
+
+    [Fact]
     public void Held_events_are_capped_so_a_log_that_never_identifies_cannot_grow_forever()
     {
         // Oldest-out at the cap: the newest lines are the ones most likely to

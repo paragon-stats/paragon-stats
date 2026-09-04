@@ -54,6 +54,9 @@ public sealed class SessionTracker
     /// <inheritdoc cref="UnattributedExperience"/>
     public long UnattributedInfluence { get; private set; }
 
+    /// <inheritdoc cref="UnattributedExperience"/>
+    public long UnattributedTickets { get; private set; }
+
     public IReadOnlyCollection<CharacterSession> Open => _current.Values;
 
     /// <summary>
@@ -95,6 +98,15 @@ public sealed class SessionTracker
         }
 
         _current.Clear();
+
+        // Held events do not survive a proven exit. Adoption already refuses to
+        // reach across a silence of IdleTimeout; a client that has actually
+        // gone is stronger evidence than silence, and without this fence
+        // whoever is seated after the next launch inherits the previous
+        // character's earnings, in a session backdated into a window when the
+        // client was not running. They stay on the unattributed books, which is
+        // where they already are.
+        _held.Clear();
     }
 
     /// <summary>
@@ -140,7 +152,7 @@ public sealed class SessionTracker
         {
             SessionStart start => start.CharacterName,
             IdentityPulse pulse when Names(session, pulse.CharacterName) => pulse.CharacterName,
-            AutohitCandidate candidate when Roster(account).Contains(candidate.CharacterName)
+            AutohitCandidate { SelfDirected: true } candidate when Roster(account).Contains(candidate.CharacterName)
                 && Names(session, candidate.CharacterName) => candidate.CharacterName,
             _ => null,
         };
@@ -279,10 +291,23 @@ public sealed class SessionTracker
     private void Tally(LogEvent logEvent, int sign)
     {
         UnattributedCount += sign;
-        if (logEvent is RewardGained reward)
+        switch (logEvent)
         {
-            UnattributedExperience += sign * (reward.Experience ?? 0);
-            UnattributedInfluence += sign * (reward.Influence ?? 0);
+            case RewardGained reward:
+                UnattributedExperience += sign * (reward.Experience ?? 0);
+                UnattributedInfluence += sign * (reward.Influence ?? 0);
+                break;
+
+            // An AE farm pays tickets INSTEAD of influence, so valuing only XP
+            // and influence repeats #251 verbatim for the farm economy's own
+            // currency: the fixture alone runs at 15,000 tickets an hour, and
+            // all of it would report as "xp 0 | inf 0".
+            case TicketsEarned tickets:
+                UnattributedTickets += sign * tickets.Count;
+                break;
+
+            default:
+                break;
         }
     }
 
