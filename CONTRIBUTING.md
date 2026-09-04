@@ -57,6 +57,19 @@ CI scans every push/PR via SonarQube Cloud. Optional local tooling:
 
 ## House rules
 
+**Talk to us first** before building anything that touches CI, the release path, repository
+configuration, the quality gates in `scripts/dev/`, or the collection policy. Open an issue and
+wait for a maintainer's reply; if nobody has answered in a couple of days, nudge it — we may have
+missed it. Before v1 the product code is expected to move fast; the machinery that builds, gates
+and ships it is not, and that machinery is what this rule protects.
+
+Everything else: a pull request is a fine opening move, and an unfinished one is welcome if you
+want early feedback on direction.
+
+An issue you opened yourself is not agreement — what counts is a maintainer's reply. This applies
+to every contributor, and to any tooling acting on their behalf. A pull request against those
+paths that arrives without that conversation will be closed with a pointer to this rule.
+
 **Clean-room.** Do not paste code from the original HeroStats source or the
 `herostats-svn-archive`. That archive is for understanding *concepts* (log formats, which stats
 were computed) only.
