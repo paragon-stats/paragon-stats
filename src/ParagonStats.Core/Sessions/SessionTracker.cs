@@ -206,9 +206,18 @@ public sealed class SessionTracker
     /// </summary>
     private CharacterSession OpenFor(string account, string character, in LogLine line, LogEvent trigger)
     {
+        // The idle gap is tested HERE as well as on arrival in Hold. Hold only
+        // sees a gap when another held event turns up, so a log that fell
+        // silent and was identified an hour later adopted straight across the
+        // silence: 900 XP earned before a one-hour gap credited to a character
+        // named after it, with the session backdated to match.
         _held.Remove(account, out Held? waiting);
         Queue<(LogLine Line, LogEvent Event)>? adopted =
-            trigger is not SessionStart && waiting is { Events.Count: > 0 } ? waiting.Events : null;
+            trigger is not SessionStart
+            && waiting is { Events.Count: > 0 }
+            && line.Timestamp - waiting.Newest < IdleTimeout
+                ? waiting.Events
+                : null;
 
         // The session genuinely spans the adopted events, so it starts where
         // they do. Anchoring it at the trigger would credit those earnings to a

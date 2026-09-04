@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using ParagonStats.Core.Parsing;
 using ParagonStats.Core.Sessions;
 
@@ -119,6 +117,28 @@ public sealed class IdentityTests
     }
 
     [Fact]
+    public void A_gap_before_the_identifying_line_fences_off_what_precedes_it()
+    {
+        // The mirror of the gap check inside the held events. Hold only sees a
+        // silence when another held event turns up; without the same test on
+        // adoption, a log that fell quiet and was identified an hour later
+        // swallowed everything before the silence and backdated its session to
+        // match. That silence IS a logout by the rule this class closes
+        // sessions on, so nothing on its far side belongs to whoever is named
+        // next.
+        SessionTracker tracker = new();
+        tracker.Accept("acct", "2026-01-01 09:00:00 You gain 900 experience and 100 influence.");
+
+        tracker.Accept("acct", "2026-01-01 10:00:00 HIT Nova! Your Health power is autohit.");
+
+        CharacterSession session = Assert.Single(tracker.Open);
+        Assert.Equal(0, session.Stats.Experience);
+        Assert.Equal(new DateTime(2026, 1, 1, 10, 0, 0, DateTimeKind.Unspecified), session.Start);
+        Assert.Equal(1, tracker.UnattributedCount);
+        Assert.Equal(900, tracker.UnattributedExperience);
+    }
+
+    [Fact]
     public void Held_events_are_capped_so_a_log_that_never_identifies_cannot_grow_forever()
     {
         // Oldest-out at the cap: the newest lines are the ones most likely to
@@ -126,9 +146,7 @@ public sealed class IdentityTests
         SessionTracker tracker = new();
         for (int line = 0; line < 20_050; line++)
         {
-            tracker.Accept(
-                "acct",
-                string.Create(CultureInfo.InvariantCulture, $"2026-01-01 10:00:00 You gain 1 experience."));
+            tracker.Accept("acct", "2026-01-01 10:00:00 You gain 1 experience.");
         }
 
         tracker.Accept("acct", "2026-01-01 10:00:01 HIT Nova! Your Health power is autohit.");
