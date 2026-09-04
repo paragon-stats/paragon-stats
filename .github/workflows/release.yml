@@ -138,7 +138,13 @@ jobs:
                 fi
                 # Issue references live in the message body (Refs/Closes), so
                 # a reader can get from a release line to the work it answers.
-                issues="$(git show -s --format='%B' "$sha" | grep -oE '#[0-9]+' | sort -u -V | paste -sd' ' -)"
+                # grep exits 1 when it matches nothing, and under pipefail that
+                # took the whole step down: one commit citing no issue - which
+                # Conventional Commits, commitlint and the commit style guide
+                # all permit - failed v0.7.0's publish leg after its tag was
+                # already cut, and silently, because this block redirects
+                # stdout into the notes file (#257).
+                issues="$(git show -s --format='%B' "$sha" | { grep -oE '#[0-9]+' || :; } | sort -u -V | paste -sd' ' -)"
                 printf -- '- %s (%s)%s\n' "${subject#*: }" "$sha" "${issues:+ - ${issues}}" >> section.txt
               done < commits.txt
               if [ -s section.txt ]; then
