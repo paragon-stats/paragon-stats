@@ -68,6 +68,15 @@ appear in the game's own combat text (a teammate's killing blow, a foe you
 damaged, a pet's name), and those lines are kept because team and farm stats
 are computed from them. Nothing is retained from a communication channel.
 
+## How it works
+
+- [How a chat log becomes a session](docs/log-pipeline.md) - the pipeline end to
+  end, what is refused, how earnings are attributed to a character, and how to
+  set up a data-only chat tab so the engine sees everything it can use.
+- [Gameplay mechanics, as the logs record them](docs/gameplay-mechanics.md) -
+  measured reward tiering, what team play does to drop rates, and what the logs
+  cannot tell you.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
