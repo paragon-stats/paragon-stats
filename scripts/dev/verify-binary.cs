@@ -71,7 +71,15 @@ string Normalise(string text)
     // against the frame width, so the whole header line is rewritten rather
     // than patched, or a longer pre-release version shifts every column.
     text = Regex.Replace(text, @"(?m)^ paragon-stats \S+(\s+)(\w+)\s+read-only \*$", " paragon-stats <version>$1$2   <read-only>");
-    text = Regex.Replace(text, @"(?m)^ .*?   (no live sessions|\d+ live)   unattributed (\d+)$", " <root>   $1   unattributed $2");
+    // The unattributed VALUE is kept, not normalised - it is content, and
+    // pinning it is the point. Only the root is machine-specific. The optional
+    // group matters: without it the anchored match failed the moment the value
+    // appeared, and regenerating would have written this machine's own accounts
+    // path into the golden for every other machine to fail against.
+    text = Regex.Replace(
+        text,
+        @"(?m)^ .*?   (no live sessions|\d+ live)   unattributed (\d+)( \(xp [^)]*\))?$",
+        " <root>   $1   unattributed $2$3");
     return text;
 }
 
