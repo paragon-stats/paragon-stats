@@ -20,6 +20,14 @@ public static class CliRunner
     private const string Usage = "usage: paragon-stats [--watch] [chatlog-file-or-game-directory]";
 
     /// <summary>
+    /// How many consecutive frames a client/log mismatch must hold before it is
+    /// shown. Both loops run at 500ms, so this is about a minute - long enough
+    /// for a login flow to finish and short enough to catch a character switch
+    /// while the operator is still at the keyboard.
+    /// </summary>
+    private const int QuietFramesBeforeNotice = 120;
+
+    /// <summary>
     /// Everything the parser accepts. Anything else opening with '-' is a
     /// typo, not a path: treating "--wathc" as a directory reported "no
     /// chatlog files found" and looked like a broken tool rather than a
@@ -147,7 +155,7 @@ public static class CliRunner
             Version,
             accountsDir,
             env,
-            () => SilentBox(env, watcher));
+            SilentBoxes(env, watcher));
     }
 
     /// <summary>
@@ -155,16 +163,25 @@ public static class CliRunner
     /// Homecoming stores chat logging per CHARACTER, so a box drops out of the
     /// totals on every character switch - hit three times in one evening of
     /// testing, each time leaving plausible-looking totals a third short (#252).
-    /// Silent when the counts agree, and silent when the count is unknown: an
-    /// unsure probe must not accuse a loading screen of being misconfigured.
+    /// Silent when the counts agree, and silent when the count is unknown.
+    ///
+    /// Returns a probe holding its own streak, because a single disagreeing
+    /// frame is not evidence: a client sitting at the login or character-select
+    /// screen genuinely has no log yet, and accusing it on every launch would
+    /// teach the operator to ignore the one message that matters.
     /// </summary>
-    private static string? SilentBox(CliEnvironment env, LogWatcher watcher)
+    private static Func<string?> SilentBoxes(CliEnvironment env, LogWatcher watcher)
     {
-        int clients = env.ClientCount();
-        int logging = watcher.AttachedAccounts;
-        return clients > logging
-            ? string.Create(CultureInfo.InvariantCulture, $"!! {clients} clients, {logging} logging - enable Log Chat")
-            : null;
+        int quiet = 0;
+        return () =>
+        {
+            int clients = env.ClientCount();
+            int logging = watcher.AttachedAccounts;
+            quiet = clients > logging ? quiet + 1 : 0;
+            return quiet >= QuietFramesBeforeNotice
+                ? string.Create(CultureInfo.InvariantCulture, $"!! {clients} clients, {logging} logging - enable Log Chat")
+                : null;
+        };
     }
 
     /// <summary>
@@ -285,6 +302,14 @@ public static class CliRunner
         SessionTracker tracker = new();
         using LogWatcher watcher = new(accountsDir, SessionTracker.IdleTimeout);
         LiveMonitor monitor = new(watcher, tracker, env.ClientRunning);
+
+        // --watch is the documented live mode and the only one when output is
+        // redirected, so it needs the same warning the text UI gets: without it
+        // this path hit the identical #252 failure with nothing said. Printed
+        // when the message changes rather than every frame, because a rolling
+        // log must not be drowned by a repeating banner.
+        Func<string?> notice = SilentBoxes(env, watcher);
+        string? announced = null;
         while (!env.Token.IsCancellationRequested)
         {
             if (monitor.Tick() > 0)
@@ -300,6 +325,13 @@ public static class CliRunner
                 }
             }
 
+            string? quiet = notice();
+            if (quiet is not null && !string.Equals(quiet, announced, StringComparison.Ordinal))
+            {
+                output.WriteLine(quiet);
+            }
+
+            announced = quiet;
             env.Sleep(500);
         }
 
@@ -307,8 +339,10 @@ public static class CliRunner
             tracker.Sessions,
             tracker.UnattributedCount,
             [.. watcher.Unreadable],
-            tracker.UnattributedExperience,
-            tracker.UnattributedInfluence)));
+            new UnattributedValue(
+                tracker.UnattributedExperience,
+                tracker.UnattributedInfluence,
+                tracker.UnattributedTickets))));
         return 0;
     }
 

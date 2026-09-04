@@ -20,6 +20,53 @@ public sealed class LiveWatchTests : IDisposable
     }
 
     [Fact]
+    public void A_file_that_has_stopped_being_written_stops_counting_as_attached()
+    {
+        // The #252 warning compares running clients against boxes that are
+        // actually logging. Counting tailers made that a high-water mark:
+        // nothing detaches a file for going quiet, and a file that stopped
+        // growing still polls successfully with zero lines - so the count never
+        // fell and the warning could not fire for a live character switch,
+        // which is the whole scenario it exists to catch.
+        string path = LogPath();
+        File.WriteAllText(path, "2026-08-31 08:00:00 first" + Environment.NewLine);
+
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30));
+        watcher.Poll();
+        Assert.Equal(1, watcher.AttachedAccounts);
+
+        // The character switched to one with Log Chat off: the client is still
+        // running and the file is still open, it just stops growing.
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow - TimeSpan.FromMinutes(31));
+
+        Assert.Equal(0, watcher.AttachedAccounts);
+
+        // Still tailed, not detached: when logging comes back the next line
+        // arrives from where the tailer left off, so going quiet costs the
+        // count without ever costing data.
+        File.AppendAllText(path, "2026-08-31 08:00:01 second" + Environment.NewLine);
+
+        Assert.NotEmpty(watcher.Poll());
+        Assert.Equal(1, watcher.AttachedAccounts);
+    }
+
+    [Fact]
+    public void Two_files_on_one_account_count_once()
+    {
+        // Daily rollover leaves an account with several logs; the readout
+        // compares BOXES against clients, not files.
+        string today = LogPath(name: "chatlog 2026-08-31.txt");
+        string yesterday = LogPath(name: "chatlog 2026-08-30.txt");
+        File.WriteAllText(today, "2026-08-31 08:00:00 a" + Environment.NewLine);
+        File.WriteAllText(yesterday, "2026-08-30 08:00:00 b" + Environment.NewLine);
+
+        using LogWatcher watcher = new(_root, TimeSpan.FromMinutes(30));
+        watcher.Poll();
+
+        Assert.Equal(1, watcher.AttachedAccounts);
+    }
+
+    [Fact]
     public void Tailer_emits_only_complete_lines_and_holds_the_partial()
     {
         string path = LogPath();
