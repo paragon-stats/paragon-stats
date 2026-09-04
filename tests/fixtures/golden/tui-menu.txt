@@ -1,5 +1,5 @@
  paragon-stats <version>   menu   <read-only>
- <root>   no live sessions   unattributed 1
+ <root>   2 live   unattributed 1
 ------------------------------------------------------------------------------------------------------------------------
   [1]  Live stats     per-character readout, updating while you play
   [2]  Help           what every option does, and the exit codes

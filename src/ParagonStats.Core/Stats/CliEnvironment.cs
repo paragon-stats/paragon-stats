@@ -88,7 +88,16 @@ public sealed class CliEnvironment
         return new CliEnvironment
         {
             Input = Console.In,
-            ClientRunning = static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
+
+            // Pinned on a forced run for the same reason as the window size
+            // below: whether an unrelated process happens to be running must not
+            // decide what a golden frame says. A forced run is replaying a
+            // fixture, so the client it models is present - and without that the
+            // stop authority closes every session, leaving the live readout able
+            // to prove only its empty state. Unforced, this probes for real.
+            ClientRunning = forced
+                ? static () => true
+                : static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
             Token = token,
             Interactive = terminal || forced,
             Ansi = terminal,
