@@ -149,17 +149,44 @@ public sealed class RobustnessTests : IDisposable
             Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
             "2026-08-31 08:00:00 Welcome to City of Heroes, Nova!",
             "2026-08-31 08:05:00 You gain 10 experience.",
-            "2026-08-31 09:00:00 You are flying!",                          // post-gap data line: who? wait
+            "2026-08-31 09:00:00 You are flying!",                          // post-gap: Nova is provably gone
             "2026-08-31 09:00:01 HIT Luna! Your Health power is autohit.",  // proof: Luna is active
             "2026-08-31 09:00:02 You gain 20 experience.");
 
         ReplayResult result = LogReplayer.Replay([log]);
 
+        // The 55-minute silence closed Nova by the rule this tracker applies
+        // everywhere else: past IdleTimeout the character is logged out. So the
+        // 09:00:00 line cannot be Nova's, and the pulse a second later names who
+        // was seated. It is adopted, and the session starts where the play began
+        // rather than where the proof landed (#251).
         Assert.Equal(2, result.Sessions.Count);
-        Assert.Equal(1, result.UnattributedCount); // only the pre-proof data line
+        Assert.Equal(0, result.UnattributedCount);
         Assert.Equal("Luna", result.Sessions[1].Character);
         Assert.Equal(20, result.Sessions[1].Stats.Experience);
-        Assert.Equal(new DateTime(2026, 8, 31, 9, 0, 1), result.Sessions[1].Start);
+        Assert.Equal(new DateTime(2026, 8, 31, 9, 0, 0), result.Sessions[1].Start);
+    }
+
+    [Fact]
+    public void An_idle_gap_inside_the_held_events_fences_off_what_precedes_it()
+    {
+        // The mirror of the case above. Activity, a proven logout, more
+        // activity, then a pulse: only the burst on the pulse's side of the
+        // fence is adopted. The far side stays unattributed, because a silence
+        // past IdleTimeout means whoever earned it had already gone.
+        string log = WriteLog(
+            Path.Join("acct", "Logs", "chatlog 2026-08-31.txt"),
+            "2026-08-31 08:00:00 You gain 11 experience.",
+            "2026-08-31 09:30:00 You gain 22 experience.",
+            "2026-08-31 09:30:01 HIT Luna! Your Health power is autohit.");
+
+        ReplayResult result = LogReplayer.Replay([log]);
+
+        CharacterSession session = Assert.Single(result.Sessions);
+        Assert.Equal("Luna", session.Character);
+        Assert.Equal(22, session.Stats.Experience);
+        Assert.Equal(new DateTime(2026, 8, 31, 9, 30, 0), session.Start);
+        Assert.Equal(1, result.UnattributedCount);
     }
 
     [Fact]

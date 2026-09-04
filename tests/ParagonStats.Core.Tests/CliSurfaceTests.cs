@@ -202,6 +202,125 @@ public sealed partial class CliSurfaceTests : IDisposable
         Assert.DoesNotContain("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_client_with_no_log_being_read_is_called_out_on_the_readout()
+    {
+        // Homecoming stores chat logging per CHARACTER, so a box drops out of
+        // the totals on every character switch. Hit three times in one evening
+        // of testing, each time leaving plausible-looking totals a third short
+        // (#252) - the count was always in hand and always thrown away.
+        string game = GameRoot();
+        Assert.True(new AppConfigStore(ConfigPath).TrySaveGameRoot(game));
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        int frames = 0;
+
+        int exit = CliRunner.Run([], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Interactive = true,
+            ClientCount = static () => 9,
+            ReadKey = static () => null,
+            Token = cancellation.Token,
+
+            // Past the debounce, so the notice has had time to earn itself.
+            Sleep = _ =>
+            {
+                if (++frames >= 130)
+                {
+                    cancellation.Cancel();
+                }
+            },
+        });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("9 clients,", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("enable Log Chat", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_client_that_has_only_just_started_is_not_accused()
+    {
+        // A client at the login or character-select screen genuinely has no log
+        // yet. Accusing it on every launch would teach the operator to ignore
+        // the one message that matters, so a mismatch has to hold before it is
+        // shown.
+        string game = GameRoot();
+        Assert.True(new AppConfigStore(ConfigPath).TrySaveGameRoot(game));
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        int frames = 0;
+
+        int exit = CliRunner.Run([], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Interactive = true,
+            ClientCount = static () => 9,
+            ReadKey = static () => null,
+            Token = cancellation.Token,
+            Sleep = _ =>
+            {
+                if (++frames >= 10)
+                {
+                    cancellation.Cancel();
+                }
+            },
+        });
+
+        Assert.Equal(0, exit);
+        Assert.DoesNotContain("clients,", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Watch_says_it_too_rather_than_only_the_text_ui()
+    {
+        // --watch is the documented live mode and the only one when output is
+        // redirected. Wiring the warning to the text UI alone left this path
+        // hitting the identical #252 failure with nothing said.
+        string game = GameRoot();
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        int frames = 0;
+
+        int exit = CliRunner.Run(["--watch", game], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            ClientCount = static () => 4,
+            Token = cancellation.Token,
+            Sleep = _ =>
+            {
+                if (++frames >= 130)
+                {
+                    cancellation.Cancel();
+                }
+            },
+        });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("4 clients,", output.ToString(), StringComparison.Ordinal);
+
+        // Once, not once per frame: a rolling log must not be drowned by a
+        // banner that repeats twice a second.
+        Assert.Equal(1, Occurrences(output.ToString(), "enable Log Chat"));
+    }
+
+    private static int Occurrences(string text, string needle)
+    {
+        int found = 0;
+        for (int seen = text.IndexOf(needle, StringComparison.Ordinal); seen >= 0; seen = text.IndexOf(needle, seen + 1, StringComparison.Ordinal))
+        {
+            found++;
+        }
+
+        return found;
+    }
+
     private CliEnvironment Environment() => new() { ConfigPath = ConfigPath };
 
     private string GameRoot()

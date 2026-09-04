@@ -34,7 +34,14 @@ public static class LogReplayer
             }
         }
 
-        return new ReplayResult(tracker.Sessions, tracker.UnattributedCount, skipped);
+        return new ReplayResult(
+            tracker.Sessions,
+            tracker.UnattributedCount,
+            skipped,
+            new UnattributedValue(
+                tracker.UnattributedExperience,
+                tracker.UnattributedInfluence,
+                tracker.UnattributedTickets));
     }
 
     private static void ReplayFile(SessionTracker tracker, string file)

@@ -35,12 +35,33 @@ internal static class Chrome
         string count = readout.Snapshot.IsEmpty
             ? "no live sessions"
             : string.Create(CultureInfo.InvariantCulture, $"{readout.Snapshot.Rows.Count} live");
-        frame.Write(
-            1,
-            1,
-            string.Create(
-                CultureInfo.InvariantCulture,
-                $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}"));
+
+        // The value rides with the count it qualifies, not somewhere else on
+        // the line: "unattributed 586" reads as housekeeping, and the whole
+        // point of #251 is that it was a fifth of a farm.
+        string status = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}");
+        if (readout.Snapshot.Value.Any)
+        {
+            // No culture ceremony: UnattributedValue renders itself invariantly
+            // and is not IFormattable, so there is nothing here for a culture
+            // to change.
+            status += $" ({readout.Snapshot.Value})";
+        }
+
+        // The notice sits on the status line rather than taking a row of its
+        // own: a box missing from the totals is not a footnote, and the body
+        // rows are the readout the frame exists for. It leads the line, so the
+        // ROOT is what a narrow frame clips - appending it instead put the one
+        // actionable string on screen past the right edge, where a real
+        // accounts path is long enough to hide it completely.
+        if (!string.IsNullOrEmpty(readout.Notice))
+        {
+            status = readout.Notice + "   " + status;
+        }
+
+        frame.Write(1, 1, status);
         frame.Rule(2);
     }
 

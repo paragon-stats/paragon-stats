@@ -10,3 +10,4 @@ Fixture Scrapper (fixturetwo) 2026-01-01 11:00 +00:01:00
   rates/hr: damage 2550 | defeats 60 | xp 38280 | inf 107160 | activations 0 | tickets 15000
   lines 7: Session 1 | Identity 1 | Damage 1 | Defeat 1 | Reward 2 | Zone 1
 sessions 2 | unattributed lines 1
+  unattributed value: xp 100 | inf 0 | tickets 0 (no character was identified when these arrived)

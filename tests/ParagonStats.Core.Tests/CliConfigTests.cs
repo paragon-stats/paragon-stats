@@ -278,13 +278,51 @@ public sealed class CliConfigTests : IDisposable
 
         Assert.NotNull(env.Input);
         Assert.Equal(cancellation.Token, env.Token);
-        Assert.False(env.ClientRunning()); // the real check: no game client in CI or tests
+
+        // Deliberately NOT asserting the probe's ANSWER. It reports whether a
+        // game client is running on THIS machine, so the old assertion passed in
+        // CI and failed on a developer's box the moment they were playing - the
+        // same environment dependency the goldens were cured of.
+        //
+        // What IS asserted is the invariant between the two probes, which holds
+        // on any machine in any state: they read the same process list, so a
+        // positive count and a negative "is anything running" cannot both be
+        // true. Assert.NotNull said nothing at all here - both are non-nullable
+        // properties with non-null defaults, so the assertion passed even if
+        // the production wiring were deleted outright.
+        Assert.False(env.ClientCount() > 0 && !env.ClientRunning());
 
         // The found-and-dispose path, deterministic on every machine: this
         // test process is always a real running process.
         string self = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
         Assert.True(CliEnvironment.AnyRunning(System.Diagnostics.Process.GetProcessesByName(self)));
         Assert.False(CliEnvironment.AnyRunning([]));
+    }
+
+    [Fact]
+    public void The_client_count_reports_what_is_running_and_says_nothing_when_it_cannot_tell()
+    {
+        // This test process is always a real running process, so the
+        // found-and-dispose path is deterministic on every machine.
+        string self = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+        Assert.True(CliEnvironment.RunningClients(() => System.Diagnostics.Process.GetProcessesByName(self)) > 0);
+        Assert.Equal(0, CliEnvironment.RunningClients(static () => []));
+
+        // Unsure reads as "nothing to say", never as an accusation that a box
+        // is misconfigured: the count only ever drives a message (#252).
+        Assert.Equal(0, CliEnvironment.RunningClients(static () => throw new InvalidOperationException()));
+    }
+
+    [Fact]
+    public void A_forced_run_pins_the_client_count_so_a_golden_never_depends_on_what_else_is_open()
+    {
+        // Same reason the window size is pinned on a forced run: whether an
+        // unrelated process happens to be running must not decide what a golden
+        // frame says. Zero means the notice can never fire while replaying a
+        // fixture.
+        using CancellationTokenSource cancellation = new();
+
+        Assert.Equal(0, CliEnvironment.Production("1", cancellation.Token).ClientCount());
     }
 
     [Fact]

@@ -27,11 +27,35 @@ public sealed class SessionTracker
     /// silence past this means the character is logged out.</summary>
     public static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(30);
 
+    /// <summary>
+    /// Events read before anyone is identified are held, not dropped. A farm
+    /// puts a few hundred lines a minute into this, and the window closes as
+    /// soon as an autohit names the character, so the cap is generous rather
+    /// than tight - it exists to bound a log that never identifies at all.
+    /// </summary>
+    private const int MaxHeldPerAccount = 20_000;
+
     private readonly Dictionary<string, CharacterSession> _current = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Held> _held = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HashSet<string>> _roster = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<CharacterSession> _closed = [];
     private int _opened;
 
     public long UnattributedCount { get; private set; }
+
+    /// <summary>
+    /// What the unattributed lines were WORTH. A count alone cannot distinguish
+    /// nine lines of login chatter from a fifth of a farming session; both read
+    /// as "unattributed". Measured live, 1,864,215 XP went missing behind a
+    /// count (#251).
+    /// </summary>
+    public long UnattributedExperience { get; private set; }
+
+    /// <inheritdoc cref="UnattributedExperience"/>
+    public long UnattributedInfluence { get; private set; }
+
+    /// <inheritdoc cref="UnattributedExperience"/>
+    public long UnattributedTickets { get; private set; }
 
     public IReadOnlyCollection<CharacterSession> Open => _current.Values;
 
@@ -74,6 +98,15 @@ public sealed class SessionTracker
         }
 
         _current.Clear();
+
+        // Held events do not survive a proven exit. Adoption already refuses to
+        // reach across a silence of IdleTimeout; a client that has actually
+        // gone is stronger evidence than silence, and without this fence
+        // whoever is seated after the next launch inherits the previous
+        // character's earnings, in a session backdated into a window when the
+        // client was not running. They stay on the unattributed books, which is
+        // where they already are.
+        _held.Clear();
     }
 
     /// <summary>
@@ -104,12 +137,23 @@ public sealed class SessionTracker
             session = null;
         }
 
+        if (logEvent is SessionStart banner)
+        {
+            // The roster is only ever fed by banners, which no enemy, pet or
+            // other player can produce - that is what makes it a safe filter.
+            Roster(account).Add(banner.CharacterName);
+        }
+
         // A banner always opens a session (a relog of the same character is a
         // new session); a pulse opens one only on mismatch or when none is open.
+        // A candidate is a pulse-shaped lead from a power that is not self-only,
+        // believed only when the name is already on this account's roster (#250).
         string? identified = logEvent switch
         {
             SessionStart start => start.CharacterName,
-            IdentityPulse pulse when session is null || !string.Equals(pulse.CharacterName, session.Character, StringComparison.Ordinal) => pulse.CharacterName,
+            IdentityPulse pulse when Names(session, pulse.CharacterName) => pulse.CharacterName,
+            AutohitCandidate { SelfDirected: true } candidate when Roster(account).Contains(candidate.CharacterName)
+                && Names(session, candidate.CharacterName) => candidate.CharacterName,
             _ => null,
         };
 
@@ -120,12 +164,12 @@ public sealed class SessionTracker
                 _closed.Add(session);
             }
 
-            session = new CharacterSession(account, identified, line.Timestamp, _opened++);
-            _current[account] = session;
+            session = OpenFor(account, identified, line, logEvent);
         }
         else if (session is null)
         {
-            UnattributedCount++;
+            Tally(logEvent, +1);
+            Hold(account, line, logEvent);
             return;
         }
 
@@ -159,5 +203,130 @@ public sealed class SessionTracker
 
         order = StringComparer.Ordinal.Compare(left.Character, right.Character);
         return order != 0 ? order : left.Sequence.CompareTo(right.Sequence);
+    }
+
+    private static bool Names(CharacterSession? session, string character) =>
+        session is null || !string.Equals(character, session.Character, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Opens a session for a newly identified character, adopting the events
+    /// held for that account when - and only when - the trigger justifies it.
+    /// A pulse says "this character is here, and has been", so the lines before
+    /// it are theirs. A banner says "a login begins now", so what came before
+    /// belongs to whoever was playing previously and is left unattributed
+    /// rather than credited to the arrival (#251).
+    /// </summary>
+    private CharacterSession OpenFor(string account, string character, in LogLine line, LogEvent trigger)
+    {
+        // The idle gap is tested HERE as well as on arrival in Hold. Hold only
+        // sees a gap when another held event turns up, so a log that fell
+        // silent and was identified an hour later adopted straight across the
+        // silence: 900 XP earned before a one-hour gap credited to a character
+        // named after it, with the session backdated to match.
+        _held.Remove(account, out Held? waiting);
+        Queue<(LogLine Line, LogEvent Event)>? adopted =
+            trigger is not SessionStart
+            && waiting is { Events.Count: > 0 }
+            && line.Timestamp - waiting.Newest < IdleTimeout
+                ? waiting.Events
+                : null;
+
+        // The session genuinely spans the adopted events, so it starts where
+        // they do. Anchoring it at the trigger would credit those earnings to a
+        // window that did not contain them, and every rate read from that
+        // window would run high.
+        DateTime start = adopted is null ? line.Timestamp : adopted.Peek().Line.Timestamp;
+        CharacterSession session = new(account, character, start, _opened++);
+        _current[account] = session;
+
+        if (adopted is null)
+        {
+            return session;
+        }
+
+        foreach ((LogLine held, LogEvent heldEvent) in adopted)
+        {
+            Tally(heldEvent, -1);
+            session.LastSeen = held.Timestamp;
+            session.Stats.Apply(heldEvent);
+            session.Messages.Add(held.Timestamp, heldEvent.Category, held.Payload);
+        }
+
+        return session;
+    }
+
+    /// <summary>
+    /// Holds an event nobody can yet be shown to have earned.
+    /// Bounded three ways. Oldest-out at the cap, so a log that never identifies
+    /// anyone cannot grow without limit. Flushed at a silence of
+    /// <see cref="IdleTimeout"/>, because that silence IS a logout by the same
+    /// rule this class already closes sessions on - nothing on its far side can
+    /// belong to whoever is named next, and adopting across it would credit one
+    /// character's play to another. And discarded outright by a banner, which
+    /// announces a new login rather than an ongoing one (#251).
+    /// </summary>
+    private void Hold(string account, in LogLine line, LogEvent logEvent)
+    {
+        if (!_held.TryGetValue(account, out Held? waiting))
+        {
+            waiting = new Held();
+            _held[account] = waiting;
+        }
+
+        if (waiting.Events.Count > 0 && line.Timestamp - waiting.Newest >= IdleTimeout)
+        {
+            waiting.Events.Clear();
+        }
+
+        if (waiting.Events.Count == MaxHeldPerAccount)
+        {
+            waiting.Events.Dequeue();
+        }
+
+        waiting.Events.Enqueue((line, logEvent));
+        waiting.Newest = line.Timestamp;
+    }
+
+    /// <summary>Adds or removes an event from the unattributed books, value included.</summary>
+    private void Tally(LogEvent logEvent, int sign)
+    {
+        UnattributedCount += sign;
+        switch (logEvent)
+        {
+            case RewardGained reward:
+                UnattributedExperience += sign * (reward.Experience ?? 0);
+                UnattributedInfluence += sign * (reward.Influence ?? 0);
+                break;
+
+            // An AE farm pays tickets INSTEAD of influence, so valuing only XP
+            // and influence repeats #251 verbatim for the farm economy's own
+            // currency: the fixture alone runs at 15,000 tickets an hour, and
+            // all of it would report as "xp 0 | inf 0".
+            case TicketsEarned tickets:
+                UnattributedTickets += sign * tickets.Count;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private HashSet<string> Roster(string account)
+    {
+        if (!_roster.TryGetValue(account, out HashSet<string>? names))
+        {
+            names = new HashSet<string>(StringComparer.Ordinal);
+            _roster[account] = names;
+        }
+
+        return names;
+    }
+
+    /// <summary>Events waiting on an identity, and when the newest of them arrived.</summary>
+    private sealed class Held
+    {
+        public Queue<(LogLine Line, LogEvent Event)> Events { get; } = new();
+
+        public DateTime Newest { get; set; }
     }
 }

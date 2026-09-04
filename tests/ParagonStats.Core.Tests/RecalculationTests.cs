@@ -117,7 +117,7 @@ public sealed class RecalculationTests : IDisposable
             monitor.Tick();
         }
 
-        AssertSameResult(batch, new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable]));
+        AssertSameResult(batch, new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable], new UnattributedValue(tracker.UnattributedExperience, tracker.UnattributedInfluence, tracker.UnattributedTickets)));
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public sealed class RecalculationTests : IDisposable
 
         AssertSameResult(
             LogReplayer.Replay(files),
-            new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable]));
+            new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable], new UnattributedValue(tracker.UnattributedExperience, tracker.UnattributedInfluence, tracker.UnattributedTickets)));
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public sealed class RecalculationTests : IDisposable
         files.Sort(StringComparer.Ordinal);
         AssertSameResult(
             LogReplayer.Replay(files),
-            new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable]));
+            new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable], new UnattributedValue(tracker.UnattributedExperience, tracker.UnattributedInfluence, tracker.UnattributedTickets)));
     }
 
     [Fact]

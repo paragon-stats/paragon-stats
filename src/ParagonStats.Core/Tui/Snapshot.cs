@@ -16,11 +16,12 @@ namespace ParagonStats.Core.Tui;
 /// </summary>
 public sealed class Snapshot
 {
-    private Snapshot(IReadOnlyList<SessionRow> rows, SessionRow combined, long unattributed)
+    private Snapshot(IReadOnlyList<SessionRow> rows, SessionRow combined, long unattributed, UnattributedValue value)
     {
         Rows = rows;
         Combined = combined;
         Unattributed = unattributed;
+        Value = value;
     }
 
     public IReadOnlyList<SessionRow> Rows { get; }
@@ -36,17 +37,34 @@ public sealed class Snapshot
 
     public long Unattributed { get; }
 
+    /// <summary>
+    /// What those unattributed lines were worth. The count reached the readout
+    /// while the value reached only the batch summary and --watch, so the
+    /// double-click flow - the default, and the one this checkpoint exists for
+    /// - showed "unattributed 586" and never the 1,864,215 XP behind it (#251).
+    /// </summary>
+    public UnattributedValue Value { get; }
+
     public bool IsEmpty => Rows.Count == 0;
 
     /// <summary>Builds a frame's worth of state from the live tracker.</summary>
     public static Snapshot Capture(SessionTracker tracker)
     {
         ArgumentNullException.ThrowIfNull(tracker);
-        return Capture(tracker.Open, tracker.UnattributedCount);
+        return Capture(
+            tracker.Open,
+            tracker.UnattributedCount,
+            new UnattributedValue(
+                tracker.UnattributedExperience,
+                tracker.UnattributedInfluence,
+                tracker.UnattributedTickets));
     }
 
     /// <summary>The seam the tests drive, and what <see cref="Capture(SessionTracker)"/> delegates to.</summary>
-    public static Snapshot Capture(IReadOnlyCollection<CharacterSession> sessions, long unattributed)
+    public static Snapshot Capture(
+        IReadOnlyCollection<CharacterSession> sessions,
+        long unattributed,
+        UnattributedValue value = default)
     {
         ArgumentNullException.ThrowIfNull(sessions);
 
@@ -60,7 +78,7 @@ public sealed class Snapshot
             rows.Add(RowFor(session));
         }
 
-        return new Snapshot(rows, Total(ordered, rows), unattributed);
+        return new Snapshot(rows, Total(ordered, rows), unattributed, value);
     }
 
     private static SessionRow RowFor(CharacterSession session) => new(

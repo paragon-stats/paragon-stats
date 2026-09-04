@@ -47,6 +47,44 @@ public sealed class LogWatcher : IDisposable
     /// <summary>Files that could not be read; surfaced in the final summary like batch skips.</summary>
     public IReadOnlyCollection<string> Unreadable => _unreadable;
 
+    /// <summary>
+    /// How many accounts are CURRENTLY writing log lines - the boxes actually
+    /// feeding the readout. Compared against the number of running clients,
+    /// this is what lets the tool say a box has gone silent instead of quietly
+    /// reporting totals that are short by a third (#252).
+    ///
+    /// Liveness is the file's own write time against the same window that
+    /// decides what to attach to, so attaching and counting answer to one rule.
+    /// Counting tailers instead made this a high-water mark that never fell:
+    /// nothing detaches a file for going quiet - only five consecutive read
+    /// FAILURES do - and a file that has stopped growing still polls
+    /// successfully with zero lines. The warning therefore could not fire for
+    /// the live character switch it exists to catch, only for a box that was
+    /// already silent when the tool started.
+    ///
+    /// A character in the world emits periodic autohit and status lines, the
+    /// same property <see cref="Sessions.SessionTracker.IdleTimeout"/> rests
+    /// on, so a file silent for the whole window is a character who has gone or
+    /// stopped logging rather than one standing still.
+    /// </summary>
+    public int AttachedAccounts
+    {
+        get
+        {
+            DateTime cutoff = DateTime.UtcNow - _attachWindow;
+            HashSet<string> live = new(StringComparer.OrdinalIgnoreCase);
+
+            // A file that has been deleted reads as 1601 rather than throwing,
+            // which is the answer wanted anyway: gone is not live.
+            foreach (string file in _tailers.Keys.Where(file => File.GetLastWriteTimeUtc(file) >= cutoff))
+            {
+                live.Add(ChatLogTree.AccountFor(file));
+            }
+
+            return live.Count;
+        }
+    }
+
     public IReadOnlyList<WatchBatch> Poll()
     {
         if (_pollsSinceDiscovery == 0)

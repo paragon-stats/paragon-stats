@@ -17,7 +17,7 @@ public static class TuiHost
     /// engine and hands back the state for this frame; the host never touches
     /// the tracker itself.
     /// </summary>
-    public static int Run(TextWriter output, Func<Snapshot> advance, string version, string root, CliEnvironment env)
+    public static int Run(TextWriter output, Func<Snapshot> advance, string version, string root, CliEnvironment env, Func<string?>? notice = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         ArgumentNullException.ThrowIfNull(advance);
@@ -26,7 +26,7 @@ public static class TuiHost
         IScreen current = new MenuScreen();
         while (!env.Token.IsCancellationRequested)
         {
-            Readout readout = new(version, root, advance());
+            Readout readout = new(version, root, advance(), notice?.Invoke());
             output.Write(Paint(current, readout, env));
 
             char? pressed = env.ReadKey();
