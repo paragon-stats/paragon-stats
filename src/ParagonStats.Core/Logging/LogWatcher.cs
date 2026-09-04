@@ -73,14 +73,12 @@ public sealed class LogWatcher : IDisposable
         {
             DateTime cutoff = DateTime.UtcNow - _attachWindow;
             HashSet<string> live = new(StringComparer.OrdinalIgnoreCase);
-            foreach (string file in _tailers.Keys)
+
+            // A file that has been deleted reads as 1601 rather than throwing,
+            // which is the answer wanted anyway: gone is not live.
+            foreach (string file in _tailers.Keys.Where(file => File.GetLastWriteTimeUtc(file) >= cutoff))
             {
-                // A file that has been deleted reads as 1601 rather than
-                // throwing, which is the answer wanted anyway: gone is not live.
-                if (File.GetLastWriteTimeUtc(file) >= cutoff)
-                {
-                    live.Add(ChatLogTree.AccountFor(file));
-                }
+                live.Add(ChatLogTree.AccountFor(file));
             }
 
             return live.Count;

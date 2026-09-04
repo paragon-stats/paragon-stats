@@ -44,7 +44,10 @@ internal static class Chrome
             $"{readout.Root}   {count}   unattributed {readout.Snapshot.Unattributed}");
         if (readout.Snapshot.Value.Any)
         {
-            status += string.Create(CultureInfo.InvariantCulture, $" ({readout.Snapshot.Value})");
+            // No culture ceremony: UnattributedValue renders itself invariantly
+            // and is not IFormattable, so there is nothing here for a culture
+            // to change.
+            status += $" ({readout.Snapshot.Value})";
         }
 
         // The notice sits on the status line rather than taking a row of its
