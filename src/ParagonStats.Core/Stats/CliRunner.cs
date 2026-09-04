@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Reflection;
 
 using ParagonStats.Core.Config;
@@ -145,7 +146,25 @@ public static class CliRunner
             },
             Version,
             accountsDir,
-            env);
+            env,
+            () => SilentBox(env, watcher));
+    }
+
+    /// <summary>
+    /// Says so when a game client is running but nothing of its is being read.
+    /// Homecoming stores chat logging per CHARACTER, so a box drops out of the
+    /// totals on every character switch - hit three times in one evening of
+    /// testing, each time leaving plausible-looking totals a third short (#252).
+    /// Silent when the counts agree, and silent when the count is unknown: an
+    /// unsure probe must not accuse a loading screen of being misconfigured.
+    /// </summary>
+    private static string? SilentBox(CliEnvironment env, LogWatcher watcher)
+    {
+        int clients = env.ClientCount();
+        int logging = watcher.AttachedAccounts;
+        return clients > logging
+            ? string.Create(CultureInfo.InvariantCulture, $"!! {clients} clients, {logging} logging - enable Log Chat")
+            : null;
     }
 
     /// <summary>
@@ -284,7 +303,12 @@ public static class CliRunner
             env.Sleep(500);
         }
 
-        output.Write(SummaryFormatter.Format(new ReplayResult(tracker.Sessions, tracker.UnattributedCount, [.. watcher.Unreadable])));
+        output.Write(SummaryFormatter.Format(new ReplayResult(
+            tracker.Sessions,
+            tracker.UnattributedCount,
+            [.. watcher.Unreadable],
+            tracker.UnattributedExperience,
+            tracker.UnattributedInfluence)));
         return 0;
     }
 

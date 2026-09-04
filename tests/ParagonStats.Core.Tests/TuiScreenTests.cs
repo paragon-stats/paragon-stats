@@ -216,6 +216,33 @@ public sealed class TuiScreenTests
         Assert.Throws<ArgumentNullException>(() => new LiveScreen(null!));
     }
 
+    [Fact]
+    public void A_notice_rides_the_status_line_rather_than_taking_a_body_row()
+    {
+        Frame frame = new(120, 12);
+        Readout readout = new("0.5.0", "root", Snapshot.Capture([], 0), "!! 3 clients, 2 logging - enable Log Chat");
+
+        new LiveScreen().Render(frame, readout);
+        string text = frame.ToPlainText();
+
+        // Same line as the root and the counts: a box missing from the totals
+        // is not a footnote, and the body rows are the readout the frame
+        // exists for.
+        string status = text.Split('\n')[1];
+        Assert.Contains("unattributed 0", status, StringComparison.Ordinal);
+        Assert.Contains("3 clients, 2 logging", status, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void No_notice_leaves_the_status_line_exactly_as_it_was()
+    {
+        Frame frame = new(120, 12);
+
+        new LiveScreen().Render(frame, new Readout("0.5.0", "root", Snapshot.Capture([], 0)));
+
+        Assert.DoesNotContain("clients,", frame.ToPlainText(), StringComparison.Ordinal);
+    }
+
     private static string Render(IScreen screen)
     {
         Frame frame = new(120, 12);

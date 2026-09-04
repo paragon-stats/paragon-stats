@@ -47,6 +47,15 @@ public sealed class LogWatcher : IDisposable
     /// <summary>Files that could not be read; surfaced in the final summary like batch skips.</summary>
     public IReadOnlyCollection<string> Unreadable => _unreadable;
 
+    /// <summary>
+    /// How many accounts are actually being tailed - the boxes feeding the
+    /// readout. Compared against the number of running clients, this is what
+    /// lets the tool say a box has gone silent instead of quietly reporting
+    /// totals that are short by a third (#252).
+    /// </summary>
+    public int AttachedAccounts =>
+        _tailers.Keys.Select(ChatLogTree.AccountFor).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+
     public IReadOnlyList<WatchBatch> Poll()
     {
         if (_pollsSinceDiscovery == 0)

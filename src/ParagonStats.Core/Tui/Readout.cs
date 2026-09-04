@@ -9,4 +9,11 @@ namespace ParagonStats.Core.Tui;
 /// <param name="Version">Stamped at build time; shown so a bug report can name it.</param>
 /// <param name="Root">The resolved directory being read, so the header names what is actually in use.</param>
 /// <param name="Snapshot">The sessions as of this frame.</param>
-public sealed record Readout(string Version, string Root, Snapshot Snapshot);
+/// <param name="Notice">
+/// A short warning for the chrome, or null. Its one job today is saying a game
+/// client is running but not writing a log - a box that silently drops out of
+/// the totals, which happens on every character switch because Homecoming
+/// stores chat logging per character (#252). Screens render it; they do not
+/// compute it.
+/// </param>
+public sealed record Readout(string Version, string Root, Snapshot Snapshot, string? Notice = null);

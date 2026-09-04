@@ -278,13 +278,36 @@ public sealed class CliConfigTests : IDisposable
 
         Assert.NotNull(env.Input);
         Assert.Equal(cancellation.Token, env.Token);
-        Assert.False(env.ClientRunning()); // the real check: no game client in CI or tests
+
+        // Deliberately NOT asserting the probe's ANSWER. It reports whether a
+        // game client is running on THIS machine, so the old assertion passed in
+        // CI and failed on a developer's box the moment they were playing - the
+        // same environment dependency the goldens were cured of. The wiring is
+        // what this test owns; AnyRunning below pins the behaviour.
+        Assert.NotNull(env.ClientRunning);
 
         // The found-and-dispose path, deterministic on every machine: this
         // test process is always a real running process.
         string self = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
         Assert.True(CliEnvironment.AnyRunning(System.Diagnostics.Process.GetProcessesByName(self)));
         Assert.False(CliEnvironment.AnyRunning([]));
+    }
+
+    [Fact]
+    public void The_client_count_reports_what_is_running_and_says_nothing_when_it_cannot_tell()
+    {
+        // This test process is always a real running process, so the
+        // found-and-dispose path is deterministic on every machine.
+        string self = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+        Assert.True(CliEnvironment.RunningClients(() => System.Diagnostics.Process.GetProcessesByName(self)) > 0);
+        Assert.Equal(0, CliEnvironment.RunningClients(static () => []));
+
+        // Unsure reads as "nothing to say", never as an accusation that a box
+        // is misconfigured: the count only ever drives a message (#252).
+        Assert.Equal(0, CliEnvironment.RunningClients(static () => throw new InvalidOperationException()));
+
+        using CancellationTokenSource cancellation = new();
+        Assert.NotNull(CliEnvironment.Production(cancellation.Token).ClientCount);
     }
 
     [Fact]

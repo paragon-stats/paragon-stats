@@ -32,6 +32,15 @@ public sealed class CliEnvironment
 
     public Func<bool> ClientRunning { get; init; } = static () => true;
 
+    /// <summary>
+    /// How many game clients are running. The stop authority only needs to know
+    /// whether ANY is, but the count is what lets the readout say a box is
+    /// missing: Homecoming stores chat logging per CHARACTER, so a box silently
+    /// drops out of the totals on every character switch until logging is turned
+    /// back on. The number was always in hand and always thrown away (#252).
+    /// </summary>
+    public Func<int> ClientCount { get; init; } = static () => 0;
+
     // Pacing, not time measurement: TimeProvider (the codebase's clock seam)
     // has no sleep primitive, so the loop delay is its own injectable.
     public Action<int> Sleep { get; init; } = Thread.Sleep;
@@ -98,6 +107,7 @@ public sealed class CliEnvironment
             ClientRunning = forced
                 ? static () => true
                 : static () => ClientProcessRunning(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
+            ClientCount = forced ? static () => 0 : static () => RunningClients(static () => System.Diagnostics.Process.GetProcessesByName("cityofheroes")),
             Token = token,
             Interactive = terminal || forced,
             Ansi = terminal,
@@ -150,6 +160,30 @@ public sealed class CliEnvironment
         return string.IsNullOrWhiteSpace(configured)
             ? Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "paragon-stats", "config.json")
             : configured;
+    }
+
+    /// <summary>
+    /// How many clients are up. Zero on any failure, deliberately: the count
+    /// only ever drives a message, so being unsure must read as "nothing to
+    /// say" rather than as an accusation that a box is misconfigured.
+    /// </summary>
+    internal static int RunningClients(Func<System.Diagnostics.Process[]> query)
+    {
+        try
+        {
+            System.Diagnostics.Process[] processes = query();
+            int running = processes.Length;
+            foreach (System.Diagnostics.Process process in processes)
+            {
+                process.Dispose();
+            }
+
+            return running;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return 0;
+        }
     }
 
     /// <summary>Disposes the handles it was given; testable with any real process list.</summary>

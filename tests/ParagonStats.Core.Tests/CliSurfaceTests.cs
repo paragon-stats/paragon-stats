@@ -202,6 +202,36 @@ public sealed partial class CliSurfaceTests : IDisposable
         Assert.DoesNotContain("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void A_client_with_no_log_being_read_is_called_out_on_the_readout()
+    {
+        // Homecoming stores chat logging per CHARACTER, so a box drops out of
+        // the totals on every character switch. Hit three times in one evening
+        // of testing, each time leaving plausible-looking totals a third short
+        // (#252) - the count was always in hand and always thrown away.
+        string game = GameRoot();
+        Assert.True(new AppConfigStore(ConfigPath).TrySaveGameRoot(game));
+
+        using StringWriter output = new();
+        using StringWriter error = new();
+        using CancellationTokenSource cancellation = new();
+        Queue<char> keys = new(['q']);
+
+        int exit = CliRunner.Run([], output, error, new CliEnvironment
+        {
+            ConfigPath = ConfigPath,
+            Interactive = true,
+            ClientCount = static () => 9,
+            ReadKey = () => keys.Count > 0 ? keys.Dequeue() : null,
+            Token = cancellation.Token,
+            Sleep = _ => cancellation.Cancel(),
+        });
+
+        Assert.Equal(0, exit);
+        Assert.Contains("9 clients,", output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("enable Log Chat", output.ToString(), StringComparison.Ordinal);
+    }
+
     private CliEnvironment Environment() => new() { ConfigPath = ConfigPath };
 
     private string GameRoot()
