@@ -13,15 +13,23 @@ namespace ParagonStats.Core.Parsing;
 /// </summary>
 public static partial class LineParser
 {
+    /// <summary>The universal inherents: every character has them, and they affect nobody else.</summary>
+    private static readonly string[] SelfOnlyPowers = ["Health", "Stamina"];
+
     [GeneratedRegex(@"^(?<pet>[^:\[]{1,60}):  (?=\S)", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex PseudopetPrefix { get; }
 
     [GeneratedRegex(@"^Welcome to City of Heroes, (?<name>.+)!$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Banner { get; }
 
-    // Self-only inherent autohits, both directions: the named character is
-    // always the logged-in one (see IdentityPulse).
-    [GeneratedRegex(@"^(?:HIT (?<name>.+)! Your (?:Health|Stamina) power is autohit|(?<name>.+) HITS you! (?:Health|Stamina) power was autohit)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+    // Any autohit line that names someone, in either direction. The power is
+    // captured so the caller can tell proof from lead: Health and Stamina are
+    // universal inherents affecting only their owner, so those name the player.
+    // Everything else names whoever the power happened to reach - a Judgement
+    // names the enemies it lands on, and a vicinity buff named 778 distinct
+    // people across one account's history. Those become AutohitCandidate and
+    // are only believed if the tracker has seen the name in a banner (#250).
+    [GeneratedRegex(@"^(?:HIT (?<name>.+)! Your (?<power>.+) power is autohit|(?<name>.+) HITS you! (?<power>.+) power was autohit)\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Pulse { get; }
 
     [GeneratedRegex(@"^You activated the (?<power>.+) power\.$", RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
@@ -92,7 +100,10 @@ public static partial class LineParser
         match = Pulse.Match(payload);
         if (match.Success)
         {
-            return new IdentityPulse(match.Groups["name"].Value);
+            string named = match.Groups["name"].Value;
+            return Array.Exists(SelfOnlyPowers, power => string.Equals(power, match.Groups["power"].Value, StringComparison.Ordinal))
+                ? new IdentityPulse(named)
+                : new AutohitCandidate(named);
         }
 
         match = Zone.Match(payload);

@@ -33,6 +33,17 @@ public static class SummaryFormatter
         }
 
         builder.AppendLine(CultureInfo.InvariantCulture, $"sessions {result.Sessions.Count} | unattributed lines {result.UnattributedCount}");
+
+        // Say what those lines were WORTH, but only when they were worth
+        // something. A bare count cannot tell login chatter from a fifth of a
+        // farm; both read as "unattributed", and 1,864,215 XP once hid there.
+        if (result.UnattributedExperience > 0 || result.UnattributedInfluence > 0)
+        {
+            builder.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"  unattributed value: xp {result.UnattributedExperience} | inf {result.UnattributedInfluence} (no character was identified when these arrived)");
+        }
+
         foreach (string skipped in result.SkippedFiles)
         {
             builder.AppendLine(CultureInfo.InvariantCulture, $"skipped (unreadable): {Ascii(skipped)}");
