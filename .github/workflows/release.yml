@@ -76,7 +76,10 @@ jobs:
       - name: publish win-x64 AOT
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          # No pipelines here, so BASH_COMMAND names the culprit exactly, and no
+          # line number for the reason given on the trap below.
+          trap 'printf "::error::the AOT publish failed running: %s\n" "$BASH_COMMAND" >&2' ERR
           dotnet publish src/ParagonStats.Cli -c Release -r win-x64
           cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
       # Releases here are immutable: born complete or not at all. A draft
@@ -86,7 +89,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          # A step that dies without saying why costs more than the bug that
+          # killed it. This one exited 1 in five seconds with no output at all:
+          # the failing command was a silent grep, and anything printed inside
+          # the notes block below lands in the notes file rather than the log.
+          # stderr escapes that redirect, so the trap reports there. -E carries
+          # it into command substitutions, which is where the failure was (#257).
+          #
+          # Two things the trap deliberately does NOT do. It reports no line
+          # number: $LINENO counts lines of the generated step script, not of
+          # this file, so it would name an unrelated YAML line and send the
+          # reader somewhere wrong - worse than saying nothing. And it does not
+          # present BASH_COMMAND as the culprit, because for a pipeline that is
+          # the LAST stage rather than the one that failed: on the very bug this
+          # fixes it names `paste`, which succeeded. PIPESTATUS is what
+          # identifies the guilty stage, and it must be captured first - any
+          # command in the trap body, an assignment included, resets it.
+          report_failure() {
+            printf '::error::creating the release failed. Stage exit codes, left to right: %s\n' "$1" >&2
+            printf '::error::bash names the last stage of that line: %s\n' "$2" >&2
+            printf '::error::the stage that failed is whichever code above is non-zero\n' >&2
+          }
+          trap 'stages=("${PIPESTATUS[@]}"); report_failure "${stages[*]}" "$BASH_COMMAND"' ERR
           # One probe answers both questions (published? with which assets?).
           # Only a real 404 means no published release; any other failure
           # must not fall through to the guards below.
@@ -138,7 +163,13 @@ jobs:
                 fi
                 # Issue references live in the message body (Refs/Closes), so
                 # a reader can get from a release line to the work it answers.
-                issues="$(git show -s --format='%B' "$sha" | grep -oE '#[0-9]+' | sort -u -V | paste -sd' ' -)"
+                # grep exits 1 when it matches nothing, and under pipefail that
+                # took the whole step down: one commit citing no issue - which
+                # Conventional Commits, commitlint and the commit style guide
+                # all permit - failed v0.7.0's publish leg after its tag was
+                # already cut, and silently, because this block redirects
+                # stdout into the notes file (#257).
+                issues="$(git show -s --format='%B' "$sha" | { grep -oE '#[0-9]+' || :; } | sort -u -V | paste -sd' ' -)"
                 printf -- '- %s (%s)%s\n' "${subject#*: }" "$sha" "${issues:+ - ${issues}}" >> section.txt
               done < commits.txt
               if [ -s section.txt ]; then
