@@ -20,6 +20,18 @@
       "args": ["run", "scripts/dev/check-coverage-exclusions.cs"]
     },
     {
+      "name": "build",
+      "group": "pre-push",
+      "command": "dotnet",
+      "args": ["build", "--nologo"]
+    },
+    {
+      "name": "test",
+      "group": "pre-push",
+      "command": "dotnet",
+      "args": ["test", "--no-build"]
+    },
+    {
       "name": "super-linter",
       "group": "pre-push",
       "command": "dotnet",

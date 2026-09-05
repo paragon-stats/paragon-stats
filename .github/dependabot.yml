@@ -18,6 +18,17 @@ updates:
         patterns:
           - "StyleCop.Analyzers"
           - "Meziantou.Analyzer"
+    ignore:
+      # An analyzer must be built against the OLDEST Roslyn it supports, not the
+      # newest: the compiler refuses to load an analyzer referencing a newer
+      # compiler than itself (CS9057), so "upgrade to latest" is backwards for
+      # this one package. A bump to 5.9.0 broke the build on the pinned SDK
+      # while CI stayed green on a newer one (#270). Patches still flow; raise
+      # the major/minor by hand, and only when the minimum supported SDK moves.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
   - package-ecosystem: github-actions
     directory: /
     schedule:

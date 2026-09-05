@@ -19,8 +19,18 @@ dotnet build
 dotnet test
 ```
 
-Husky.Net hooks run `dotnet format` and the commit-message + encoding checks **on commit**,
-and the full Super-Linter image **on push** (needs Docker; skipped without it).
+Husky.Net hooks run `dotnet format` and the commit-message + encoding + coverage-exclusion
+checks **on commit**, and the build, the test suite and the full Super-Linter image **on push**
+(Super-Linter needs Docker; skipped without it).
+
+Build and test sit at push, not commit, so a commit stays fast while a broken build cannot
+reach the remote. They were absent from both until a dependency bump broke the build on the
+pinned SDK and nothing local objected ([#270](https://github.com/paragon-stats/paragon-stats/issues/270)).
+
+`dotnet run scripts/dev/check-mutations.cs` is not wired into either hook — it rebuilds per
+mutation, which is too slow for both. Run it by hand when touching `CliEnvironment`, `TuiHost`,
+or a test that asserts on them; it breaks the production code on purpose and fails if a test
+does not notice.
 
 Super-Linter runs at push rather than at commit for a reason worth knowing: with `RUN_LOCAL`
 it diffs against `origin/main` using *committed* history, so in a pre-commit hook it never
