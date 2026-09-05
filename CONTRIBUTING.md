@@ -40,8 +40,12 @@ the source rather than suppressing.
 - **Signed commits are required.**
 - Use [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`,
   `docs:`, ...) — they drive the version; see [versioning](docs/ROADMAP.md#versioning).
-- All status checks must pass, and every PR clears two reviews (correctness + over-engineering;
-  see the [review workflow](docs/style-guides/review-workflow.md)) before merge.
+- All status checks must pass before merge. Those are machine-enforced and cannot be waived.
+- PRs get two reviews — correctness and over-engineering; see the
+  [review workflow](docs/style-guides/review-workflow.md). While the project has a single
+  maintainer that is a working practice rather than a branch rule: `main` requires no approving
+  reviews, so nothing mechanically stops a PR merging unreviewed. Stated plainly because a
+  documented gate that cannot fail a build reads as covered when it is not.
 
 ## Code quality (SonarQube)
 
@@ -56,6 +60,19 @@ CI scans every push/PR via SonarQube Cloud. Optional local tooling:
   connection with id `paragon-stats`.
 
 ## House rules
+
+**Talk to us first** before building anything that touches CI, the release path, repository
+configuration, the quality gates in `scripts/dev/`, or the collection policy. Open an issue and
+wait for a maintainer's reply; if nobody has answered in a couple of days, nudge it — we may have
+missed it. Before v1 the product code is expected to move fast; the machinery that builds, gates
+and ships it is not, and that machinery is what this rule protects.
+
+Everything else: a pull request is a fine opening move, and an unfinished one is welcome if you
+want early feedback on direction.
+
+An issue you opened yourself is not agreement — what counts is a maintainer's reply. This applies
+to every contributor, and to any tooling acting on their behalf. A pull request against those
+paths that arrives without that conversation will be closed with a pointer to this rule.
 
 **Clean-room.** Do not paste code from the original HeroStats source or the
 `herostats-svn-archive`. That archive is for understanding *concepts* (log formats, which stats
