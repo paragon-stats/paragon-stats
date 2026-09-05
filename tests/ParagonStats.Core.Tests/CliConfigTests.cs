@@ -290,7 +290,15 @@ public sealed class CliConfigTests : IDisposable
         // true. Assert.NotNull said nothing at all here - both are non-nullable
         // properties with non-null defaults, so the assertion passed even if
         // the production wiring were deleted outright.
-        Assert.False(env.ClientCount() > 0 && !env.ClientRunning());
+        //
+        // Both probes are called into locals first, because `&&` short-circuits:
+        // written as one expression, a zero count on a machine with no game
+        // running meant ClientRunning was never invoked at all. The assertion
+        // read as though it exercised both and exercised one - the coverage
+        // data is what exposed it.
+        int count = env.ClientCount();
+        bool running = env.ClientRunning();
+        Assert.False(count > 0 && !running);
 
         // The found-and-dispose path, deterministic on every machine: this
         // test process is always a real running process.
@@ -311,6 +319,59 @@ public sealed class CliConfigTests : IDisposable
         // Unsure reads as "nothing to say", never as an accusation that a box
         // is misconfigured: the count only ever drives a message (#252).
         Assert.Equal(0, CliEnvironment.RunningClients(static () => throw new InvalidOperationException()));
+    }
+
+    [Fact]
+    public void The_production_wiring_is_invoked_not_merely_assigned()
+    {
+        // These are all lambdas. Coverage marks the line covered the instant the
+        // assignment runs, so a body nobody calls is invisible to the gate -
+        // which is how the shipped binary lost --help for four releases. Calling
+        // them is the only thing that proves they do anything.
+        using CancellationTokenSource cancellation = new();
+        CliEnvironment forced = CliEnvironment.Production("1", cancellation.Token);
+        CliEnvironment live = CliEnvironment.Production(forceTui: null, cancellation.Token);
+
+        // The golden frames are 120x12 and TuiHost reserves the last row for the
+        // shell's cursor, so a forced run has to report one row more than it
+        // paints. Pinned here because a golden that follows the CI runner's
+        // window is not a golden.
+        Assert.Equal((120, 13), forced.WindowSize());
+
+        // "Falls back to the 120x12 strip when there is no console to ask" - the
+        // answer varies with the host, so what is asserted is that it always
+        // returns a usable grid rather than a zero or a throw.
+        (int width, int height) = live.WindowSize();
+        Assert.True(width > 0 && height > 0);
+
+        // A forced run replays a fixture, so the client it models is present:
+        // were the stop authority to report otherwise it would close every
+        // session and the golden live frame could never show one open.
+        Assert.True(forced.ClientRunning());
+
+        // Console.KeyAvailable throws outright when stdin is redirected, which
+        // it is under any test host. The guard is the whole point.
+        Assert.Null(Record.Exception(() => live.ReadKey()));
+    }
+
+    [Fact]
+    public void A_forced_run_reads_keys_from_the_pipe_and_treats_end_of_input_as_quit()
+    {
+        // Stated contract: "Keys are then read from stdin, and end-of-input
+        // quits - so piping nothing renders one frame and exits."
+        using CancellationTokenSource cancellation = new();
+        CliEnvironment forced = CliEnvironment.Production("1", cancellation.Token);
+
+        TextReader original = Console.In;
+        try
+        {
+            Console.SetIn(TextReader.Null);
+            Assert.Equal('q', forced.ReadKey());
+        }
+        finally
+        {
+            Console.SetIn(original);
+        }
     }
 
     [Fact]

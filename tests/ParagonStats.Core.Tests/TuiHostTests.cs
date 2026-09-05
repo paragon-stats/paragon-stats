@@ -40,6 +40,23 @@ public sealed class TuiHostTests : IDisposable
     }
 
     [Fact]
+    public void A_key_that_means_nothing_leaves_you_on_the_screen_you_were_on()
+    {
+        // ScreenResult.Stay is documented as "Nothing happened, or the key meant
+        // nothing here. Keep painting this screen." Nothing exercised that,
+        // so the host's do-nothing branch was the one untested outcome of a
+        // keypress.
+        using StringWriter output = new();
+        Queue<char> keys = new(['z', 'q']);
+
+        TuiHost.Run(output, Empty, "0.5.0", "root", Env(keys, ticks: 5));
+
+        // Still the menu, and never the live readout, despite a key being read.
+        Assert.Contains("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("CHARACTER", output.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Pressing_one_switches_to_the_live_readout()
     {
         using StringWriter output = new();
