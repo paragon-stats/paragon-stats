@@ -40,8 +40,12 @@ the source rather than suppressing.
 - **Signed commits are required.**
 - Use [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `chore:`,
   `docs:`, ...) — they drive the version; see [versioning](docs/ROADMAP.md#versioning).
-- All status checks must pass, and every PR clears two reviews (correctness + over-engineering;
-  see the [review workflow](docs/style-guides/review-workflow.md)) before merge.
+- All status checks must pass before merge. Those are machine-enforced and cannot be waived.
+- PRs get two reviews — correctness and over-engineering; see the
+  [review workflow](docs/style-guides/review-workflow.md). While the project has a single
+  maintainer that is a working practice rather than a branch rule: `main` requires no approving
+  reviews, so nothing mechanically stops a PR merging unreviewed. Stated plainly because a
+  documented gate that cannot fail a build reads as covered when it is not.
 
 ## Code quality (SonarQube)
 
