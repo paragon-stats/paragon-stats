@@ -77,7 +77,9 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          trap 'failed=$?; printf "::error::the AOT publish failed at line %s (exit %s) running: %s\n" "$LINENO" "$failed" "$BASH_COMMAND" >&2' ERR
+          # No pipelines here, so BASH_COMMAND names the culprit exactly, and no
+          # line number for the reason given on the trap below.
+          trap 'printf "::error::the AOT publish failed running: %s\n" "$BASH_COMMAND" >&2' ERR
           dotnet publish src/ParagonStats.Cli -c Release -r win-x64
           cp src/ParagonStats.Cli/bin/Release/net10.0/win-x64/publish/ParagonStats.Cli.exe paragon-stats-win-x64.exe
       # Releases here are immutable: born complete or not at all. A draft
@@ -92,11 +94,24 @@ jobs:
           # killed it. This one exited 1 in five seconds with no output at all:
           # the failing command was a silent grep, and anything printed inside
           # the notes block below lands in the notes file rather than the log.
-          # stderr escapes that redirect, so the trap reports there - naming the
-          # line, the exit status and the command that produced it. -E carries
-          # the trap into command substitutions, which is where most of the work
-          # in this step happens (#257).
-          trap 'failed=$?; printf "::error::creating the release failed at line %s (exit %s) running: %s\n" "$LINENO" "$failed" "$BASH_COMMAND" >&2' ERR
+          # stderr escapes that redirect, so the trap reports there. -E carries
+          # it into command substitutions, which is where the failure was (#257).
+          #
+          # Two things the trap deliberately does NOT do. It reports no line
+          # number: $LINENO counts lines of the generated step script, not of
+          # this file, so it would name an unrelated YAML line and send the
+          # reader somewhere wrong - worse than saying nothing. And it does not
+          # present BASH_COMMAND as the culprit, because for a pipeline that is
+          # the LAST stage rather than the one that failed: on the very bug this
+          # fixes it names `paste`, which succeeded. PIPESTATUS is what
+          # identifies the guilty stage, and it must be captured first - any
+          # command in the trap body, an assignment included, resets it.
+          report_failure() {
+            printf '::error::creating the release failed. Stage exit codes, left to right: %s\n' "$1" >&2
+            printf '::error::bash names the last stage of that line: %s\n' "$2" >&2
+            printf '::error::the stage that failed is whichever code above is non-zero\n' >&2
+          }
+          trap 'stages=("${PIPESTATUS[@]}"); report_failure "${stages[*]}" "$BASH_COMMAND"' ERR
           # One probe answers both questions (published? with which assets?).
           # Only a real 404 means no published release; any other failure
           # must not fall through to the guards below.
