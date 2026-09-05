@@ -279,26 +279,45 @@ public sealed class CliConfigTests : IDisposable
         Assert.NotNull(env.Input);
         Assert.Equal(cancellation.Token, env.Token);
 
-        // Deliberately NOT asserting the probe's ANSWER. It reports whether a
-        // game client is running on THIS machine, so the old assertion passed in
-        // CI and failed on a developer's box the moment they were playing - the
-        // same environment dependency the goldens were cured of.
+        // The probes' ANSWERS are not assertable here: they report whether a
+        // game client is running on THIS machine, so an assertion on the answer
+        // passes in CI and fails on a developer's box the moment they play.
         //
-        // What IS asserted is the invariant between the two probes, which holds
-        // on any machine in any state: they read the same process list, so a
-        // positive count and a negative "is anything running" cannot both be
-        // true. Assert.NotNull said nothing at all here - both are non-nullable
-        // properties with non-null defaults, so the assertion passed even if
-        // the production wiring were deleted outright.
+        // Three attempts at asserting something else have now failed, and the
+        // record is worth keeping because each looked correct:
         //
-        // Both probes are called into locals first, because `&&` short-circuits:
-        // written as one expression, a zero count on a machine with no game
-        // running meant ClientRunning was never invoked at all. The assertion
-        // read as though it exercised both and exercised one - the coverage
-        // data is what exposed it.
-        int count = env.ClientCount();
-        bool running = env.ClientRunning();
-        Assert.False(count > 0 && !running);
+        //   Assert.NotNull(env.ClientRunning)          - both are non-nullable
+        //     properties with non-null defaults, so it passed with the wiring
+        //     deleted outright.
+        //   Assert.False(env.ClientCount() > 0 && !env.ClientRunning())
+        //     - `&&` short-circuits, so a zero count meant ClientRunning was
+        //     never invoked at all.
+        //   Assert.False(count > 0 && !running), the same with locals
+        //     - invokes both, but on a machine with no game the count is zero
+        //     and the conjunction is false whatever the other probe says.
+        //     Mutation-testing broke the live probe, then deleted the wiring
+        //     entirely, and this assertion passed both times. Worse, the two
+        //     probes take SEPARATE process snapshots milliseconds apart, so
+        //     "they cannot disagree" was never true: churning the game process
+        //     reproduced count=1 with running=false in 5 runs out of 30.
+        //
+        // So the answers are only invoked, not judged, and the comment no
+        // longer pretends otherwise.
+        //
+        // Stated plainly because the temptation is to imply more: NOTHING here
+        // proves the client-probe wiring is present. Its forced values (true,
+        // 0) are byte-identical to the property defaults, and its unforced
+        // answers depend on whether the maintainer is playing, so no assertion
+        // can separate "wired" from "defaulted" without becoming
+        // machine-dependent. Deleting that wiring outright is caught only by
+        // the compiler, and only incidentally. The behaviour behind it IS
+        // tested, directly and deterministically, by injecting a process list
+        // into RunningClients and ClientProcessRunning below; what is untested
+        // is the one line that connects them, and that is the honest limit.
+        // WindowSize and ReadKey are different - production and default differ
+        // there, so those assertions do prove their wiring.
+        Assert.True(env.ClientCount() >= 0);
+        Assert.Null(Record.Exception(() => env.ClientRunning()));
 
         // The found-and-dispose path, deterministic on every machine: this
         // test process is always a real running process.
@@ -324,10 +343,16 @@ public sealed class CliConfigTests : IDisposable
     [Fact]
     public void The_production_wiring_is_invoked_not_merely_assigned()
     {
-        // These are all lambdas. Coverage marks the line covered the instant the
-        // assignment runs, so a body nobody calls is invisible to the gate -
-        // which is how the shipped binary lost --help for four releases. Calling
-        // them is the only thing that proves they do anything.
+        // These are all lambdas. Coverage marks the line covered the instant
+        // the assignment runs, so a body nobody calls is invisible to the gate.
+        // Calling them is the only thing that proves they do anything.
+        //
+        // Related to, but NOT the same as, the --help that shipped missing for
+        // four releases: that one was invisible because no test ran the
+        // published artifact at all, which is what verify-binary.cs now covers.
+        // Same family - production paths nothing executes - different
+        // mechanism, and worth keeping straight so nobody expects the coverage
+        // gate to catch the artifact-level case.
         using CancellationTokenSource cancellation = new();
         CliEnvironment forced = CliEnvironment.Production("1", cancellation.Token);
         CliEnvironment live = CliEnvironment.Production(forceTui: null, cancellation.Token);
@@ -352,6 +377,18 @@ public sealed class CliConfigTests : IDisposable
         // Console.KeyAvailable throws outright when stdin is redirected, which
         // it is under any test host. The guard is the whole point.
         Assert.Null(Record.Exception(() => live.ReadKey()));
+    }
+
+    [Fact]
+    public void The_default_key_reader_reports_no_keypress_rather_than_blocking()
+    {
+        // The last member of the same defect class this PR exists to close:
+        // `ReadKey`'s default is a lambda whose body nothing invoked, so its
+        // line read covered while the body never ran. The contract is that a
+        // default environment reports "nobody typed" - the readout has to keep
+        // repainting while no key is waiting, so a null here is what lets the
+        // clock advance on screen.
+        Assert.Null(new CliEnvironment().ReadKey());
     }
 
     [Fact]

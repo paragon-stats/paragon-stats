@@ -49,7 +49,24 @@ public sealed class TuiHostTests : IDisposable
         using StringWriter output = new();
         Queue<char> keys = new(['z', 'q']);
 
-        TuiHost.Run(output, Empty, "0.5.0", "root", Env(keys, ticks: 5));
+        // Counting the frames is the half the first version of this test
+        // missed. Asserting only "menu present, live absent" cannot tell
+        // "stayed on the menu, then quit" from "quit immediately on z":
+        // mutating the host to treat Stay as Quit left it green, and left the
+        // whole TuiHost suite green. Stay's contract is "keep painting this
+        // screen", so the painting is the thing to count - two frames, one
+        // before each key.
+        int painted = 0;
+        Snapshot Advance()
+        {
+            painted++;
+            return Snapshot.Capture([], 0);
+        }
+
+        TuiHost.Run(output, Advance, "0.5.0", "root", Env(keys, ticks: 5));
+
+        Assert.Equal(2, painted);
+        Assert.Empty(keys);
 
         // Still the menu, and never the live readout, despite a key being read.
         Assert.Contains("[1]  Live stats", output.ToString(), StringComparison.Ordinal);
