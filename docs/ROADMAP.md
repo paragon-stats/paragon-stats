@@ -55,10 +55,27 @@ So closing any checkpoint means recording, in the milestone's closing comment:
    An unexplained delta blocks the close.
 4. The CLI surface the checkpoint claims to deliver, exercised from the
    artifact - including `--help`, `--version` and the start banner.
+5. Anything the artifact **cannot** demonstrate about itself, named explicitly
+   as unverified while it is unverified, and confirmed by hand before the close.
 
 Steps 2-4 also run on every pull request via the `binary` job in `build.yml`
 (#236), so the pass at milestone close confirms rather than being the only
 line of defence. Tracking: **#239**.
+
+Step 5 exists because steps 1-4 are all reachable by a machine, and that is not
+the same as being true. The quiet-box warning (#252) tells you a client is
+running while nothing of its is being read - and no CI runner can launch
+Homecoming, so nothing automated could ever judge it. It shipped structurally
+incapable of firing for its own case: it counted attached log *files*, and
+nothing stops counting one for going quiet, so the number never moved on a
+character switch. The coverage gate, CodeQL, Sonar, all three `binary` tiers and
+a code review were green throughout. It was found by reading the diff, fixed,
+and only proven by the operator switching characters mid-farm with logging off.
+
+Naming it matters as much as confirming it. That gap was carried as an explicit
+"not verified, and only your machine can close it" in every report until the day
+it was tested - which is why it was still remembered, rather than quietly
+becoming assumed.
 
 ## After 1.0
 
