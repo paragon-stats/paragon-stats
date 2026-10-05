@@ -61,11 +61,13 @@ the source rather than suppressing.
 
 CI scans every push/PR via SonarQube Cloud. Optional local tooling:
 
-- **MCP servers** — `.mcp.json` defines `sonarqube` and `github` (both Docker,
-  digest-pinned). Each reads its token from its own gitignored env file, so neither
-  server sees the other's secret. Populate them once, values unquoted (`--env-file` keeps quotes literally):
-  `echo "SONARQUBE_TOKEN=$(op read 'op://Homelab/SonarQube Cloud claude-code Token/credential')" > .env.sonarqube`
-  `echo "GITHUB_PERSONAL_ACCESS_TOKEN=$(op read 'op://Homelab/paragon-stats-mcp/credential')" > .env.github`
+- **MCP servers** — two are useful here and both run as pinned Docker images:
+  [`mcp/sonarqube`](https://hub.docker.com/r/mcp/sonarqube) and
+  [`ghcr.io/github/github-mcp-server`](https://github.com/github/github-mcp-server).
+  Wire them in whichever client you use; the config is yours and stays out of git
+  (see [AI assistance](docs/style-guides/ai-assistance-policy.md)). Give each server its
+  own env file so neither sees the other's token, and keep values unquoted —
+  `--env-file` treats quotes literally.
 - **SonarLint connected mode** — `.vscode/settings.json` binds the project; create an IDE
   connection with id `paragon-stats`.
 
