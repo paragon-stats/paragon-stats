@@ -3,19 +3,29 @@ name: pr-summary
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  # The body is generated from the linked issue's Objective and Acceptance
+  # Criteria, so editing an issue leaves every open PR that links it stale until
+  # the next push. This refreshes one without an empty commit.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to refresh
+        required: true
+        type: string
 
 permissions:
   contents: read
   pull-requests: write
 
 concurrency:
-  group: pr-summary-${{ github.event.pull_request.number }}
+  group: pr-summary-${{ github.event.pull_request.number || inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   summary:
     # Same-repo PRs only; fork PRs get a read-only token and can't edit the body.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # A dispatch needs write access to the repository, so it is already gated.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     # CI glue only (no product build), so it runs on Linux regardless of target RID.
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -29,9 +39,18 @@ jobs:
         with:
           global-json-file: global.json
       # Event data crosses into the shell via env, never ${{ }} interpolation
-      # inside run: - a branch name is attacker-controlled text.
-      - run: dotnet run tools/pr-summary.cs -- --pr "$PR_NUMBER"
+      # inside run: - a branch name is attacker-controlled text. The dispatch
+      # input is checked here because the tool takes --pr as an opaque string and
+      # passes it to gh; a non-numeric value belongs in an error, not an API call.
+      - run: |
+          case "$PR_NUMBER" in
+            '' | *[!0-9]*)
+              echo "::error::PR number must be a positive integer, got '$PR_NUMBER'"
+              exit 1
+              ;;
+          esac
+          dotnet run tools/pr-summary.cs -- --pr "$PR_NUMBER"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
