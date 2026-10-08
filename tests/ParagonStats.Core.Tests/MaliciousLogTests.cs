@@ -153,10 +153,9 @@ public sealed class MaliciousLogTests : IDisposable
         string path = Path.Join(_root, "chatlog 2026-09-03.txt");
         File.WriteAllText(path, "2026-09-01 12:00:00 You gain 10 experience.\n");
 
-        // Scoped rather than a using declaration on purpose: the delete below has
-        // to run AFTER disposal, and a declaration would hold the handle to the end
-        // of the method. The scope also means a throwing Poll still releases it
-        // (cs/dispose-not-called-on-throw).
+        // Scoped, not a using declaration: the delete runs after disposal, and a
+        // declaration holds the handle to the end of the method. The scope also
+        // releases it when Poll throws (cs/dispose-not-called-on-throw).
         using (ChatLogTailer tailer = new(path))
         {
             tailer.Poll();

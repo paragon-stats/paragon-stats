@@ -20,8 +20,8 @@ settings change, so #77's pin auto-update should also catch a tag that moves.
 
 ## The plugins
 
-The four plugins and their `ref` pins are the single source of truth in
-[`../.claude/settings.json`](../.claude/settings.json):
+The four plugins and their `ref` pins were the single source of truth in
+`.claude/settings.json`, which the repository no longer tracks:
 
 | Plugin | Marketplace repo | Role |
 | --- | --- | --- |

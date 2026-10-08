@@ -25,6 +25,10 @@ Use whatever AI tooling you like locally. Keep its config out of git — add it 
 `.git/info/exclude` so it's never staged. Your local `CLAUDE.md` or `.cursorrules`
 is yours; it just doesn't get committed.
 
+`.claude/` and `.mcp.json` are named in `.gitignore` rather than left to each
+contributor's exclude file. Both were tracked once, so the entries are a tripwire:
+re-adding them takes a deliberate `git add -f`, not a stray `git add .`.
+
 ## One bar for all code
 
 Every change — AI-assisted or hand-written — clears the same review and CI gate

@@ -3,9 +3,9 @@ name: pr-summary
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-  # The body is generated from the linked issue's Objective and Acceptance
-  # Criteria, so editing an issue leaves every open PR that links it stale until
-  # the next push. This refreshes one without an empty commit.
+  # A generated body goes stale when its linked issue changes, because the
+  # workflow otherwise runs only on pull_request events. Dispatch refreshes one
+  # pull request without an empty commit.
   workflow_dispatch:
     inputs:
       pr:
@@ -38,13 +38,14 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68  # v6.0.0
         with:
           global-json-file: global.json
-      # Event data crosses into the shell via env, never ${{ }} interpolation
-      # inside run: - a branch name is attacker-controlled text. The dispatch
-      # input is checked here because the tool takes --pr as an opaque string and
-      # passes it to gh; a non-numeric value belongs in an error, not an API call.
+      # Event data reaches the shell through env, never `${{ }}` inside `run`,
+      # because a branch name is attacker-controlled text. Validate the dispatch
+      # input here as well: `tools/pr-summary.cs` takes `--pr` as an opaque
+      # string and hands it to `gh`, so a bad value belongs in an error rather
+      # than an API call.
       - run: |
           case "$PR_NUMBER" in
-            '' | *[!0-9]*)
+            '' | *[!0-9]* | 0*)
               echo "::error::PR number must be a positive integer, got '$PR_NUMBER'"
               exit 1
               ;;

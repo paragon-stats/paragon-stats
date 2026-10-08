@@ -26,6 +26,13 @@ indent_size = 2
 [*.json]
 indent_size = 2
 
+# Dependabot's NuGet updater rewrites this manifest without a final newline on
+# every tool bump: the producer dictates that byte, not repo style. Relax the
+# one property here rather than exclude the file from a linter, which also drops
+# its line endings, trailing whitespace, and indentation.
+[.config/dotnet-tools.json]
+insert_final_newline = unset
+
 # Make requires a tab to introduce a recipe line; the [*] space rule would
 # otherwise flag correct syntax (the only findings in a full-tree lint).
 [Makefile]
