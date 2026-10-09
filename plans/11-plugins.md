@@ -1,5 +1,12 @@
 # 11 — Pinned dev plugins (wiring)
 
+> **Superseded.** The committed `.claude/settings.json` this plan wires was untracked
+> under [AI assistance](../docs/style-guides/ai-assistance-policy.md): committing one
+> maintainer's plugin set imposes it on everyone else, which is the thing that policy
+> exists to prevent. Plugins are now each contributor's own, installed from the
+> marketplace repos named below. The pin auto-update that depended on the committed
+> file (#77) went with it. Kept as the historical record of how the pinning worked.
+
 ## Goal
 
 Control AI-assist sprawl with **pinned, auditable** Claude Code plugins, wired into this
@@ -13,8 +20,8 @@ settings change, so #77's pin auto-update should also catch a tag that moves.
 
 ## The plugins
 
-The four plugins and their `ref` pins are the single source of truth in
-[`../.claude/settings.json`](../.claude/settings.json):
+The four plugins and their `ref` pins were the single source of truth in
+`.claude/settings.json`, which the repository no longer tracks:
 
 | Plugin | Marketplace repo | Role |
 | --- | --- | --- |

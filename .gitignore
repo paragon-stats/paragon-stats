@@ -495,3 +495,8 @@ $RECYCLE.BIN/
 
 # Scratch/working files (never committed)
 tmp/
+
+# Local AI/harness configuration — bring your own tooling, keep it out of git
+# (docs/style-guides/ai-assistance-policy.md)
+.claude/
+.mcp.json

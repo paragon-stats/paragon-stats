@@ -83,8 +83,8 @@ becoming assumed.
   [Overlay](https://github.com/paragon-stats/paragon-stats/milestone/13).
 - **Backlog** — operator-pull only; nothing in it blocks a checkpoint.
 
-Off the critical path, any time: #77 (plugin pin freshness), #203 (workflow
-plugin), #198 (closes when the sibling repo finishes its repoint).
+Off the critical path, any time: #203 (workflow plugin), #198 (closes when the
+sibling repo finishes its repoint).
 
 ## Feature map
 
