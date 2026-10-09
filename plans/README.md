@@ -35,7 +35,8 @@ Grouped into the (now closed) bootstrap milestones.
 
 ### Dev plugins
 
-- [`11-plugins.md`](11-plugins.md) — Pinned dev plugins, wired into `.claude/settings.json`
+- [`11-plugins.md`](11-plugins.md) — Pinned dev plugins (superseded - the harness config is
+  untracked; plugins are each contributor's own)
 
 ## Done
 

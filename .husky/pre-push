@@ -2,6 +2,19 @@
 # shellcheck source=/dev/null  # husky.sh is generated in .husky/_/ at install time
 . "$(dirname "$0")/_/husky.sh"
 
+# Git lists the refs it would update on stdin, and sends nothing when there is
+# nothing to push. Read the list once and stop when it is empty: an up-to-date
+# push otherwise pays for a build, a test run, and a linter container to learn
+# that the remote already matches. The homelab repositories' composed pre-push
+# reads it the same way.
+#
+# Nothing else is parsed. Skipping a branch deletion as well would save almost
+# nothing, because GitHub deletes merged branches and the ruleset forbids
+# deleting `main`, and each case parsed adds another way for the gate to skip
+# when it should run.
+REFS="$(cat)"
+[ -n "$REFS" ] || exit 0
+
 # Super-Linter runs here rather than pre-commit so it lints the same thing CI
 # does. With RUN_LOCAL it diffs against origin/main using committed history, so
 # in pre-commit it never saw the staged files - it linted the previous commit
