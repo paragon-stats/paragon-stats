@@ -27,6 +27,12 @@ Build and test sit at push, not commit, so a commit stays fast while a broken bu
 reach the remote. They were absent from both until a dependency bump broke the build on the
 pinned SDK and nothing local objected ([#270](https://github.com/paragon-stats/paragon-stats/issues/270)).
 
+The .NET 10 SDK covers the coverage path too: `dotnet-coverage` targets `net8.0` but rolls
+forward. A host that also has .NET 8 runs collection on it instead, accepted until runner images
+drop it even though .NET 8 support ends 2026-11-10 — `scripts/dev/check-coverage-runtime.cs`
+reports when that is the case, and
+[#291](https://github.com/paragon-stats/paragon-stats/issues/291) holds the alternative.
+
 `dotnet run scripts/dev/check-mutations.cs` is not wired into either hook — it rebuilds per
 mutation, which is too slow for both. Run it by hand when touching `CliEnvironment`, `TuiHost`,
 or a test that asserts on them; it breaks the production code on purpose and fails if a test
