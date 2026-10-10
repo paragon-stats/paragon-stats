@@ -46,6 +46,14 @@ jobs:
         run: dotnet run scripts/dev/check-encoding.cs
       - run: dotnet format --verify-no-changes --severity error --no-restore
       - run: dotnet build --no-restore
+      # A notice, not a gate: the collector targets net8.0 and prefers an 8.x
+      # runtime when the host has one, which outlives .NET 8's support. Both this
+      # image and the maintainer's box carry 8 today, so failing here would
+      # redden every pull request over something no change in this repository
+      # can clear. Runs once per workflow because it reports on the host, not
+      # the job. Tracked in #291.
+      - name: Check the runtime the collector will resolve
+        run: dotnet run scripts/dev/check-coverage-runtime.cs
       # Collect coverage as Visual Studio XML — the format SonarQube Cloud consumes
       # via sonar.cs.vscoveragexml.reportsPaths (#23). dotnet-coverage supports the
       # Microsoft.Testing.Platform runner; coverlet.collector / OpenCover do not.
