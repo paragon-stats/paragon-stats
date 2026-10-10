@@ -3,28 +3,20 @@
 //
 //   dotnet run scripts/dev/check-coverage-runtime.cs
 //
-// Why this exists: dotnet-coverage ships tools/net8.0 only, in every version
-// including the newest, and its runtimeconfig asks for framework 8.0.0 with
-// rollForward Major. So it runs happily on .NET 10 when 8 is absent, and
-// prefers 8 as the exact match when 8 is present. .NET 8 leaves support on
-// 2026-11-10, after which a host that still carries it quietly keeps collecting
-// coverage on an unsupported runtime.
+// Why this exists: a tool's own runtimeconfig decides which runtime it gets,
+// not this repository. dotnet-coverage asks for an older framework with
+// rollForward Major, so it rolls forward where that major is absent and takes
+// it as the exact match where it is present. A host carrying the older major
+// keeps collecting coverage on it once it leaves support, and says nothing.
 //
-// The earlier reading of this - that the collector requires a runtime nothing
-// declares - was wrong, and the wrong version would have had CI install .NET 8
-// deliberately. The tool's own roll-forward policy is what governs, so the
-// honest statement is about preference, not need.
+// Both halves of the comparison are read rather than written down: the
+// framework the collector asks for comes from the package restored by
+// .config/dotnet-tools.json, and the major this repository targets comes from
+// global.json. When either pin moves, the expectation moves with it.
 //
-// It derives the expectation rather than carrying a date table: the SDK major
-// in global.json is what this repository targets, so a collector resolving an
-// older major is the thing worth saying out loud. When the SDK pin moves, the
-// expectation moves with it.
-//
-// WARNS, NEVER FAILS. Today's runner image and the maintainer's box both carry
-// .NET 8, so failing would redden every pull request to report a condition
-// nobody can clear from inside this repository. Making it a gate is a follow-up
-// for when the hosts stop shipping 8 - and until then this is a notice, which
-// is all it claims to be.
+// WARNS, NEVER FAILS. The runner image carries the older runtime, so failing
+// would redden every pull request over a condition no change in this
+// repository can clear. CONTRIBUTING.md records the acceptance.
 // CI tooling, not shipped product code: exempt from the solution-wide analyzers.
 #:property TreatWarningsAsErrors=false
 #:property EnforceCodeStyleInBuild=false
@@ -107,7 +99,7 @@ if (wanted >= targeted)
 Console.WriteLine(
     $"::warning::The coverage collector will run on .NET {wanted}.x because this host has it, " +
     $"while the repository targets {targeted}.x. Remove the {wanted}.x runtime, or set " +
-    "DOTNET_ROLL_FORWARD=LatestMajor for the collector, to move collection onto a supported runtime. See #291.");
+    "DOTNET_ROLL_FORWARD=LatestMajor for the collector, to move collection onto a supported runtime.");
 Console.WriteLine($"[!!] collector prefers .NET {wanted}.x over the targeted {targeted}.x (notice only; this check never fails)");
 return 0;
 
