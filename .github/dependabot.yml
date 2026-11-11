@@ -1,9 +1,17 @@
+# Dependabot, set up to behave like the Renovate runner the homelab repositories use:
+# a daily check at 06:00 America/Los_Angeles (the runner's "renovate daily" schedule),
+# one pull request for all minor and patch updates of an ecosystem, one pull request
+# per major update, no practical cap on open pull requests, and `type(deps)` commit
+# titles. `daily` runs Monday to Friday only.
 version: 2
 updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 50
     # zizmor dependabot-cooldown: never take a day-0 release; a week of soak
     # time is cheap insurance against a compromised upstream publish.
     cooldown:
@@ -13,11 +21,24 @@ updates:
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
+      include: scope
     groups:
       analyzers:
         patterns:
           - "StyleCop.Analyzers"
           - "Meziantou.Analyzer"
+        update-types:
+          - "minor"
+          - "patch"
+      nuget-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "StyleCop.Analyzers"
+          - "Meziantou.Analyzer"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # An analyzer must be built against the OLDEST Roslyn it supports, not the
       # newest: the compiler refuses to load an analyzer referencing a newer
@@ -32,12 +53,19 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
+      time: "06:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 50
     cooldown:
       default-days: 7
     commit-message:
       prefix: "chore"
+      include: scope
     groups:
       github-actions:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
