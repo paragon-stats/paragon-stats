@@ -39,6 +39,18 @@
           { "context": "branch-name", "integration_id": 15368 }
         ]
       }
+    },
+    {
+      "type": "code_scanning",
+      "parameters": {
+        "code_scanning_tools": [
+          {
+            "tool": "CodeQL",
+            "alerts_threshold": "all",
+            "security_alerts_threshold": "all"
+          }
+        ]
+      }
     }
   ],
   "bypass_actors": []
