@@ -52,16 +52,27 @@ internal static class DevScripts
             info.Environment[name] = value;
         }
 
+        CancellationToken cancellation = TestContext.Current.CancellationToken;
         using Process process = Process.Start(info) ?? throw new InvalidOperationException($"could not start {program}");
-        Task<string> output = process.StandardOutput.ReadToEndAsync();
-        Task<string> error = process.StandardError.ReadToEndAsync();
+        Task<string> output = process.StandardOutput.ReadToEndAsync(cancellation);
+        Task<string> error = process.StandardError.ReadToEndAsync(cancellation);
         if (input is not null)
         {
             process.StandardInput.Write(input);
             process.StandardInput.Close();
         }
 
-        process.WaitForExit();
+        try
+        {
+            process.WaitForExitAsync(cancellation).GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException)
+        {
+            // A cancelled test must not leave the hook, script or git it started running.
+            process.Kill(entireProcessTree: true);
+            throw;
+        }
+
         return (process.ExitCode, output.GetAwaiter().GetResult(), error.GetAwaiter().GetResult());
     }
 

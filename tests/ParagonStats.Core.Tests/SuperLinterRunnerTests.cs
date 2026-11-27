@@ -7,9 +7,15 @@ namespace ParagonStats.Core.Tests;
 /// and it lints from a linked worktree as well as from a plain checkout.
 /// </summary>
 [Collection(DevScriptBuilds.Name)]
-public sealed class SuperLinterRunnerTests : IDisposable
+public sealed partial class SuperLinterRunnerTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("ps-runner-").FullName;
+
+    [GeneratedRegex(@"ghcr\.io/super-linter/super-linter:(?<version>v\d+\.\d+\.\d+)@sha256:[0-9a-f]{64}", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex RunnerImage { get; }
+
+    [GeneratedRegex(@"uses: super-linter/super-linter@[0-9a-f]{40}\s+#\s*(?<version>v\d+\.\d+\.\d+)", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex ActionPin { get; }
 
     public void Dispose() => DevScripts.Delete(_root);
 
@@ -19,8 +25,8 @@ public sealed class SuperLinterRunnerTests : IDisposable
         string runner = File.ReadAllText(Path.Join(DevScripts.RepositoryRoot, "scripts", "dev", "run-super-linter.cs"));
         string workflow = File.ReadAllText(Path.Join(DevScripts.RepositoryRoot, ".github", "workflows", "super-linter.yml"));
 
-        Match image = Regex.Match(runner, @"ghcr\.io/super-linter/super-linter:(?<version>v\d+\.\d+\.\d+)@sha256:[0-9a-f]{64}", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
-        Match action = Regex.Match(workflow, @"uses: super-linter/super-linter@[0-9a-f]{40}\s+#\s*(?<version>v\d+\.\d+\.\d+)", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
+        Match image = RunnerImage.Match(runner);
+        Match action = ActionPin.Match(workflow);
 
         Assert.True(image.Success, "no digest-pinned image in the runner");
         Assert.True(action.Success, "no commit-pinned action with a version comment in the workflow");
