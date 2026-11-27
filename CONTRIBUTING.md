@@ -26,8 +26,9 @@ checks **on commit**, and the build, the test suite and the full Super-Linter im
 Husky stops at the first failing check, so each group runs its quickest check first, and both
 hooks pass `--quiet`: a passing run prints only the checks' own lines. Run the group by hand
 without it (`dotnet husky run --group pre-commit`) to see Husky's banner and each check's time.
-The commit checks read the staged content, not the working tree. A push that only deletes
-remote branches skips the push checks. Super-Linter logs at `NOTICE`, set in
+At commit, the encoding and coverage-exclusion checks read the staged content; `dotnet format`
+reads the working tree. A push that only deletes remote branches skips the push checks, and
+the local Super-Linter runs from a linked worktree too. Super-Linter logs at `NOTICE`, set in
 `.github/super-linter.env`: one line per passing linter, full output for a failing one, and a
 yamllint warning fails the YAML check. Set `SUPER_LINTER_LOG_LEVEL=INFO` for a full local log;
 in CI, re-run the job with debug logging.

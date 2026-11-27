@@ -1,6 +1,6 @@
 // check-coverage-exclusions.cs - keep the two coverage exclusion lists in step.
 //
-//   dotnet run scripts/dev/check-coverage-exclusions.cs               (CI: working tree)
+//   dotnet run scripts/dev/check-coverage-exclusions.cs               (by hand: working tree)
 //   dotnet run scripts/dev/check-coverage-exclusions.cs -- --staged   (commit hook: staged content)
 //
 // Why this exists: coverage is excluded in two places, in two vocabularies, and
