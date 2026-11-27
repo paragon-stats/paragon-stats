@@ -1,6 +1,7 @@
 // check-coverage-exclusions.cs - keep the two coverage exclusion lists in step.
 //
-//   dotnet run scripts/dev/check-coverage-exclusions.cs
+//   dotnet run scripts/dev/check-coverage-exclusions.cs               (by hand: working tree)
+//   dotnet run scripts/dev/check-coverage-exclusions.cs -- --staged   (commit hook: staged content)
 //
 // Why this exists: coverage is excluded in two places, in two vocabularies, and
 // nothing kept them in step.
@@ -44,9 +45,15 @@ Dictionary<string, string> sonarOnly = new(StringComparer.Ordinal)
 };
 
 List<string> problems = [];
+bool staged = args.Contains("--staged");
 
 string Read(string path)
 {
+    if (staged)
+    {
+        return ReadStaged(path, problems);
+    }
+
     if (!File.Exists(path))
     {
         problems.Add($"{path}: not found");
@@ -149,3 +156,37 @@ if (problems.Count > 0)
 
 Console.WriteLine($"[OK] coverage exclusions agree ({filtered.Length} class filter(s), {excluded.Length} Sonar glob(s)).");
 return 0;
+
+// The file as staged; git reads ":<path>" from the top of the tree whatever the folder.
+// Arguments as a list, so the path stays one argument.
+static string ReadStaged(string path, List<string> problems)
+{
+    System.Diagnostics.ProcessStartInfo info = new("git")
+    {
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false,
+        StandardOutputEncoding = new System.Text.UTF8Encoding(false),
+    };
+    info.ArgumentList.Add("show");
+    info.ArgumentList.Add($":{path.Replace('\\', '/')}");
+    try
+    {
+        using System.Diagnostics.Process git = System.Diagnostics.Process.Start(info)!;
+        Task<string> error = git.StandardError.ReadToEndAsync();
+        string text = git.StandardOutput.ReadToEnd();
+        git.WaitForExit();
+        if (git.ExitCode == 0)
+        {
+            return text;
+        }
+
+        problems.Add($"{path}: not in the index, or git cannot read it ({error.GetAwaiter().GetResult().Trim()})");
+    }
+    catch (System.ComponentModel.Win32Exception exception)
+    {
+        problems.Add($"{path}: git could not start ({exception.Message})");
+    }
+
+    return string.Empty;
+}
