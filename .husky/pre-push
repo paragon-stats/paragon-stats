@@ -11,14 +11,17 @@ REFS="$(cat)"
 [ -n "$REFS" ] || exit 0
 
 # Each line is "<local ref> <local id> <remote ref> <remote id>"; a deletion's
-# local id is all zeros and sends no commits to check. Skip only when every line
-# is such a deletion. Any other line runs the group, one this cannot read
-# included: a needless run costs minutes, a skipped one an unchecked push. The
-# loop reads a here-document, not a pipe, so its flag survives.
+# local id is all zeros, 40 for SHA-1 and 64 for SHA-256, and sends no commits
+# to check. Skip only when every line is such a deletion. Any other line runs the
+# group, one this cannot read included: a needless run costs minutes, a skipped
+# one an unchecked push. The loop reads a here-document, not a pipe, so its flag
+# survives.
 DELETES_ONLY=1
 while read -r _ LOCAL_ID _ REMOTE_ID EXTRA; do
   case "$LOCAL_ID" in
-  "" | *[!0]*) DELETES_ONLY= ;;
+  0000000000000000000000000000000000000000) ;;
+  0000000000000000000000000000000000000000000000000000000000000000) ;;
+  *) DELETES_ONLY= ;;
   esac
   if [ -z "$REMOTE_ID" ] || [ -n "$EXTRA" ]; then
     DELETES_ONLY=
