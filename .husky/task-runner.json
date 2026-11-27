@@ -2,12 +2,6 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
-      "name": "dotnet-format",
-      "group": "pre-commit",
-      "command": "dotnet",
-      "args": ["format", "--verify-no-changes", "--severity", "error"]
-    },
-    {
       "name": "check-encoding",
       "group": "pre-commit",
       "command": "dotnet",
@@ -18,6 +12,12 @@
       "group": "pre-commit",
       "command": "dotnet",
       "args": ["run", "scripts/dev/check-coverage-exclusions.cs"]
+    },
+    {
+      "name": "dotnet-format",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": ["format", "--verify-no-changes", "--severity", "error"]
     },
     {
       "name": "build",

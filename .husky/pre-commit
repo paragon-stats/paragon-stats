@@ -2,22 +2,8 @@
 # shellcheck source=/dev/null  # husky.sh is generated in .husky/_/ at install time
 . "$(dirname "$0")/_/husky.sh"
 
-## husky task runner examples -------------------
-## Note : for local installation use 'dotnet' prefix. e.g. 'dotnet husky'
-
-## run all tasks
-#husky run
-
-### run all tasks with group: 'group-name'
-#husky run --group group-name
-
-## run task with name: 'task-name'
-#husky run --name task-name
-
-## pass hook arguments to task
-#husky run --args "$1" "$2"
-
-## or put your custom commands -------------------
-#echo 'Husky.Net is awesome!'
-
-dotnet husky run --group pre-commit
+# Husky stops at the first failing check, so task-runner.json lists the quickest
+# first. --quiet drops Husky's banner and separator lines; run the same line
+# without it to see them. The hook restores no tools; the bootstrap script does
+# that once per clone (CONTRIBUTING.md).
+dotnet husky run --quiet --group pre-commit

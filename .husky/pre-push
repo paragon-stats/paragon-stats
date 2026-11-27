@@ -20,4 +20,6 @@ REFS="$(cat)"
 # in pre-commit it never saw the staged files - it linted the previous commit
 # and reported a pass on code nobody had checked. At push time HEAD contains the
 # commits, and the range matches the CI workflow's exactly.
-dotnet husky run --group pre-push
+# --quiet drops Husky's banner and separator lines; run the same line without it
+# to see them.
+dotnet husky run --quiet --group pre-push
