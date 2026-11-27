@@ -33,6 +33,9 @@ public sealed class StagedCheckTests : IDisposable
         DevScripts.Git(repository, "add", "scripts/tool.sh");
         DevScripts.Write(repository, "scripts/tool.sh", "echo cafe\n");
 
+        // diff.relative would make git list paths from the folder it runs in.
+        DevScripts.Git(repository, "config", "diff.relative", "true");
+
         (int topExit, string topOutput, string topError) = DevScripts.RunScript("check-encoding.cs", repository, environment: null, "--staged");
         (int subExit, _, string subError) = DevScripts.RunScript("check-encoding.cs", Path.Join(repository, "scripts"), environment: null, "--staged");
         (int treeExit, string treeOutput, string treeError) = DevScripts.RunScript("check-encoding.cs", repository, environment: null);
@@ -83,15 +86,67 @@ public sealed class StagedCheckTests : IDisposable
     }
 
     [Theory]
-    [InlineData("check-encoding.cs")]
-    [InlineData("check-coverage-exclusions.cs")]
-    public void A_staged_check_fails_when_git_cannot_read_the_index(string script)
+    [InlineData("check-encoding.cs", "the staged file list is unknown")]
+    [InlineData("check-coverage-exclusions.cs", "not in the index")]
+    public void A_staged_check_fails_when_git_cannot_read_the_index(string script, string reason)
     {
         string plain = Directory.CreateDirectory(Path.Join(_root, "not-a-repository")).FullName;
 
-        (int exit, string output, string error) = DevScripts.RunScript(script, plain, environment: null, "--staged");
+        // Git must not find a repository above the scratch folder either.
+        Dictionary<string, string> ceiling = new(StringComparer.Ordinal) { ["GIT_CEILING_DIRECTORIES"] = _root };
+        (int exit, string output, string error) = DevScripts.RunScript(script, plain, ceiling, "--staged");
 
         Assert.True(exit == 2, output + error);
         Assert.Contains("[FAIL]", error, StringComparison.Ordinal);
+        Assert.Contains(reason, error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_encoding_check_fails_when_git_cannot_return_a_staged_blob()
+    {
+        string repository = DevScripts.NewRepository(_root);
+        DevScripts.Write(repository, "scripts/tool.sh", "echo cafe\n");
+        DevScripts.Git(repository, "add", "scripts/tool.sh");
+        string blob = DevScripts.Git(repository, "rev-parse", ":scripts/tool.sh");
+        DevScripts.Delete(Path.Join(repository, ".git", "objects", blob[..2]));
+
+        (int exit, string output, string error) = DevScripts.RunScript("check-encoding.cs", repository, environment: null, "--staged");
+
+        Assert.True(exit == 2, output + error);
+        Assert.Contains("[FAIL] git cannot read the staged content of scripts/tool.sh", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_encoding_check_reads_a_staged_path_with_a_space_and_a_non_ascii_character()
+    {
+        string repository = DevScripts.NewRepository(_root);
+        DevScripts.Write(repository, "scripts/my tool é.sh", "echo café\n");
+        DevScripts.Git(repository, "add", "scripts");
+
+        (int exit, string output, string error) = DevScripts.RunScript("check-encoding.cs", repository, environment: null, "--staged");
+
+        Assert.True(exit == 1, output + error);
+        Assert.Contains("scripts/my tool ", error, StringComparison.Ordinal);
+        Assert.Contains(".sh:1:9: non-ASCII U+00E9", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_encoding_check_judges_a_symlink_staged_as_a_regular_file()
+    {
+        string repository = DevScripts.NewRepository(_root);
+        DevScripts.Write(repository, "target.txt", "target\n");
+        DevScripts.Write(repository, "content.txt", "echo café\n");
+        string target = DevScripts.Git(repository, "hash-object", "-w", "target.txt");
+        string content = DevScripts.Git(repository, "hash-object", "-w", "content.txt");
+
+        // Index entries written directly, so no OS symlink is needed: commit a symlink, then stage a regular file in its place.
+        DevScripts.Git(repository, "update-index", "--add", "--cacheinfo", $"120000,{target},scripts/link.sh");
+        DevScripts.Commit(repository);
+        DevScripts.Git(repository, "update-index", "--cacheinfo", $"100644,{content},scripts/link.sh");
+
+        (int exit, string output, string error) = DevScripts.RunScript("check-encoding.cs", repository, environment: null, "--staged");
+
+        Assert.True(exit == 1, output + error);
+        Assert.Contains("scripts/link.sh:1:9: non-ASCII U+00E9", error, StringComparison.Ordinal);
     }
 }

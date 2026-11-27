@@ -23,6 +23,7 @@ public sealed class PushHookTests : IDisposable
     [InlineData("")]
     [InlineData(Deletion)]
     [InlineData(Deletion + Deletion)]
+    [InlineData($"(delete) {Zeros}000000000000000000000000 refs/heads/old {Commit}\n")]
     public void The_group_does_not_run_when_there_are_no_commits_to_check(string refs)
     {
         (int exit, string output, string error) = RunHook(refs);
@@ -35,6 +36,8 @@ public sealed class PushHookTests : IDisposable
     [InlineData($"refs/heads/new {Commit} refs/heads/new {Zeros}\n")]
     [InlineData(Deletion + $"refs/heads/new {Commit} refs/heads/new {Commit}\n")]
     [InlineData($"(delete) {Zeros}\n")]
+    [InlineData($"(delete) {Zeros} refs/heads/old {Commit} extra\n")]
+    [InlineData($"(delete) 0 refs/heads/old {Commit}\n")]
     [InlineData("not a ref line\n")]
     public void The_group_runs_quietly_for_any_other_push(string refs)
     {

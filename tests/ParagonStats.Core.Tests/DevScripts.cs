@@ -43,6 +43,10 @@ internal static class DevScripts
         // The coverage collector and the Sonar scanner hook child builds too; the scripts are not the code under test.
         info.Environment["CORECLR_ENABLE_PROFILING"] = "0";
         info.Environment["SonarQubeExclude"] = "true";
+
+        // The developer's own git config must not change what git does here (core.autocrlf with core.safecrlf refuses an LF file).
+        info.Environment["GIT_CONFIG_GLOBAL"] = OperatingSystem.IsWindows() ? "NUL" : "/dev/null";
+        info.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
         foreach ((string name, string value) in environment ?? new Dictionary<string, string>(StringComparer.Ordinal))
         {
             info.Environment[name] = value;
@@ -77,12 +81,17 @@ internal static class DevScripts
         return (exit, output, error);
     }
 
-    /// <summary>Runs git and fails the test when git fails.</summary>
-    internal static void Git(string directory, params string[] arguments)
+    /// <summary>Runs git, fails the test when git fails, and returns what git printed.</summary>
+    internal static string Git(string directory, params string[] arguments)
     {
         (int exit, string output, string error) = Run(directory, "git", input: null, environment: null, arguments);
         Assert.True(exit == 0, $"git {string.Join(' ', arguments)}: {output}{error}");
+        return output.Trim();
     }
+
+    /// <summary>Makes a commit of the index without signing or a configured identity, as scratch repositories have neither.</summary>
+    internal static void Commit(string directory) =>
+        Git(directory, "-c", "user.name=test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "commit", "--allow-empty", "--quiet", "-m", "scratch");
 
     /// <summary>Makes an empty git repository at a new folder under <paramref name="parent"/>.</summary>
     internal static string NewRepository(string parent)
