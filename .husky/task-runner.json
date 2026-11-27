@@ -5,13 +5,13 @@
       "name": "check-encoding",
       "group": "pre-commit",
       "command": "dotnet",
-      "args": ["run", "scripts/dev/check-encoding.cs"]
+      "args": ["run", "scripts/dev/check-encoding.cs", "--", "--staged"]
     },
     {
       "name": "check-coverage-exclusions",
       "group": "pre-commit",
       "command": "dotnet",
-      "args": ["run", "scripts/dev/check-coverage-exclusions.cs"]
+      "args": ["run", "scripts/dev/check-coverage-exclusions.cs", "--", "--staged"]
     },
     {
       "name": "dotnet-format",
